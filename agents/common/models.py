@@ -101,6 +101,10 @@ class AuditResult(Traced):
     disputed_amount: float
     hospital_npi: str
     charity_care_hint: str = ""
+    reader: str = "unknown"  # ocr | vision | demo | demo_fallback
+    unreviewed_lines: int = 0  # charges OCR saw without a CPT/HCPCS code
+    needs_review: List[int] = []  # vision lines OCR could not confirm
+    fallback_reason: str = ""
 
 
 # ---------- Payment Guard ----------

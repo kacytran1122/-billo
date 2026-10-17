@@ -1,0 +1,10 @@
+# OCR reader (local, free, no API key)
+rapidocr-onnxruntime>=1.3
+pillow>=10
+numpy
+# iPhone HEIC photos from iMessage (optional but recommended)
+pillow-heif
+# ChatGPT vision fallback (already in core/requirements.txt)
+openai>=1.40
+# tests
+pytest

@@ -336,12 +336,24 @@ async def on_result(ctx: Context, sender: str, res: AuditResult):
     if not case:
         return
     case["audit"] = {"fair_amount": res.fair_amount, "disputed_amount": res.disputed_amount,
-                     "hospital_npi": res.hospital_npi, "flags": [dump(f) for f in res.flags]}
+                     "hospital_npi": res.hospital_npi, "flags": [dump(f) for f in res.flags],
+                     "reader": res.reader}
     case["stage"] = "audited"
     save(ctx, case)
     disputes = [f for f in res.flags if f.kind == "dispute"]
     asks = [f for f in res.flags if f.kind == "ask_hospital"]
     text = [f"Done. Your bill is ${res.total_billed:,.2f}. I found {len(disputes)} thing(s) to dispute and {len(asks)} to ask about."]
+    if res.reader == "ocr":
+        text.append("I read the bill locally with OCR, and the parsed charges matched the printed total.")
+    elif res.reader == "vision":
+        text.append("Local OCR was not confident enough, so I used the vision fallback and checked its numbers against the photo.")
+    elif res.reader == "demo_fallback":
+        text.append("I could not read that photo safely, so this result uses the demo bill. Please send a clearer photo.")
+    if res.unreviewed_lines:
+        text.append(f"Ask the hospital about {res.unreviewed_lines} charge(s) that had no readable billing code.")
+    if res.needs_review:
+        nums = ", ".join(str(n) for n in res.needs_review)
+        text.append(f"Please verify line(s) {nums}; OCR could not confirm both the code and charge.")
     text += [f"- Dispute: {f.explanation}" for f in disputes]
     text += [f"- Ask the hospital: {f.explanation}" for f in asks]
     if res.charity_care_hint:

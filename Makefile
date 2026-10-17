@@ -45,7 +45,7 @@ dev: agents       ## core + agents + bridge (core and bridge in this terminal)
 	$(MAKE) core
 
 test:             ## unit tests (no keys, no database)
-	$(BIN)/python -m pytest -q tests
+	$(BIN)/python -m pytest -q tests ocr/tests
 
 stop:             ## stop everything started by make agents / dev
 	-pkill -f "python (red_flag|care_finder|bill_auditor|payment_guard|imessage_gateway|case_medic|coordinator).py"

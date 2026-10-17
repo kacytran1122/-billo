@@ -35,7 +35,7 @@ agent = Agent(
 async def on_audit(ctx: Context, sender: str, req: AuditRequest):
     reply_to = req.reply_to or sender
     with case_span(req, op="agent.bill_auditor", name="audit"):
-        with sentry_sdk.start_span(op="gen_ai.vision", name="read bill"):
+        with sentry_sdk.start_span(op="document.reader", name="read bill"):
             bill = await core_post("/reader/extract", {"case_id": req.case_id, "file_url": req.file_url, "demo": req.demo})
         lines = [BillLine(**l) for l in bill["lines"]]
         npi = bill.get("hospital_npi") or req.hospital_npi
@@ -70,7 +70,11 @@ async def on_audit(ctx: Context, sender: str, req: AuditRequest):
         result = AuditResult(
             case_id=req.case_id, lines=lines, flags=flags, total_billed=total_billed,
             fair_amount=round(total_billed - disputed, 2), disputed_amount=disputed,
-            hospital_npi=npi, charity_care_hint=total.get("charity_care_hint", ""), trace=carry(),
+            hospital_npi=npi, charity_care_hint=total.get("charity_care_hint", ""),
+            reader=bill.get("reader", "unknown"),
+            unreviewed_lines=len(bill.get("unreviewed_lines", [])),
+            needs_review=bill.get("needs_review", []),
+            fallback_reason=bill.get("fallback_reason", ""), trace=carry(),
         )
         ctx.logger.info(f"audit done case={req.case_id[:6]} flags={len(flags)}")
         await ctx.send(reply_to, result)

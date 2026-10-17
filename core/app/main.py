@@ -156,7 +156,7 @@ class ExtractIn(BaseModel):
 @app.post("/reader/extract")
 def extract(body: ExtractIn, x_internal_token: str | None = Header(None)):
     auth(x_internal_token)
-    with sentry_sdk.start_span(op="gen_ai.vision", name="bill photo -> json"):
+    with sentry_sdk.start_span(op="document.reader", name="bill photo -> typed lines"):
         return reader.read_bill(body.file_url, body.demo or (DEMO and not body.file_url), body.strict)
 
 

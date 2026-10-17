@@ -27,6 +27,7 @@ def run_demo_audit(case_id="t1"):
 
 def test_demo_bill_has_the_three_expected_flags():
     bill, flags, total = run_demo_audit()
+    assert bill["reader"] == "demo"
     kinds = {(f["rule_id"], f["kind"]) for f in flags}
     assert ("DUP-001", "dispute") in kinds          # X-ray charged twice: both checks agree
     assert ("PRICE-P90", "ask_hospital") in kinds    # splint: only the price check -> verifier rejects the dispute
