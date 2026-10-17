@@ -1,0 +1,385 @@
+"""Billo Core API (FastAPI): the shared tools every agent uses.
+
+Run:  cd core && uvicorn app.main:app --reload --port 8000
+Docs: http://localhost:8000/docs
+"""
+from __future__ import annotations
+
+import io
+import os
+import random
+import time
+from pathlib import Path
+from urllib.parse import quote
+
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")  # must run before the imports below read env
+
+import httpx  # noqa: E402
+import sentry_sdk  # noqa: E402
+from fastapi import FastAPI, Header, HTTPException, Request  # noqa: E402
+from fastapi.responses import HTMLResponse, PlainTextResponse, Response  # noqa: E402
+from pydantic import BaseModel  # noqa: E402
+
+from . import reader, rules, store, visa  # noqa: E402
+
+if os.getenv("SENTRY_DSN"):
+    sentry_sdk.init(dsn=os.getenv("SENTRY_DSN"), traces_sample_rate=1.0, send_default_pii=False,
+                    environment=os.getenv("SENTRY_ENVIRONMENT", "hackathon"), enable_logs=True)
+
+app = FastAPI(title="Billo Core API", version="0.1.0")
+TOKEN = os.getenv("INTERNAL_TOKEN", "dev-token")
+PUBLIC = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/")
+LINE = os.getenv("PHOTON_LINE_ADDRESS", "")
+TRUSTED = [d.strip() for d in os.getenv("TRUSTED_PAY_DOMAINS", "heybillo.tech").split(",") if d.strip()]
+DEMO = os.getenv("BILLO_MODE", "demo") == "demo"
+
+
+def auth(token: str | None) -> None:
+    if token != TOKEN:
+        raise HTTPException(401, "bad internal token")
+
+
+@app.get("/health")
+def health():
+    return {"ok": True, "db": store.use_db(), "mode": os.getenv("BILLO_MODE", "demo"), "visa": os.getenv("VISA_MODE", "mock")}
+
+
+# ------------------------------------------------------------------ Care Finder
+@app.get("/care/search")
+def care_search(q: str = "", near: str = "UCLA", x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    code = "73560" if any(w in q.lower() for w in ("knee", "ankle", "leg", "fall", "soccer")) else "99213"
+    key = os.getenv("GOOGLE_MAPS_API_KEY", "")
+    out = []
+    for p in store.places():
+        pic = ""
+        if key:  # Google Static Maps (satellite). Show attribution in the UI; do not cache images.
+            pic = (f"https://maps.googleapis.com/maps/api/staticmap?center={p['lat']},{p['lng']}"
+                   f"&zoom=18&size=600x300&maptype=satellite&markers={p['lat']},{p['lng']}&key={key}")
+        stats = store.price_stats(code, include_er=p["kind"] == "er")
+        out.append({
+            "name": p["name"], "kind": p["kind"], "npi": p["npi"], "address": p["address"], "hours": p["hours"],
+            "price_low": p["price_low"], "price_typical": p["price_typical"],
+            "price_source": f"{stats['source']} p50 ${stats['p50']:,.0f} for {code}" if stats else "posted price",
+            "picture_url": pic, "pay_domain": p.get("pay_domain", ""),
+        })
+    return {"code": code, "places": out}
+
+
+# ------------------------------------------------------------------ Good Faith Estimate + calendar
+class EstimateIn(BaseModel):
+    case_id: str
+    npi: str
+    place: str
+    code: str = ""
+    amount: float
+
+
+@app.post("/estimates")
+def save_estimate(body: EstimateIn, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    store.save_estimate(body.case_id, body.model_dump())
+    start = time.strftime("%Y%m%dT%H%M%S", time.localtime(time.time() + 3600))
+    end = time.strftime("%Y%m%dT%H%M%S", time.localtime(time.time() + 7200))
+    gcal = ("https://calendar.google.com/calendar/render?action=TEMPLATE"
+            f"&text={quote('Visit: ' + body.place)}&dates={start}/{end}&details={quote('Booked with Billo')}")
+    return {"amount": body.amount, "ics_url": f"{PUBLIC}/ics/{body.case_id}", "gcal_url": gcal}
+
+
+@app.get("/ics/{case_id}")
+def ics(case_id: str):
+    est = store.get_estimate(case_id)
+    if not est:
+        raise HTTPException(404)
+    t0 = time.strftime("%Y%m%dT%H%M%S", time.localtime(time.time() + 3600))
+    t1 = time.strftime("%Y%m%dT%H%M%S", time.localtime(time.time() + 7200))
+    body = ("BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Billo//EN\r\nBEGIN:VEVENT\r\n"
+            f"UID:{case_id}@heybillo.tech\r\nDTSTART:{t0}\r\nDTEND:{t1}\r\nSUMMARY:Visit: {est['place']}\r\n"
+            "DESCRIPTION:Booked with Billo. Your Good Faith Estimate is saved.\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")
+    return Response(body, media_type="text/calendar", headers={"Content-Disposition": "attachment; filename=billo-visit.ics"})
+
+
+# ------------------------------------------------------------------ live visit log
+class VisitIn(BaseModel):
+    case_id: str
+    text: str
+
+
+@app.post("/visit-events")
+def visit_event(body: VisitIn, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    codes = rules.visit_codes_from_text(body.text)
+    added = []
+    for code in sorted(codes):
+        stats = store.price_stats(code)
+        if stats:
+            store.add_visit_event(body.case_id, body.text[:60], code, stats["p50"])
+            added.append(code)
+    total, n = store.visit_running_total(body.case_id)
+    gfe = store.get_estimate(body.case_id)
+    base = gfe["amount"] if gfe else 0
+    if not added:
+        return {"say": "Got it. I did not find a price for that yet, but I saved it in your visit log.", "total": total}
+    return {"say": f"Saved. Your visit so far: about ${base + total:,.0f} (estimate ${base:,.0f} + {n} item(s)).", "total": base + total}
+
+
+# ------------------------------------------------------------------ uploads (bill photos from iMessage)
+UPLOADS = Path(__file__).resolve().parents[1] / "uploads"
+
+
+@app.post("/files")
+async def upload(request: Request, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    UPLOADS.mkdir(exist_ok=True)
+    ext = {"image/jpeg": "jpg", "image/png": "png", "image/heic": "heic", "application/pdf": "pdf"}.get(
+        request.headers.get("content-type", ""), "bin")
+    name = f"{random.getrandbits(64):016x}.{ext}"
+    (UPLOADS / name).write_bytes(await request.body())
+    return {"file_url": f"file:{name}"}
+
+
+# ------------------------------------------------------------------ Bill Auditor tools
+class ExtractIn(BaseModel):
+    case_id: str
+    file_url: str = ""
+    demo: bool = False
+    strict: bool = False
+
+
+@app.post("/reader/extract")
+def extract(body: ExtractIn, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    with sentry_sdk.start_span(op="gen_ai.vision", name="bill photo -> json"):
+        return reader.read_bill(body.file_url, body.demo or (DEMO and not body.file_url), body.strict)
+
+
+class LineIn(BaseModel):
+    case_id: str
+    line: dict
+    all_lines: list[dict]
+
+
+@app.post("/audit/line")
+def audit_line(body: LineIn, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    hits = rules.rules_check(body.line, body.all_lines, store.visit_codes(body.case_id))
+    stats = store.price_stats(body.line["code"])
+    price = rules.price_check(body.line, body.all_lines, stats)
+    flag = rules.vote(body.line, hits, price)
+    return {"flag": flag, "say": rules.say_for(body.line, flag), "stats": stats}
+
+
+class TotalIn(BaseModel):
+    case_id: str
+    lines: list[dict]
+    line_flags: list[dict] = []
+
+
+@app.post("/audit/total")
+def audit_total(body: TotalIn, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    est = store.get_estimate(body.case_id)
+    gfe = est["amount"] if est else (240.0 if DEMO else None)  # demo: Maya's saved estimate
+    sum_p90 = sum((store.price_stats(l["code"]) or {"p90": l["charge"]})["p90"] for l in body.lines)
+    flags = [f for f in [rules.gfe_check(body.lines, gfe, sum_p90)] if f]
+    disputed = rules.disputed_amount(body.lines, body.line_flags + flags, gfe)
+    hint = ("You may also qualify for free or cheaper care (charity care): in California, hospitals must help "
+            "patients up to 400% of the federal poverty level. Tell me your yearly income to check.")
+    return {"flags": flags, "disputed_amount": disputed, "charity_care_hint": hint}
+
+
+@app.post("/disputes/letter")
+def dispute_letter(body: dict, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    # TODO(drafter): build the letter from the agreed flags only, with evidence, and store it.
+    return {"url": f"{PUBLIC}/letters/{body['case_id']}.txt"}
+
+
+@app.get("/letters/{case_id}.txt", response_class=PlainTextResponse)
+def letter(case_id: str):
+    return ("To the billing office,\n\nI am disputing charges on my bill. Details are attached: each disputed "
+            "item, the rule it breaks, and the public price data. Please send an itemized bill and correct the "
+            "charges. Under the No Surprises Act I am starting the dispute process for the amount over my Good "
+            "Faith Estimate.\n\nThank you.\n(Drafted by Billo. Not legal advice.)\n")
+
+
+# ------------------------------------------------------------------ Payment Guard tools
+class VerifyIn(BaseModel):
+    case_id: str
+    npi: str
+    amount: float
+    disputed_amount: float
+    mandate_max: float
+    pay_link: str = ""
+
+
+@app.post("/guard/verify")
+async def guard_verify(body: VerifyIn, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    reasons, ok = [], True
+    if os.getenv("NPI_MODE", "demo") == "live":
+        async with httpx.AsyncClient(timeout=10) as c:
+            r = await c.get("https://npiregistry.cms.hhs.gov/api/", params={"version": "2.1", "number": body.npi})
+        found = r.status_code == 200 and r.json().get("result_count", 0) > 0
+    else:
+        found = body.npi.startswith("19999999")  # demo NPIs from data/synthetic/places.json
+    reasons.append("hospital NPI checks out" if found else "hospital NPI not found")
+    ok &= found
+    if body.pay_link:
+        host = httpx.URL(body.pay_link).host
+        trusted = any(host == d or host.endswith("." + d) for d in TRUSTED)
+        reasons.append(f"pay link domain {host} is trusted" if trusted else f"pay link domain {host} is NOT trusted")
+        ok &= trusted
+    within = body.amount <= body.mandate_max
+    reasons.append(f"amount within your limit of ${body.mandate_max:,.0f}" if within else "amount is over your limit")
+    ok &= within
+    reasons.append(f"${body.disputed_amount:,.2f} disputed money held back")
+    return {"ok": ok, "reasons": reasons}
+
+
+@app.post("/visa/pay-link")
+def pay_link(body: dict, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    return visa.create_pay_link(body["case_id"], float(body["amount"]))
+
+
+@app.get("/visa/status/{payment_id}")
+def pay_status(payment_id: str, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    rec = store.get_payment(payment_id)
+    return {"paid": bool(rec and rec["paid"])}
+
+
+@app.get("/pay/{payment_id}", response_class=HTMLResponse)
+def mock_pay_page(payment_id: str):
+    rec = store.get_payment(payment_id)
+    if not rec:
+        raise HTTPException(404)
+    return (f"<html><body style='font-family:sans-serif;max-width:420px;margin:40px auto'>"
+            f"<h2>Visa sandbox (mock)</h2><p>Pay <b>${rec['amount']:,.2f}</b> (fair part only).</p>"
+            f"<form method='post' action='/pay/{payment_id}'><button>Pay with test card</button></form>"
+            f"<p style='color:#666'>Demo only. No real card is charged.</p></body></html>")
+
+
+@app.post("/pay/{payment_id}", response_class=HTMLResponse)
+def mock_pay(payment_id: str):
+    visa.mark_paid(payment_id)
+    return "<html><body style='font-family:sans-serif;text-align:center;margin-top:60px'><h2>Paid (mock)</h2>Go back to ASI:One and say 'paid'.</body></html>"
+
+
+@app.post("/visa/webhook")
+async def visa_webhook(request: Request):
+    # TODO(visa): verify the signature with VISA_WEBHOOK_SECRET, then mark_paid(payment id from payload).
+    payload = await request.json()
+    pid = payload.get("payment_id", "")
+    visa.mark_paid(pid)
+    return {"ok": True}
+
+
+# ------------------------------------------------------------------ QR join (News Next Door method)
+@app.post("/link-codes")
+def new_link(body: dict, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    code = f"BILLO-{random.randint(1000, 9999)}"
+    store.save_link(code, body["case_id"], time.time() + 15 * 60)
+    return {"code": code, "qr_url": f"{PUBLIC}/qr/{code}.png", "line": LINE, "sms": f"sms:{LINE}&body={code}",
+            "expires_in": 900, "case_page": f"{PUBLIC}/c/{code}"}
+
+
+@app.get("/qr/{code}.png")
+def qr(code: str):
+    import qrcode
+
+    img = qrcode.make(f"sms:{LINE}&body={code}" if LINE else f"{PUBLIC}/c/{code}")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return Response(buf.getvalue(), media_type="image/png")
+
+
+@app.get("/api/link/{code}")
+def link_status(code: str):
+    link = store.get_link(code)
+    if not link:
+        return {"status": "unknown"}
+    if link["status"] == "waiting" and time.time() > link["expires_at"]:
+        link["status"] = "expired"
+    return {"status": link["status"]}
+
+
+@app.get("/c/{code}", response_class=HTMLResponse)
+def case_page(code: str):
+    """Optional page for discharge sheets. Not part of the ASI:One primary flow."""
+    return (f"<html><body style='font-family:sans-serif;text-align:center;margin-top:40px'>"
+            f"<h2>Text this to check your bill</h2><img src='/qr/{code}.png' width='220'/>"
+            f"<p><a href='sms:{LINE}&body={code}'>Open in iMessage</a> · code <b>{code}</b></p>"
+            f"<p id='s'>waiting...</p><script>setInterval(async()=>{{const r=await fetch('/api/link/{code}');"
+            f"const j=await r.json();document.getElementById('s').textContent=j.status==='linked'?'Linked':j.status}},3000)"
+            f"</script></body></html>")
+
+
+class ClaimIn(BaseModel):
+    code: str
+    handle_hash: str
+    space_id: str
+
+
+@app.post("/link/claim")
+def claim(body: ClaimIn, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    link = store.claim_link(body.code.upper(), body.handle_hash, body.space_id)
+    if not link:
+        return {"status": "unknown"}
+    return {"status": link["status"], "case_id": link["case_id"] if link["status"] == "linked" else ""}
+
+
+@app.get("/link/resolve")
+def resolve(handle_hash: str, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    return {"case_id": store.case_for_handle(handle_hash) or ""}
+
+
+@app.post("/link/stop")
+def stop(body: dict, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    store.stop(body["handle_hash"])
+    return {"ok": True}
+
+
+@app.get("/reminders/allowed")
+def allowed(case_id: str, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    return {"ok": store.reminders_allowed(case_id)}
+
+
+# ------------------------------------------------------------------ Sentry -> Case Medic
+@app.post("/sentry/webhook")
+async def sentry_webhook(request: Request):
+    """Sentry alert webhook (Settings > Integrations > Webhooks, or an Internal Integration).
+    We forward a SMALL alert to Case Medic: which check failed + case tag + trace id."""
+    payload = await request.json()
+    data = payload.get("data", {})
+    event = data.get("event", {}) or data.get("issue", {}) or {}
+    tags = {t[0]: t[1] for t in event.get("tags", []) if isinstance(t, list) and len(t) == 2}
+    title = (event.get("title") or payload.get("message") or "").lower()
+    check = "npi" if "npi" in title else "bill_reader" if ("reader" in title or "json" in title) else "visa" if "visa" in title else "npi"
+    trace_id = (event.get("contexts", {}).get("trace", {}) or {}).get("trace_id", "")
+    alert = {"token": TOKEN, "check": check, "case_id": tags.get("case", ""), "trace_id": trace_id, "title": title[:120]}
+    async with httpx.AsyncClient(timeout=10) as c:
+        await c.post("http://localhost:8007/alert", json=alert)
+    return {"forwarded": check}
+
+
+@app.post("/demo/break-npi")
+async def break_npi(body: dict, x_internal_token: str | None = Header(None)):
+    """Demo button: raise a tagged NPI error so Sentry fires the alert -> Case Medic heals the case.
+    If Sentry is slow, this also calls Case Medic directly (the backup path for the stage)."""
+    auth(x_internal_token)
+    case_id = body.get("case_id", "")
+    with sentry_sdk.new_scope() as scope:
+        scope.set_tag("check", "npi")
+        sentry_sdk.capture_message("NPI lookup failed (demo)", level="error")
+    async with httpx.AsyncClient(timeout=10) as c:
+        await c.post("http://localhost:8007/alert", json={"token": TOKEN, "check": "npi", "case_id": case_id, "title": "npi demo"})
+    return {"ok": True}

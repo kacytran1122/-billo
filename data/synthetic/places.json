@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Westwood Urgent Care (demo)",
+    "kind": "urgent_care",
+    "npi": "1999999901",
+    "address": "10900 Wilshire Blvd, Los Angeles, CA 90024",
+    "lat": 34.0597,
+    "lng": -118.4434,
+    "hours": "open until 9 pm",
+    "pay_domain": "heybillo.tech",
+    "price_typical": 240,
+    "price_low": 180
+  },
+  {
+    "name": "Campus Health Clinic (demo)",
+    "kind": "clinic",
+    "npi": "1999999902",
+    "address": "221 Charles E Young Dr S, Los Angeles, CA 90095",
+    "lat": 34.0716,
+    "lng": -118.4436,
+    "hours": "open until 6 pm",
+    "pay_domain": "heybillo.tech",
+    "price_typical": 180,
+    "price_low": 120
+  },
+  {
+    "name": "Santa Monica Emergency Room (demo)",
+    "kind": "er",
+    "npi": "1999999903",
+    "address": "1250 16th St, Santa Monica, CA 90404",
+    "lat": 34.0292,
+    "lng": -118.4862,
+    "hours": "open 24 hours",
+    "pay_domain": "heybillo.tech",
+    "price_typical": 1800,
+    "price_low": 1200
+  }
+]

@@ -1,0 +1,262 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 1340" width="1440" height="1340" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif" xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTpkNDdhN2Y2Mi04Y2NlLTQzNTItOTI5NC1iMmIwZjBjN2Y1NTMAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaMV1mncIIgN0vLqpYipz4g0AAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDowOTExMTNmNC01NTgwLTQ3ZDItYjg1My1hYmI3Nzg5N2RlZGRscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNoZ3XibKYZPn3gSrr5PLQmWgAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFgg2zdzxB9pLW9TuU6vvQ3NlGW1jxD9+gnX4HKRDYKTjrqkZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaIHinDataQtF+aEOOF0nVaYAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCD3poc38EKujJe3FR5v9ABya5b4SbVc4Sqw2J0U7ipCPWRuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjWZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOmQ0N2E3ZjYyLThjY2UtNDM1Mi05Mjk0LWIyYjBmMGM3ZjU1My9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOmFmMzRhMDUzLWJlYmQtNDk1Zi04YTA5LTM3MjdlNDNmNDY2YnJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCDbN3PEH2ktb1O5Tq+9Dc2UZbWPEP36CdfgcpENgpOOuqJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggCPA5cru08u9mgQ0/t44kvBeWWOG1Lm2CozGSHZqadmCiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggyr4Wli7LAw5LqvXjn0karaQ4s4F33XNcE8OVh3qov9B0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQO2bGkkkwWG9eGzz2m1uUWh/T5chQLTrL4KI27I1CqgknGa4xnJYaIBQfDN6mhZRZit5n1NvvdjMV2nrtO7YVks=</c2pa:manifest></metadata>
+  <defs>
+    <marker id="a" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 z" fill="#111827"/>
+    </marker>
+    <style>
+      .t   { font-size: 15px; font-weight: 700; fill: #0f172a; }
+      .s   { font-size: 12.5px; fill: #475569; }
+      .m   { font-size: 12px; fill: #0f172a; font-family: "DejaVu Sans Mono", Menlo, Consolas, monospace; }
+      .h   { font-size: 12.5px; font-weight: 800; letter-spacing: .07em; }
+      .lbl { font-size: 12px; font-weight: 600; fill: #111827; }
+      .ln  { stroke: #111827; stroke-width: 2.4; fill: none; stroke-linejoin: round; }
+      .num { font-size: 11.5px; font-weight: 800; fill: #ffffff; }
+      .badge { fill: #0d9488; stroke: #ffffff; stroke-width: 2; }
+      .badge2 { fill: #334155; stroke: #ffffff; stroke-width: 2; }
+      .th  { font-size: 12px; font-weight: 800; fill: #334155; }
+      .rl  { font-size: 12.5px; font-weight: 700; fill: #0f172a; }
+      .yes { font-size: 12.5px; font-weight: 600; fill: #0f766e; }
+      .no  { font-size: 12.5px; font-weight: 600; fill: #9f1239; }
+    </style>
+  </defs>
+  <rect width="1440" height="1340" fill="#ffffff"/>
+
+  <!-- TITLE -->
+  <text x="40" y="50" font-size="28" font-weight="800" fill="#0f172a">Billo · Photon (iMessage) System</text>
+  <text x="40" y="76" class="s" font-size="14">The patient joins with a QR code. Photon carries the texts. Fetch.ai agents do the work. Billo works in private chats and, when asked with @Billo, in group chats.</text>
+
+  <!-- QR JOIN -->
+  <rect x="40" y="96" width="1360" height="184" rx="16" fill="#f8fafc" stroke="#334155" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="60" y="120" class="h" fill="#334155">QR JOIN · method from News Next Door</text>
+  <rect x="68" y="134" width="232" height="128" rx="10" fill="#ffffff" stroke="#94a3b8"/>
+  <circle cx="90" cy="158" r="11" class="badge2"/><text x="90" y="162" text-anchor="middle" class="num">1</text>
+  <text x="110" y="163" class="t" font-size="14">Ask for a code</text>
+  <text x="84" y="192" class="s">heybillo.tech/c/... asks</text>
+  <text x="84" y="210" class="s">the server for BILLO-4821.</text>
+  <text x="84" y="228" class="s">It lasts 15 minutes.</text>
+  <rect x="336" y="134" width="232" height="128" rx="10" fill="#ffffff" stroke="#94a3b8"/>
+  <circle cx="358" cy="158" r="11" class="badge2"/><text x="358" y="162" text-anchor="middle" class="num">2</text>
+  <text x="378" y="163" class="t" font-size="14">Show a QR image</text>
+  <text x="352" y="192" class="s">The QR holds this link:</text>
+  <text x="352" y="210" class="m">sms:&lt;Billo line&gt;</text>
+  <text x="352" y="228" class="m">&amp;body=BILLO-4821</text>
+  <rect x="604" y="134" width="232" height="128" rx="10" fill="#ffffff" stroke="#94a3b8"/>
+  <circle cx="626" cy="158" r="11" class="badge2"/><text x="626" y="162" text-anchor="middle" class="num">3</text>
+  <text x="646" y="163" class="t" font-size="14">Scan and Send</text>
+  <text x="620" y="192" class="s">The patient scans the QR</text>
+  <text x="620" y="210" class="s">on her iPhone and taps</text>
+  <text x="620" y="228" class="s">Send. The text goes out.</text>
+  <rect x="872" y="134" width="232" height="128" rx="10" fill="#ffffff" stroke="#94a3b8"/>
+  <circle cx="894" cy="158" r="11" class="badge2"/><text x="894" y="162" text-anchor="middle" class="num">4</text>
+  <text x="914" y="163" class="t" font-size="14">Page checks status</text>
+  <text x="888" y="192" class="m">GET /api/link/:code</text>
+  <text x="888" y="210" class="s">every few seconds:</text>
+  <text x="888" y="228" class="s">waiting / linked /</text>
+  <text x="888" y="246" class="s">stopped / expired</text>
+  <rect x="1140" y="134" width="232" height="128" rx="10" fill="#ffffff" stroke="#94a3b8"/>
+  <circle cx="1162" cy="158" r="11" class="badge2"/><text x="1162" y="162" text-anchor="middle" class="num">5</text>
+  <text x="1182" y="163" class="t" font-size="14">Page shows Linked</text>
+  <text x="1156" y="192" class="s">Only after the bridge has</text>
+  <text x="1156" y="210" class="s">handled her text. The</text>
+  <text x="1156" y="228" class="s">case goes on in iMessage.</text>
+
+  <!-- PEOPLE -->
+  <text x="40" y="352" class="h" fill="#334155">PEOPLE</text>
+  <rect x="40" y="364" width="260" height="106" rx="12" fill="#f1f5f9" stroke="#334155" stroke-width="1.5"/>
+  <text x="170" y="391" text-anchor="middle" class="t">Private chat (one person)</text>
+  <text x="170" y="413" text-anchor="middle" class="s" font-weight="700" fill="#0f766e">before + after care</text>
+  <text x="170" y="432" text-anchor="middle" class="s">booking, bill photos, payments</text>
+  <text x="170" y="450" text-anchor="middle" class="s">approvals by her own tap</text>
+
+  <rect x="40" y="486" width="260" height="106" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="170" y="513" text-anchor="middle" class="t">Group chat (family, friends)</text>
+  <text x="170" y="535" text-anchor="middle" class="s" font-weight="700" fill="#9f1239">@Billo only, before care only</text>
+  <text x="170" y="554" text-anchor="middle" class="s">general answers, no names</text>
+  <text x="170" y="572" text-anchor="middle" class="s">or symptoms, nothing kept</text>
+
+  <rect x="40" y="610" width="260" height="62" rx="12" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+  <text x="170" y="633" text-anchor="middle" class="h" fill="#b45309">TARGET</text>
+  <text x="170" y="656" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">First reply in under 5 seconds</text>
+
+  <!-- WHAT WORKS WHERE -->
+  <rect x="40" y="700" width="510" height="240" rx="14" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+  <text x="58" y="726" class="h" fill="#334155">WHAT WORKS WHERE</text>
+  <rect x="56" y="740" width="478" height="30" rx="6" fill="#e2e8f0"/>
+  <text x="70" y="760" class="th">What</text>
+  <text x="252" y="760" class="th">Group (@Billo)</text>
+  <text x="382" y="760" class="th">Private chat</text>
+  <line x1="56" y1="810" x2="534" y2="810" stroke="#e2e8f0"/>
+  <line x1="56" y1="850" x2="534" y2="850" stroke="#e2e8f0"/>
+  <line x1="56" y1="890" x2="534" y2="890" stroke="#e2e8f0"/>
+  <line x1="240" y1="776" x2="240" y2="926" stroke="#e2e8f0"/>
+  <line x1="370" y1="776" x2="370" y2="926" stroke="#e2e8f0"/>
+  <text x="70" y="795" class="rl">Before care</text>
+  <text x="252" y="795" class="yes">yes</text>
+  <text x="382" y="795" class="yes">yes</text>
+  <text x="70" y="835" class="rl">After care</text>
+  <text x="252" y="835" class="no">no</text>
+  <text x="382" y="835" class="yes">yes</text>
+  <text x="70" y="875" class="rl">Payments + approvals</text>
+  <text x="252" y="875" class="no">never</text>
+  <text x="382" y="875" class="yes">yes, your own tap</text>
+  <text x="70" y="915" class="rl">Memory</text>
+  <text x="252" y="915" class="no">nothing kept</text>
+  <text x="382" y="915" class="yes">full case</text>
+
+  <!-- PHOTON SPECTRUM -->
+  <rect x="340" y="364" width="210" height="228" rx="14" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.8"/>
+  <text x="445" y="392" text-anchor="middle" class="t">Photon Spectrum</text>
+  <text x="445" y="412" text-anchor="middle" class="s">Billo's own iMessage line</text>
+  <text x="445" y="440" text-anchor="middle" class="s">texts · photos</text>
+  <text x="445" y="458" text-anchor="middle" class="s">typing dots</text>
+  <text x="445" y="476" text-anchor="middle" class="s">private chats</text>
+  <text x="445" y="494" text-anchor="middle" class="s">group chats (@Billo)</text>
+  <text x="445" y="572" text-anchor="middle" font-size="11.5" font-weight="700" fill="#0f766e">backup: local Mac mode</text>
+
+  <!-- BRIDGE CONTAINER -->
+  <rect x="590" y="330" width="440" height="672" rx="16" fill="#ecfdf5" stroke="#0d9488" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="610" y="354" class="h" fill="#0f766e">BILLO SPECTRUM BRIDGE · TypeScript</text>
+
+  <rect x="610" y="366" width="400" height="82" rx="10" fill="#ffffff" stroke="#14b8a6"/>
+  <circle cx="632" cy="407" r="11" class="badge"/><text x="632" y="411" text-anchor="middle" class="num">1</text>
+  <text x="654" y="392" class="t" font-size="14">Code + STOP + HELP handler</text>
+  <text x="654" y="412" class="s">same result every time per message id</text>
+  <text x="654" y="430" class="s">typing dots while the agents work</text>
+
+  <rect x="610" y="458" width="400" height="82" rx="10" fill="#ffffff" stroke="#14b8a6"/>
+  <circle cx="632" cy="499" r="11" class="badge"/><text x="632" y="503" text-anchor="middle" class="num">2</text>
+  <text x="654" y="484" class="t" font-size="14">@Billo filter</text>
+  <text x="654" y="504" class="s">groups: reply only when someone writes @Billo</text>
+  <text x="654" y="522" class="s">"Call 911" right in the group for emergency signs</text>
+
+  <rect x="610" y="550" width="400" height="100" rx="10" fill="#ffffff" stroke="#14b8a6"/>
+  <circle cx="632" cy="600" r="11" class="badge"/><text x="632" y="604" text-anchor="middle" class="num">3</text>
+  <text x="654" y="576" class="t" font-size="14">Privacy router</text>
+  <text x="654" y="596" class="s">bills, payments, approvals: private chat only</text>
+  <text x="654" y="614" class="s">bill in a group is not read: "send it privately" + QR</text>
+  <text x="654" y="632" class="s">booking: "I sent Maya a private message to book"</text>
+
+  <rect x="610" y="660" width="400" height="82" rx="10" fill="#ffffff" stroke="#14b8a6"/>
+  <circle cx="632" cy="701" r="11" class="badge"/><text x="632" y="705" text-anchor="middle" class="num">4</text>
+  <text x="654" y="686" class="t" font-size="14">Photo of bill in · Live audit stream</text>
+  <text x="654" y="706" class="s">findings one line at a time</text>
+  <text x="654" y="724" class="s">then the savings total</text>
+
+  <rect x="610" y="752" width="400" height="64" rx="10" fill="#ffffff" stroke="#14b8a6"/>
+  <circle cx="632" cy="784" r="11" class="badge"/><text x="632" y="788" text-anchor="middle" class="num">5</text>
+  <text x="654" y="778" class="t" font-size="14">Approve button</text>
+  <text x="654" y="798" class="s">patient taps to approve (tap, not text)</text>
+
+  <rect x="610" y="826" width="400" height="82" rx="10" fill="#ffffff" stroke="#14b8a6"/>
+  <circle cx="632" cy="867" r="11" class="badge"/><text x="632" y="871" text-anchor="middle" class="num">6</text>
+  <text x="654" y="852" class="t" font-size="14">Billo texts first</text>
+  <text x="654" y="872" class="s">30-min "Did you go?" check</text>
+  <text x="654" y="890" class="s">quiet hours · one reminder a day</text>
+
+  <rect x="610" y="918" width="400" height="64" rx="10" fill="#ffffff" stroke="#14b8a6"/>
+  <circle cx="632" cy="950" r="11" class="badge"/><text x="632" y="954" text-anchor="middle" class="num">7</text>
+  <text x="654" y="944" class="t" font-size="14">Phone numbers masked</text>
+  <text x="654" y="964" class="s">real numbers never shown in logs</text>
+
+  <!-- FETCH SIDE -->
+  <text x="1100" y="352" class="h" fill="#4f46e5">FETCH.AI AGENTVERSE</text>
+  <rect x="1100" y="364" width="300" height="80" rx="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="1250" y="391" text-anchor="middle" font-size="14.5" font-weight="800" fill="#134e4a">iMessage Gateway</text>
+  <text x="1250" y="411" text-anchor="middle" font-size="12" fill="#115e59">thin adapter (a helper)</text>
+  <text x="1250" y="428" text-anchor="middle" font-size="12" fill="#115e59">only passes messages along</text>
+
+  <rect x="1100" y="508" width="300" height="88" rx="12" fill="#4f46e5"/>
+  <text x="1250" y="537" text-anchor="middle" font-size="15" font-weight="800" fill="#ffffff">Billo Coordinator (Fetch.ai)</text>
+  <text x="1250" y="558" text-anchor="middle" font-size="12" fill="#e0e7ff">plans the case + Billo agents</text>
+  <text x="1250" y="575" text-anchor="middle" font-size="12" fill="#e0e7ff">(same agents ASI:One uses)</text>
+
+  <rect x="1100" y="660" width="300" height="172" rx="12" fill="#fdf2f8" stroke="#9d174d" stroke-width="1.5"/>
+  <text x="1250" y="686" text-anchor="middle" class="h" fill="#9d174d">SENTRY</text>
+  <g font-size="12.5" fill="#1f2937">
+    <text x="1118" y="712">1 case = 1 trace (all agents)</text>
+    <text x="1118" y="740" font-weight="700">Case Medic:</text>
+    <text x="1118" y="757">an alert wakes an agent that</text>
+    <text x="1118" y="774">reads the trace and fixes the case</text>
+    <text x="1118" y="806">Crons watch the 30-min check</text>
+  </g>
+
+  <!-- MEMORY -->
+  <rect x="590" y="1032" width="440" height="96" rx="14" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="610" y="1057" class="h" fill="#c2410c">MEMORY · Tiger Data [MLH]</text>
+  <text x="610" y="1080" class="s" font-size="13">one patient ID across iMessage and ASI:One</text>
+  <text x="610" y="1099" class="s" font-size="13">chat links · pending approvals · prices</text>
+  <text x="610" y="1118" class="s" font-size="13">private chats only · nothing kept from groups</text>
+
+  <!-- ===== RULES ===== -->
+  <rect x="40" y="1156" width="1360" height="164" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="58" y="1182" class="h" fill="#0f766e">PHOTON RULES · how Billo behaves in iMessage</text>
+
+  <rect x="58" y="1196" width="210" height="110" rx="10" fill="#ffffff" stroke="#99f6e4"/>
+  <text x="72" y="1221" class="t" font-size="14">Two kinds of chats</text>
+  <text x="72" y="1243" class="s">Groups: only with @Billo,</text>
+  <text x="72" y="1260" class="s">before care only.</text>
+  <text x="72" y="1277" class="s">Private: everything,</text>
+  <text x="72" y="1294" class="s">before and after care.</text>
+
+  <rect x="280" y="1196" width="210" height="110" rx="10" fill="#ffffff" stroke="#99f6e4"/>
+  <text x="294" y="1221" class="t" font-size="14">Safety first</text>
+  <text x="294" y="1243" class="s">Emergency signs get</text>
+  <text x="294" y="1260" class="s">"Call 911" right away,</text>
+  <text x="294" y="1277" class="s">even in a group chat.</text>
+
+  <rect x="502" y="1196" width="210" height="110" rx="10" fill="#ffffff" stroke="#99f6e4"/>
+  <text x="516" y="1221" class="t" font-size="14">Fast first reply</text>
+  <text x="516" y="1243" class="s">First reply in under 5 sec.</text>
+  <text x="516" y="1260" class="s">Typing dots show while</text>
+  <text x="516" y="1277" class="s">the agents work.</text>
+
+  <rect x="724" y="1196" width="210" height="110" rx="10" fill="#ffffff" stroke="#99f6e4"/>
+  <text x="738" y="1221" class="t" font-size="14">Only the patient pays</text>
+  <text x="738" y="1243" class="s">Paying needs her own tap</text>
+  <text x="738" y="1260" class="s">on Approve, in private.</text>
+  <text x="738" y="1277" class="s">Never in a group.</text>
+  <text x="738" y="1294" class="s">Silence moves no money.</text>
+
+  <rect x="946" y="1196" width="210" height="110" rx="10" fill="#ffffff" stroke="#99f6e4"/>
+  <text x="960" y="1221" class="t" font-size="14">Gentle, not pushy</text>
+  <text x="960" y="1243" class="s">At most one reminder</text>
+  <text x="960" y="1260" class="s">a day, and no texts at</text>
+  <text x="960" y="1277" class="s">night (9 pm to 8 am).</text>
+
+  <rect x="1168" y="1196" width="214" height="110" rx="10" fill="#ffffff" stroke="#99f6e4"/>
+  <text x="1182" y="1221" class="t" font-size="14">Easy to stop</text>
+  <text x="1182" y="1243" class="s">Texting STOP ends all</text>
+  <text x="1182" y="1260" class="s">texts and reminders.</text>
+  <text x="1182" y="1277" class="s">HELP explains what</text>
+  <text x="1182" y="1294" class="s">Billo does.</text>
+
+  <!-- ===== ARROWS (drawn last, on top) ===== -->
+  <path d="M303,198 L333,198" class="ln" marker-end="url(#a)"/>
+  <path d="M571,198 L601,198" class="ln" marker-end="url(#a)"/>
+  <path d="M839,198 L869,198" class="ln" marker-end="url(#a)"/>
+  <path d="M1107,198 L1137,198" class="ln" marker-end="url(#a)"/>
+  <!-- step 3 -> Photon Spectrum -->
+  <path d="M660,264 L660,306 L445,306 L445,360" class="ln" marker-end="url(#a)"/>
+  <text x="552" y="298" text-anchor="middle" class="lbl">text: BILLO-4821</text>
+  <!-- bridge -> step 4 (link status) -->
+  <path d="M990,330 L990,266" class="ln" marker-end="url(#a)"/>
+  <text x="1000" y="306" class="lbl">case linked</text>
+  <!-- private chat <-> spectrum -->
+  <path d="M304,417 L336,417" class="ln" marker-start="url(#a)" marker-end="url(#a)"/>
+  <!-- group chat <-> spectrum -->
+  <path d="M304,539 L336,539" class="ln" marker-start="url(#a)" marker-end="url(#a)"/>
+  <!-- spectrum <-> bridge module 1 -->
+  <path d="M554,407 L606,407" class="ln" marker-start="url(#a)" marker-end="url(#a)"/>
+  <text x="580" y="397" text-anchor="middle" class="lbl">in/out</text>
+  <!-- bridge <-> gateway -->
+  <path d="M1014,404 L1096,404" class="ln" marker-start="url(#a)" marker-end="url(#a)"/>
+  <!-- gateway <-> coordinator -->
+  <path d="M1250,448 L1250,504" class="ln" marker-start="url(#a)" marker-end="url(#a)"/>
+  <text x="1262" y="481" class="lbl">Fetch message</text>
+  <!-- coordinator -> sentry -->
+  <path d="M1250,600 L1250,656" class="ln" marker-end="url(#a)"/>
+  <text x="1262" y="633" class="lbl">trace</text>
+  <!-- coordinator <-> memory -->
+  <path d="M1096,580 L1066,580 L1066,1080 L1034,1080" class="ln" marker-start="url(#a)" marker-end="url(#a)"/>
+  <text x="1089" y="930" class="lbl" transform="rotate(-90 1089 930)">save / load</text>
+</svg>

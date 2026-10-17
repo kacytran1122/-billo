@@ -1,0 +1,31 @@
+# Bill audit rules. Code decides; every flag cites a rule_id.
+gfe:
+  rule_id: GFE-400
+  threshold: 400          # No Surprises Act: dispute if the bill is $400+ over the Good Faith Estimate
+  dispute_window_days: 120
+price:
+  rule_id: PRICE-P90
+  high_percentile: 0.9    # price check says "too high" above p90 for the code in the area
+duplicates:
+  rule_id: DUP-001        # same code, same date, more units than makes sense
+ncci:
+  rule_id: NCCI-PTP
+  # Sample procedure-to-procedure pairs that should not be billed together.
+  # Replace with the real CMS NCCI PTP edit file during the hackathon.
+  pairs:
+    - ["29505", "29530"]
+    - ["73560", "73562"]
+visit_log:
+  rule_id: NOT-IN-LOG     # billed for something the patient's live visit log never mentions
+  # word the patient texts -> billing codes it explains
+  words:
+    "x-ray": ["73560", "73562"]
+    "xray": ["73560", "73562"]
+    "splint": ["29505", "L1830", "L3908"]
+    "brace": ["L1830", "L3908"]
+    "immobilizer": ["L1830"]
+    "stitches": ["12001", "12002"]
+    "shot": ["96372", "J1885"]
+  always_ok: ["99202", "99203", "99204", "99212", "99213", "99214", "99215"]  # the visit itself
+charity:
+  fpl_percent_limit: 400  # CA AB 1020: charity care up to 400% of the federal poverty level

@@ -1,0 +1,387 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1372" width="1280" height="1372" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif" xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTowN2Q2ODkyYS0xOTNhLTQ3M2MtYmM3Yy0yOGViYTUyNjVjNzUAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaMg3L1QJppq+az36hMj7svIAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDpkNmI2MjM2ZC03YWY0LTQwOWYtYjkxNC1iMTM4OWQ4OGU4NmRscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNo4maJnEBdMH0Hq1Oa7hPQEwAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggZZf2hr6WZUxABczKm5y5PIuVcHd4WcE6P+9VvnY83NykZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaA/fHc1AR7pxUSFGNLcDgHkAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCB0iiIESzhtRv7xlK7nL17SCZOK3DpSLWjcvUuD8j4p32RuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjWZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjA3ZDY4OTJhLTE5M2EtNDczYy1iYzdjLTI4ZWJhNTI2NWM3NS9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOmI3OGY5ZjdiLTJlZTYtNDAzMC1hYTRjLTQxODgzMjE0ZjUxN3JjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCBll/aGvpZlTEAFzMqbnLk8i5Vwd3hZwTo/71W+djzc3KJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggnpBgKmZsLFd6//6kcwsSFfJFIdI0G37lVCrFCRsj8A2iY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggnO7wy+57lmTd7hTvXIQ4p1qxZ/oGFRY6s03gg60HTjV0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQFDkuDbsiKdOBRW8Cet/dn7qAbZ9Lg/SQhENeiVPgqg4FPlGp9iNTQYfnQeOdP7tc4f/EoadLvqWBIwTVgTt7TI=</c2pa:manifest></metadata>
+  <defs>
+    <marker id="a" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 z" fill="#111827"/>
+    </marker>
+    <marker id="as" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 z" fill="#9d174d"/>
+    </marker>
+    <marker id="at" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 z" fill="#0f766e"/>
+    </marker>
+    <style>
+      .title { font-size: 15px; font-weight: 700; fill: #0f172a; }
+      .sub   { font-size: 12.5px; fill: #475569; }
+      .head  { font-size: 12.5px; font-weight: 800; letter-spacing: .07em; }
+      .li    { font-size: 13px; fill: #1f2937; }
+      .lbl   { font-size: 12px; font-weight: 600; fill: #111827; }
+      .ln    { stroke: #111827; stroke-width: 2.4; fill: none; stroke-linejoin: round; }
+      .lnt   { stroke: #0f766e; stroke-width: 1.8; fill: none; }
+      .sl    { stroke: #9d174d; stroke-width: 2; stroke-dasharray: 6 4; fill: none; }
+      .sls   { stroke: #9d174d; stroke-width: 2.4; fill: none; }
+      .num   { font-size: 11.5px; font-weight: 800; fill: #ffffff; }
+      .badge { fill: #f59e0b; stroke: #ffffff; stroke-width: 2; }
+      .mt    { font-size: 13px; font-weight: 700; fill: #134e4a; }
+      .ms    { font-size: 11.5px; fill: #475569; }
+      .at    { font-size: 13.5px; font-weight: 800; }
+      .as    { font-size: 12px; fill: #475569; }
+    </style>
+  </defs>
+
+  <rect width="1280" height="1372" fill="#ffffff"/>
+
+  <!-- TITLE -->
+  <text x="40" y="50" font-size="28" font-weight="800" fill="#0f172a">Billo · System Architecture</text>
+  <text x="40" y="76" class="sub" font-size="14">Care without the sticker shock. The AI reads and writes, code decides, you approve. · heybillo.tech</text>
+
+  <!-- WHAT YOU DO -->
+  <rect x="40" y="92" width="1200" height="118" rx="14" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="58" y="114" class="head" fill="#b45309">WHAT YOU DO</text>
+  <text x="172" y="114" font-size="12.5" fill="#92400e">At most 6 things. Billo does everything else.</text>
+  <path d="M70,186 L70,192 L640,192 L640,186" fill="none" stroke="#b45309" stroke-width="1.5"/>
+  <text x="355" y="204" text-anchor="middle" font-size="11.5" font-weight="800" fill="#b45309" letter-spacing=".05em">BEFORE CARE · optional</text>
+  <path d="M652,186 L652,192 L1222,192 L1222,186" fill="none" stroke="#b45309" stroke-width="1.5"/>
+  <text x="937" y="204" text-anchor="middle" font-size="11.5" font-weight="800" fill="#b45309" letter-spacing=".05em">AFTER CARE · you can start here with just a bill</text>
+  <rect x="661" y="114" width="160" height="20" rx="10" fill="#b45309"/>
+  <text x="741" y="128" text-anchor="middle" font-size="10.5" font-weight="800" fill="#ffffff">START HERE WITH A BILL</text>
+  <g transform="translate(18,0)">
+    <rect x="52" y="138" width="170" height="44" rx="10" fill="#ffffff" stroke="#f59e0b"/>
+    <text x="137" y="156" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Say what happened</text>
+    <text x="137" y="173" text-anchor="middle" font-size="11.5" fill="#92400e">in plain words</text>
+    <path d="M225,160 L243,160" class="ln" marker-end="url(#a)"/>
+    <rect x="246" y="138" width="170" height="44" rx="10" fill="#ffffff" stroke="#f59e0b"/>
+    <text x="331" y="156" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Pick a place</text>
+    <text x="331" y="173" text-anchor="middle" font-size="11.5" fill="#92400e">see the price + a picture</text>
+    <path d="M419,160 L437,160" class="ln" marker-end="url(#a)"/>
+    <rect x="440" y="138" width="170" height="44" rx="10" fill="#ffffff" stroke="#f59e0b"/>
+    <text x="525" y="156" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Approve the visit</text>
+    <text x="525" y="173" text-anchor="middle" font-size="11.5" fill="#92400e">see a live running total</text>
+    <path d="M613,160 L631,160" class="ln" marker-end="url(#a)"/>
+    <rect x="634" y="138" width="170" height="44" rx="10" fill="#ffffff" stroke="#f59e0b"/>
+    <text x="719" y="156" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Send the bill photo</text>
+    <text x="719" y="173" text-anchor="middle" font-size="11.5" fill="#92400e">see flags arrive live</text>
+    <path d="M807,160 L825,160" class="ln" marker-end="url(#a)"/>
+    <rect x="828" y="138" width="170" height="44" rx="10" fill="#ffffff" stroke="#f59e0b"/>
+    <text x="913" y="156" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Approve the dispute</text>
+    <text x="913" y="173" text-anchor="middle" font-size="11.5" fill="#92400e">Billo writes the letter</text>
+    <path d="M1001,160 L1019,160" class="ln" marker-end="url(#a)"/>
+    <rect x="1022" y="138" width="170" height="44" rx="10" fill="#ffffff" stroke="#f59e0b"/>
+    <text x="1107" y="156" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Approve the payment</text>
+    <text x="1107" y="173" text-anchor="middle" font-size="11.5" fill="#92400e">only the fair amount</text>
+  </g>
+
+  <!-- DOORS -->
+  <rect x="150" y="226" width="250" height="64" rx="12" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.8"/>
+  <text x="275" y="254" text-anchor="middle" class="title">iMessage · Photon</text>
+  <text x="275" y="274" text-anchor="middle" class="sub">private chat · or @Billo in a group</text>
+
+  <rect x="470" y="226" width="220" height="64" rx="12" fill="#f1f5f9" stroke="#334155" stroke-width="1.5"/>
+  <text x="580" y="254" text-anchor="middle" class="title">Patient</text>
+  <text x="580" y="274" text-anchor="middle" class="sub">uses either door</text>
+
+  <rect x="760" y="226" width="250" height="64" rx="12" fill="#f5f3ff" stroke="#6d28d9" stroke-width="1.5"/>
+  <text x="885" y="254" text-anchor="middle" class="title">ASI:One · Fetch.ai</text>
+  <text x="885" y="274" text-anchor="middle" class="sub">full flow works here too</text>
+
+  <!-- PHOTON LAYER -->
+  <rect x="40" y="318" width="700" height="206" rx="16" fill="#ecfdf5" stroke="#0d9488" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="58" y="340" class="head" fill="#0f766e">PHOTON LAYER · Spectrum iMessage + Billo bridge (TypeScript)</text>
+  <!-- QR join strip -->
+  <text x="58" y="360" font-size="11.5" font-weight="800" fill="#0f766e">QR JOIN · the method from News Next Door</text>
+  <g>
+    <rect x="52"  y="368" width="122" height="40" rx="8" fill="#ccfbf1" stroke="#0d9488"/>
+    <text x="113" y="384" text-anchor="middle" font-size="12" font-weight="700" fill="#134e4a">1 heybillo.tech</text>
+    <text x="113" y="400" text-anchor="middle" class="ms">makes BILLO-4821</text>
+    <rect x="190" y="368" width="122" height="40" rx="8" fill="#ccfbf1" stroke="#0d9488"/>
+    <text x="251" y="384" text-anchor="middle" font-size="12" font-weight="700" fill="#134e4a">2 QR of sms: link</text>
+    <text x="251" y="400" text-anchor="middle" class="ms">lasts 15 minutes</text>
+    <rect x="328" y="368" width="122" height="40" rx="8" fill="#ccfbf1" stroke="#0d9488"/>
+    <text x="389" y="384" text-anchor="middle" font-size="12" font-weight="700" fill="#134e4a">3 Scan + Send</text>
+    <text x="389" y="400" text-anchor="middle" class="ms">in iMessage</text>
+    <rect x="466" y="368" width="122" height="40" rx="8" fill="#ccfbf1" stroke="#0d9488"/>
+    <text x="527" y="384" text-anchor="middle" font-size="12" font-weight="700" fill="#134e4a">4 Page checks</text>
+    <text x="527" y="400" text-anchor="middle" class="ms">/api/link/:code</text>
+    <rect x="604" y="368" width="122" height="40" rx="8" fill="#ccfbf1" stroke="#0d9488"/>
+    <text x="665" y="384" text-anchor="middle" font-size="12" font-weight="700" fill="#134e4a">5 Shows "Linked"</text>
+    <text x="665" y="400" text-anchor="middle" class="ms">after text is read</text>
+    <path d="M175,388 L187,388" class="lnt" marker-end="url(#at)"/>
+    <path d="M313,388 L325,388" class="lnt" marker-end="url(#at)"/>
+    <path d="M451,388 L463,388" class="lnt" marker-end="url(#at)"/>
+    <path d="M589,388 L601,388" class="lnt" marker-end="url(#at)"/>
+  </g>
+  <!-- bridge modules -->
+  <rect x="56" y="418" width="216" height="44" rx="9" fill="#ffffff" stroke="#14b8a6"/>
+  <circle cx="73" cy="440" r="10" fill="#0d9488"/><text x="73" y="444" text-anchor="middle" font-size="11" font-weight="800" fill="#ffffff">1</text>
+  <text x="90" y="437" class="mt">Code, STOP, HELP</text>
+  <text x="90" y="453" class="ms">same result · typing dots</text>
+  <rect x="284" y="418" width="216" height="44" rx="9" fill="#ffffff" stroke="#14b8a6"/>
+  <circle cx="301" cy="440" r="10" fill="#0d9488"/><text x="301" y="444" text-anchor="middle" font-size="11" font-weight="800" fill="#ffffff">2</text>
+  <text x="318" y="437" class="mt">@Billo filter</text>
+  <text x="318" y="453" class="ms">groups: reply only to @Billo</text>
+  <rect x="512" y="418" width="216" height="44" rx="9" fill="#ffffff" stroke="#14b8a6"/>
+  <circle cx="529" cy="440" r="10" fill="#0d9488"/><text x="529" y="444" text-anchor="middle" font-size="11" font-weight="800" fill="#ffffff">3</text>
+  <text x="546" y="437" class="mt">Live audit stream</text>
+  <text x="546" y="453" class="ms">one line at a time + savings</text>
+  <rect x="56" y="470" width="216" height="44" rx="9" fill="#ffffff" stroke="#14b8a6"/>
+  <circle cx="73" cy="492" r="10" fill="#0d9488"/><text x="73" y="496" text-anchor="middle" font-size="11" font-weight="800" fill="#ffffff">4</text>
+  <text x="90" y="489" class="mt">Approve by tap</text>
+  <text x="90" y="505" class="ms">your own tap, never a guess</text>
+  <rect x="284" y="470" width="216" height="44" rx="9" fill="#ffffff" stroke="#14b8a6"/>
+  <circle cx="301" cy="492" r="10" fill="#0d9488"/><text x="301" y="496" text-anchor="middle" font-size="11" font-weight="800" fill="#ffffff">5</text>
+  <text x="318" y="489" class="mt">Billo texts first</text>
+  <text x="318" y="505" class="ms">30-min "Did you go?" check</text>
+  <rect x="512" y="470" width="216" height="44" rx="9" fill="#ffffff" stroke="#14b8a6"/>
+  <circle cx="529" cy="492" r="10" fill="#0d9488"/><text x="529" y="496" text-anchor="middle" font-size="11" font-weight="800" fill="#ffffff">6</text>
+  <text x="546" y="489" class="mt">Privacy router</text>
+  <text x="546" y="505" class="ms">bills + pay: private chat only</text>
+
+  <!-- PHOTON RULES -->
+  <rect x="790" y="318" width="450" height="206" rx="16" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="808" y="340" class="head" fill="#0f766e">PHOTON RULES</text>
+  <g font-size="12.5" fill="#1f2937">
+    <text x="808" y="366"><tspan font-weight="700">Group chat (@Billo):</tspan> before care only,</text>
+    <text x="808" y="383">places and prices in general words.</text>
+    <text x="808" y="406"><tspan font-weight="700">Private chat:</tspan> everything, before and after care.</text>
+    <text x="808" y="429"><tspan font-weight="700">Bills, payments, approvals</tspan> never go in a group.</text>
+    <text x="808" y="452"><tspan font-weight="700">Emergency signs</tspan> get "Call 911", even in a group.</text>
+    <text x="808" y="475"><tspan font-weight="700">STOP</tspan> cancels every reminder in the queue.</text>
+    <text x="808" y="498"><tspan font-weight="700">First reply</tspan> in under 5 seconds · numbers masked.</text>
+  </g>
+
+  <!-- AGENTS BAND -->
+  <rect x="40" y="556" width="1000" height="264" rx="16" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="60" y="580" class="head" fill="#4f46e5">AGENTS · Fetch.ai Agentverse</text>
+  <text x="420" y="580" font-size="12" fill="#4338ca">5 public agents + 2 small helpers</text>
+
+  <rect x="120" y="592" width="260" height="52" rx="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="250" y="614" text-anchor="middle" font-size="14.5" font-weight="800" fill="#134e4a">iMessage Gateway</text>
+  <text x="250" y="633" text-anchor="middle" font-size="12" fill="#115e59">helper · thin adapter, no thinking</text>
+
+  <rect x="620" y="592" width="300" height="54" rx="12" fill="#4f46e5"/>
+  <text x="770" y="615" text-anchor="middle" font-size="16" font-weight="800" fill="#ffffff">Billo Coordinator</text>
+  <text x="770" y="634" text-anchor="middle" font-size="12" fill="#e0e7ff">books · live visit log · 30-min check</text>
+
+  <!-- four agents -->
+  <rect x="56" y="684" width="232" height="120" rx="12" fill="#ffffff" stroke="#dc2626"/>
+  <rect x="56" y="684" width="232" height="30" rx="12" fill="#fef2f2"/>
+  <text x="172" y="704" text-anchor="middle" class="at" fill="#7f1d1d">Red-Flag Screener</text>
+  <text x="172" y="734" text-anchor="middle" class="as">runs first, every time</text>
+  <text x="172" y="752" text-anchor="middle" class="as">if it may be an emergency,</text>
+  <text x="172" y="770" text-anchor="middle" class="as">it says "go to the ER now"</text>
+  <text x="172" y="788" text-anchor="middle" class="as">and stops</text>
+
+  <rect x="300" y="684" width="232" height="120" rx="12" fill="#ffffff" stroke="#0891b2"/>
+  <rect x="300" y="684" width="232" height="30" rx="12" fill="#ecfeff"/>
+  <text x="416" y="704" text-anchor="middle" class="at" fill="#164e63">Care Finder</text>
+  <text x="416" y="734" text-anchor="middle" class="as">places near you</text>
+  <text x="416" y="752" text-anchor="middle" class="as">real prices from Tiger Data</text>
+  <text x="416" y="770" text-anchor="middle" class="as">one picture per place</text>
+  <text x="416" y="788" text-anchor="middle" class="as">(satellite or Street View)</text>
+
+  <rect x="544" y="684" width="232" height="120" rx="12" fill="#ffffff" stroke="#6366f1"/>
+  <rect x="544" y="684" width="232" height="30" rx="12" fill="#eef2ff"/>
+  <text x="660" y="704" text-anchor="middle" class="at" fill="#1e1b4b">Bill Auditor + Verifier</text>
+  <text x="660" y="734" text-anchor="middle" class="as" font-weight="700" fill="#1e1b4b">live: checks line by line</text>
+  <text x="660" y="752" text-anchor="middle" class="as">two checks vote: rules + prices</text>
+  <text x="660" y="770" text-anchor="middle" class="as">compares bill to visit log</text>
+  <text x="660" y="788" text-anchor="middle" class="as">charity care · $400 estimate</text>
+
+  <rect x="788" y="684" width="232" height="120" rx="12" fill="#ffffff" stroke="#1a1f71"/>
+  <rect x="788" y="684" width="232" height="30" rx="12" fill="#eff6ff"/>
+  <text x="904" y="704" text-anchor="middle" class="at" fill="#1a1f71">Payment Guard</text>
+  <text x="904" y="734" text-anchor="middle" class="as">checks your signed limits</text>
+  <text x="904" y="752" text-anchor="middle" class="as" font-weight="700" fill="#1a1f71">verifies the hospital first</text>
+  <text x="904" y="770" text-anchor="middle" class="as">never pays a disputed amount</text>
+  <text x="904" y="788" text-anchor="middle" class="as" font-weight="700" fill="#b91c1c">no deposit for ER visits</text>
+
+  <!-- SHARED TOOLS -->
+  <rect x="40" y="852" width="1000" height="108" rx="16" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="60" y="876" class="head" fill="#15803d">SHARED TOOLS · Core API (FastAPI)</text>
+  <rect x="60" y="886" width="280" height="62" rx="10" fill="#ffffff" stroke="#16a34a"/>
+  <text x="200" y="911" text-anchor="middle" class="title">Rules Engine</text>
+  <text x="200" y="931" text-anchor="middle" class="sub">makes every decision · cites a rule</text>
+  <rect x="360" y="886" width="280" height="62" rx="10" fill="#ffffff" stroke="#16a34a"/>
+  <text x="500" y="911" text-anchor="middle" class="title">Document Reader</text>
+  <text x="500" y="931" text-anchor="middle" class="sub">AI turns a bill photo into data</text>
+  <rect x="660" y="886" width="280" height="62" rx="10" fill="#ffffff" stroke="#16a34a"/>
+  <text x="800" y="911" text-anchor="middle" class="title">Drafter</text>
+  <text x="800" y="931" text-anchor="middle" class="sub">writes letters from agreed flags</text>
+
+  <!-- OUTSIDE SERVICES -->
+  <rect x="60" y="996" width="220" height="240" rx="14" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+  <text x="76" y="1022" class="head" fill="#475569">OUTSIDE SERVICES</text>
+  <g class="li">
+    <text x="76" y="1048">CMS hospital price files</text>
+    <text x="76" y="1072">NCCI billing-code rules</text>
+    <text x="76" y="1096">NPI doctor registry</text>
+    <text x="76" y="1120">HRSA low-cost clinics</text>
+    <text x="76" y="1144">Hospital charity policies</text>
+    <text x="76" y="1170" font-weight="700" fill="#164e63">Google Maps: satellite</text>
+    <text x="76" y="1186" font-weight="700" fill="#164e63">or Street View</text>
+    <text x="76" y="1210" font-weight="700" fill="#713f12">Calendar: iPhone (.ics)</text>
+    <text x="76" y="1226" font-weight="700" fill="#713f12">or Google Calendar</text>
+  </g>
+
+  <!-- TIGER DATA -->
+  <rect x="330" y="996" width="330" height="240" rx="14" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="346" y="1022" class="head" fill="#c2410c">DATABASE · Tiger Data [MLH]</text>
+  <g class="li">
+    <text x="346" y="1054"><tspan font-weight="700">Price history</tspan> · 90%+ compressed</text>
+    <text x="346" y="1084"><tspan font-weight="700">Auto summaries</tspan> · hospital → region → county</text>
+    <text x="346" y="1114"><tspan font-weight="700">Stats</tspan> · percentiles for the price check</text>
+    <text x="346" y="1144"><tspan font-weight="700">Search</tspan> · map (PostGIS) · policies (vectors)</text>
+    <text x="346" y="1174"><tspan font-weight="700">Live visit log</tspan> · real-time running total</text>
+    <text x="346" y="1204"><tspan font-weight="700">Cases + link codes</tspan> · only yours</text>
+  </g>
+
+  <!-- VISA -->
+  <rect x="710" y="996" width="310" height="240" rx="14" fill="#eff6ff" stroke="#1a1f71" stroke-width="1.5"/>
+  <text x="726" y="1022" class="head" fill="#1a1f71">PAYMENTS · Visa</text>
+  <g font-size="12.5" fill="#1f2937">
+    <circle cx="734" cy="1046" r="9" fill="#1a1f71"/><text x="734" y="1050" text-anchor="middle" font-size="10.5" font-weight="800" fill="#ffffff">1</text>
+    <text x="750" y="1050">You sign your limits: how much, which</text>
+    <text x="750" y="1065">hospital, and until when.</text>
+    <circle cx="734" cy="1085" r="9" fill="#1a1f71"/><text x="734" y="1089" text-anchor="middle" font-size="10.5" font-weight="800" fill="#ffffff">2</text>
+    <text x="750" y="1089">You enter your card once on Visa's page,</text>
+    <text x="750" y="1104">so Billo keeps only a token.</text>
+    <circle cx="734" cy="1124" r="9" fill="#1a1f71"/><text x="734" y="1128" text-anchor="middle" font-size="10.5" font-weight="800" fill="#ffffff">3</text>
+    <text x="750" y="1128">Before paying, the Guard checks the</text>
+    <text x="750" y="1143">hospital's NPI, the link, and the amount.</text>
+    <circle cx="734" cy="1163" r="9" fill="#1a1f71"/><text x="734" y="1167" text-anchor="middle" font-size="10.5" font-weight="800" fill="#ffffff">4</text>
+    <text x="750" y="1167">Billo pays only the fair part and holds</text>
+    <text x="750" y="1182">back the part being disputed.</text>
+    <circle cx="734" cy="1202" r="9" fill="#1a1f71"/><text x="734" y="1206" text-anchor="middle" font-size="10.5" font-weight="800" fill="#ffffff">5</text>
+    <text x="750" y="1206">Visa tells Billo the payment is done,</text>
+    <text x="750" y="1221">and the case closes.</text>
+  </g>
+
+  <!-- SENTRY COLUMN -->
+  <rect x="1070" y="556" width="170" height="680" rx="16" fill="#fdf2f8" stroke="#9d174d" stroke-width="1.5"/>
+  <text x="1155" y="580" text-anchor="middle" class="head" fill="#9d174d">SENTRY</text>
+  <rect x="1082" y="590" width="146" height="94" rx="10" fill="#9d174d"/>
+  <text x="1155" y="611" text-anchor="middle" font-size="14" font-weight="800" fill="#ffffff">Case Medic</text>
+  <text x="1155" y="628" text-anchor="middle" font-size="11.5" fill="#fce7f3">helper agent</text>
+  <text x="1155" y="646" text-anchor="middle" font-size="11.5" fill="#ffffff">alert wakes it, it reads</text>
+  <text x="1155" y="661" text-anchor="middle" font-size="11.5" fill="#ffffff">the trace, picks 1 of 3</text>
+  <text x="1155" y="676" text-anchor="middle" font-size="11.5" fill="#ffffff">fixes, and tells you</text>
+  <g font-size="13.5" font-weight="700" fill="#0f172a">
+    <text x="1086" y="716">Tracing</text>
+    <text x="1086" y="782">AI Monitoring</text>
+    <text x="1086" y="848">Logs</text>
+    <text x="1086" y="914">Crons</text>
+    <text x="1086" y="980">Uptime</text>
+    <text x="1086" y="1046">Alerts</text>
+    <text x="1086" y="1112">Privacy</text>
+  </g>
+  <g font-size="12" fill="#475569">
+    <text x="1086" y="734">1 case = 1 trace,</text>
+    <text x="1086" y="750">across every agent</text>
+    <text x="1086" y="800">is the bill reader's</text>
+    <text x="1086" y="816">output valid?</text>
+    <text x="1086" y="866">every rule that fired,</text>
+    <text x="1086" y="882">and why</text>
+    <text x="1086" y="932">did the 30-min</text>
+    <text x="1086" y="948">check run?</text>
+    <text x="1086" y="998">are all parts up?</text>
+    <text x="1086" y="1064">failing or slow:</text>
+    <text x="1086" y="1080">wakes Case Medic</text>
+    <text x="1086" y="1130">no health data sent</text>
+    <text x="1086" y="1146">keyed-hash case IDs</text>
+  </g>
+  <text x="1155" y="1186" text-anchor="middle" font-size="11.5" font-weight="700" fill="#9d174d">dashed line = watches</text>
+  <text x="1155" y="1204" text-anchor="middle" font-size="11.5" font-weight="700" fill="#9d174d">solid line = fixes</text>
+
+  <!-- ===== ARROWS (drawn last so they sit on top) ===== -->
+  <!-- 1: Patient <-> doors -->
+  <path d="M466,258 L404,258" class="ln" marker-start="url(#a)" marker-end="url(#a)"/>
+  <path d="M694,258 L756,258" class="ln" marker-start="url(#a)" marker-end="url(#a)"/>
+  <circle cx="435" cy="236" r="11" class="badge"/><text x="435" y="240" text-anchor="middle" class="num">1</text>
+  <circle cx="725" cy="236" r="11" class="badge"/><text x="725" y="240" text-anchor="middle" class="num">1</text>
+
+  <!-- 2a: iMessage door <-> Photon layer -->
+  <path d="M275,294 L275,314" class="ln" marker-start="url(#a)" marker-end="url(#a)"/>
+  <!-- 2a: Photon layer <-> Gateway -->
+  <path d="M350,528 L350,588" class="ln" marker-start="url(#a)" marker-end="url(#a)"/>
+  <circle cx="328" cy="546" r="11" class="badge"/><text x="328" y="550" text-anchor="middle" class="num">2</text>
+  <text x="364" y="545" class="lbl">POST /imessage · reply via /send</text>
+  <!-- 2b: Gateway <-> Coordinator -->
+  <path d="M384,618 L616,618" class="ln" marker-start="url(#a)" marker-end="url(#a)"/>
+  <text x="500" y="609" text-anchor="middle" class="lbl">Fetch message</text>
+  <!-- 2c: ASI:One <-> Coordinator -->
+  <path d="M772,294 L772,588" class="ln" marker-start="url(#a)" marker-end="url(#a)"/>
+  <circle cx="772" cy="546" r="11" class="badge"/><text x="772" y="550" text-anchor="middle" class="num">2</text>
+  <text x="790" y="545" class="lbl">Agent Chat Protocol</text>
+
+  <!-- 3: fan-out -->
+  <path d="M770,646 L770,662" class="ln"/>
+  <path d="M172,662 L904,662" class="ln"/>
+  <path d="M172,662 L172,680" class="ln" marker-end="url(#a)"/>
+  <path d="M416,662 L416,680" class="ln" marker-end="url(#a)"/>
+  <path d="M660,662 L660,680" class="ln" marker-end="url(#a)"/>
+  <path d="M904,662 L904,680" class="ln" marker-end="url(#a)"/>
+  <circle cx="300" cy="662" r="11" class="badge"/><text x="300" y="666" text-anchor="middle" class="num">3</text>
+  <text x="316" y="656" class="lbl">sends the work</text>
+
+  <!-- 4: Agents -> Shared tools -->
+  <path d="M172,804 L172,848" class="ln" marker-end="url(#a)"/>
+  <path d="M416,804 L416,848" class="ln" marker-end="url(#a)"/>
+  <path d="M660,804 L660,848" class="ln" marker-end="url(#a)"/>
+  <circle cx="150" cy="834" r="11" class="badge"/><text x="150" y="838" text-anchor="middle" class="num">4</text>
+  <text x="186" y="838" class="lbl">use tools</text>
+  <text x="430" y="838" class="lbl">use tools</text>
+  <text x="674" y="838" class="lbl">use tools</text>
+
+  <!-- 5: Shared tools <-> Tiger Data -->
+  <path d="M490,950 L490,992" class="ln" marker-start="url(#a)" marker-end="url(#a)"/>
+  <circle cx="468" cy="974" r="11" class="badge"/><text x="468" y="978" text-anchor="middle" class="num">5</text>
+  <text x="504" y="978" class="lbl">look up prices · save case</text>
+
+  <!-- 6: Payment Guard -> Visa -->
+  <path d="M990,804 L990,992" stroke="#f0fdf4" stroke-width="8" fill="none"/>
+  <path d="M990,804 L990,992" class="ln" marker-end="url(#a)"/>
+  <circle cx="968" cy="974" r="11" class="badge"/><text x="968" y="978" text-anchor="middle" class="num">6</text>
+  <text x="954" y="978" text-anchor="end" class="lbl">pay after you approve</text>
+
+  <!-- Outside -> Tiger -->
+  <path d="M282,1084 L326,1084" class="ln" marker-end="url(#a)"/>
+  <text x="304" y="1074" text-anchor="middle" class="lbl">load</text>
+  <!-- Visa -> Tiger -->
+  <path d="M706,1144 L664,1144" class="ln" marker-end="url(#a)"/>
+  <text x="685" y="1134" text-anchor="middle" class="lbl">status</text>
+
+  <!-- Sentry: Case Medic fixes Coordinator (solid) -->
+  <path d="M1080,624 L924,624" class="sls" marker-end="url(#as)"/>
+  <text x="1000" y="616" text-anchor="middle" font-size="12" font-weight="700" fill="#9d174d">fixes the case</text>
+  <!-- Sentry watches (dashed) -->
+  <path d="M1068,744 L1024,744" class="sl" marker-end="url(#as)"/>
+  <path d="M1068,904 L1044,904" class="sl" marker-end="url(#as)"/>
+  <path d="M1068,1104 L1024,1104" class="sl" marker-end="url(#as)"/>
+
+  <!-- FLOW LEGEND -->
+  <rect x="40" y="1256" width="1200" height="58" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+  <g font-size="12.5" fill="#1f2937">
+    <circle cx="62"  cy="1285" r="10" class="badge"/><text x="62"  y="1289" text-anchor="middle" class="num">1</text>
+    <text x="78"  y="1289">You text or chat</text>
+    <circle cx="200" cy="1285" r="10" class="badge"/><text x="200" y="1289" text-anchor="middle" class="num">2</text>
+    <text x="216" y="1289">Coordinator gets it</text>
+    <circle cx="370" cy="1285" r="10" class="badge"/><text x="370" y="1289" text-anchor="middle" class="num">3</text>
+    <text x="386" y="1289">Work goes to the right agents</text>
+    <circle cx="596" cy="1285" r="10" class="badge"/><text x="596" y="1289" text-anchor="middle" class="num">4</text>
+    <text x="612" y="1289">Agents use shared tools</text>
+    <circle cx="790" cy="1285" r="10" class="badge"/><text x="790" y="1289" text-anchor="middle" class="num">5</text>
+    <text x="806" y="1289">Prices checked, case saved</text>
+    <circle cx="1002" cy="1285" r="10" class="badge"/><text x="1002" y="1289" text-anchor="middle" class="num">6</text>
+    <text x="1018" y="1289">You approve, Visa pays</text>
+  </g>
+
+  <!-- COLOR LEGEND -->
+  <g font-size="12" fill="#334155">
+    <rect x="40"  y="1332" width="14" height="14" rx="3" fill="#4f46e5"/><text x="60"  y="1343">Fetch.ai agents</text>
+    <rect x="165" y="1332" width="14" height="14" rx="3" fill="#0d9488"/><text x="185" y="1343">Photon (iMessage)</text>
+    <rect x="308" y="1332" width="14" height="14" rx="3" fill="#16a34a"/><text x="328" y="1343">Shared tools</text>
+    <rect x="420" y="1332" width="14" height="14" rx="3" fill="#ea580c"/><text x="440" y="1343">Tiger Data [MLH]</text>
+    <rect x="560" y="1332" width="14" height="14" rx="3" fill="#1a1f71"/><text x="580" y="1343">Visa</text>
+    <rect x="623" y="1332" width="14" height="14" rx="3" fill="#9d174d"/><text x="643" y="1343">Sentry</text>
+    <text x="720" y="1343" fill="#64748b">Optional, built last: ElevenLabs voice [MLH]</text>
+  </g>
+</svg>

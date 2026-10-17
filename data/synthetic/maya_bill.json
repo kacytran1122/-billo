@@ -1,0 +1,48 @@
+{
+  "patient": "Maya (synthetic)",
+  "hospital": "Westwood Urgent Care (demo)",
+  "hospital_npi": "1999999901",
+  "service_date": "2026-10-17",
+  "lines": [
+    {
+      "line_no": 1,
+      "code": "99214",
+      "description": "Office visit, moderate",
+      "units": 1,
+      "charge": 390.0,
+      "service_date": "2026-10-17"
+    },
+    {
+      "line_no": 2,
+      "code": "73560",
+      "description": "X-ray knee, 1-2 views",
+      "units": 1,
+      "charge": 340.0,
+      "service_date": "2026-10-17"
+    },
+    {
+      "line_no": 3,
+      "code": "73560",
+      "description": "X-ray knee, 1-2 views",
+      "units": 1,
+      "charge": 340.0,
+      "service_date": "2026-10-17"
+    },
+    {
+      "line_no": 4,
+      "code": "L1830",
+      "description": "Knee immobilizer (splint)",
+      "units": 1,
+      "charge": 750.0,
+      "service_date": "2026-10-17"
+    },
+    {
+      "line_no": 5,
+      "code": "29505",
+      "description": "Application of long leg splint",
+      "units": 1,
+      "charge": 320.0,
+      "service_date": "2026-10-17"
+    }
+  ]
+}
