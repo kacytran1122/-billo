@@ -4,7 +4,7 @@ PYTHON_VERSION ?= 3.11
 VENV := .venv
 BIN := $(VENV)/bin
 
-.PHONY: setup env addresses db prices core agents bridge dev test stop
+.PHONY: setup env addresses db prices visa-check core agents bridge dev test stop
 
 setup:            ## create the Python venv + install everything (Python and Node)
 	$(UV) venv --allow-existing --seed --python $(PYTHON_VERSION) $(VENV)
@@ -24,6 +24,9 @@ db:               ## create tables, hypertables and continuous aggregates in Tig
 
 prices:           ## load the price CSV (synthetic by default) into Tiger Data
 	$(BIN)/python scripts/load_prices.py $(FILE)
+
+visa-check:       ## verify the configured Visa X-Pay sandbox credentials
+	$(BIN)/python scripts/check_visa_xpay.py
 
 core:             ## Core API on :8000  (docs at /docs)
 	cd core && ../$(BIN)/uvicorn app.main:app --reload --port 8000
