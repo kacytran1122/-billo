@@ -39,6 +39,10 @@ PUBLIC = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/")
 LINE = os.getenv("PHOTON_LINE_ADDRESS", "")
 TRUSTED = [d.strip() for d in os.getenv("TRUSTED_PAY_DOMAINS", "heybillo.tech").split(",") if d.strip()]
 DEMO = os.getenv("BILLO_MODE", "demo") == "demo"
+MAX_IMAGE_BYTES = int(os.getenv("OCR_MAX_IMAGE_BYTES", str(20 * 1024 * 1024)))
+
+if not DEMO and TOKEN == "dev-token":
+    raise RuntimeError("INTERNAL_TOKEN must be set to a strong secret when BILLO_MODE=live")
 
 
 def auth(token: str | None) -> None:
@@ -131,17 +135,33 @@ def visit_event(body: VisitIn, x_internal_token: str | None = Header(None)):
 
 
 # ------------------------------------------------------------------ uploads (bill photos from iMessage)
-UPLOADS = Path(__file__).resolve().parents[1] / "uploads"
+def _uploads_dir() -> Path:
+    configured = os.getenv("BILLO_UPLOADS_DIR", "").strip()
+    if not configured:
+        return Path(__file__).resolve().parents[1] / "uploads"
+    path = Path(configured)
+    return path if path.is_absolute() else Path(__file__).resolve().parents[2] / path
+
+
+UPLOADS = _uploads_dir()
 
 
 @app.post("/files")
 async def upload(request: Request, x_internal_token: str | None = Header(None)):
     auth(x_internal_token)
-    UPLOADS.mkdir(exist_ok=True)
+    content_length = int(request.headers.get("content-length") or 0)
+    if content_length > MAX_IMAGE_BYTES:
+        raise HTTPException(413, "bill image is too large")
+    data = await request.body()
+    if len(data) > MAX_IMAGE_BYTES:
+        raise HTTPException(413, "bill image is too large")
+    if not data:
+        raise HTTPException(400, "bill image is empty")
+    UPLOADS.mkdir(parents=True, exist_ok=True)
     ext = {"image/jpeg": "jpg", "image/png": "png", "image/heic": "heic", "application/pdf": "pdf"}.get(
         request.headers.get("content-type", ""), "bin")
     name = f"{random.getrandbits(64):016x}.{ext}"
-    (UPLOADS / name).write_bytes(await request.body())
+    (UPLOADS / name).write_bytes(data)
     return {"file_url": f"file:{name}"}
 
 
@@ -156,8 +176,17 @@ class ExtractIn(BaseModel):
 @app.post("/reader/extract")
 def extract(body: ExtractIn, x_internal_token: str | None = Header(None)):
     auth(x_internal_token)
-    with sentry_sdk.start_span(op="document.reader", name="bill photo -> typed lines"):
-        return reader.read_bill(body.file_url, body.demo or (DEMO and not body.file_url), body.strict)
+    uploaded = UPLOADS / Path(body.file_url[5:]).name if body.file_url.startswith("file:") else None
+    try:
+        with sentry_sdk.start_span(op="document.reader", name="bill photo -> typed lines"):
+            return reader.read_bill(body.file_url, body.demo or (DEMO and not body.file_url), body.strict)
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    finally:
+        # Uploaded bills can contain health information. Remove them as soon as
+        # OCR/vision has finished; extracted typed lines continue through the flow.
+        if uploaded:
+            uploaded.unlink(missing_ok=True)
 
 
 class LineIn(BaseModel):

@@ -129,6 +129,14 @@ def test_falls_back_to_chatgpt_when_ocr_missing(img, monkeypatch):
     assert out["reader"] == "vision" and out["lines"][0]["verified"] is None
 
 
+def test_live_mode_never_substitutes_the_demo_bill(img, monkeypatch):
+    monkeypatch.setattr(engine, "run_ocr", lambda b: None)
+    monkeypatch.delenv("VISION_API_KEY", raising=False)
+    monkeypatch.setenv("BILLO_MODE", "live")
+    with pytest.raises(ValueError, match="could not be read reliably"):
+        reader.read_bill(img, demo=False)
+
+
 # ---- real OCR on the synthetic bill image (skipped if RapidOCR missing) ----
 
 @pytest.mark.skipif(not engine.available(), reason="rapidocr-onnxruntime not installed")

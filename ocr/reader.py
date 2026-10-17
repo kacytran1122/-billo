@@ -173,4 +173,10 @@ def read_bill(file_url: str, demo: bool, strict: bool = False) -> dict:
         bill["needs_review"] = [l["line_no"] for l in bill["lines"] if l["verified"] is False]
         return bill
 
-    return demo_bill("demo_fallback") | {"fallback_reason": ocr_reason}
+    if os.getenv("BILLO_MODE", "demo") == "demo":
+        return demo_bill("demo_fallback") | {"fallback_reason": ocr_reason}
+
+    raise ValueError(
+        f"The bill could not be read reliably ({ocr_reason}). "
+        "Upload a clearer image or configure VISION_API_KEY for the fallback reader."
+    )

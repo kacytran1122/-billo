@@ -1,0 +1,13 @@
+.git
+.env
+.secrets
+.venv
+.pytest_cache
+.logs
+**/__pycache__
+**/*.pyc
+bridge/node_modules
+core/uploads
+agents/*_data.json
+*.db
+.DS_Store

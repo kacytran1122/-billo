@@ -8,6 +8,7 @@ sys.path.insert(0, str(ROOT / "core"))
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app.main import TOKEN, app  # noqa: E402
+from app import main  # noqa: E402
 
 c = TestClient(app)
 H = {"x-internal-token": TOKEN}
@@ -64,3 +65,13 @@ def test_live_visit_log_running_total():
     c.post("/estimates", json={"case_id": "t4", "npi": "1999999901", "place": "Westwood", "amount": 240}, headers=H)
     r = c.post("/visit-events", json={"case_id": "t4", "text": "They did an X-ray and gave me a splint"}, headers=H).json()
     assert r["total"] > 240
+
+
+def test_uploaded_bill_is_deleted_after_extraction(tmp_path, monkeypatch):
+    upload = tmp_path / "bill.png"
+    upload.write_bytes(b"private bill")
+    monkeypatch.setattr(main, "UPLOADS", tmp_path)
+    monkeypatch.setattr(main.reader, "read_bill", lambda *args: {"reader": "ocr", "lines": []})
+    r = c.post("/reader/extract", json={"case_id": "t5", "file_url": "file:bill.png"}, headers=H)
+    assert r.status_code == 200
+    assert not upload.exists()
