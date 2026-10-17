@@ -25,8 +25,13 @@ from pydantic import BaseModel  # noqa: E402
 from . import reader, rules, store, visa  # noqa: E402
 
 if os.getenv("SENTRY_DSN"):
-    sentry_sdk.init(dsn=os.getenv("SENTRY_DSN"), traces_sample_rate=1.0, send_default_pii=False,
-                    environment=os.getenv("SENTRY_ENVIRONMENT", "hackathon"), enable_logs=True)
+    sentry_sdk.init(
+        dsn=os.getenv("SENTRY_DSN"),
+        traces_sample_rate=1.0,
+        data_collection={"user_info": False},
+        environment=os.getenv("SENTRY_ENVIRONMENT", "hackathon"),
+        enable_logs=True,
+    )
 
 app = FastAPI(title="Billo Core API", version="0.1.0")
 TOKEN = os.getenv("INTERNAL_TOKEN", "dev-token")

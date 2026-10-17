@@ -51,7 +51,7 @@ def init_sentry(service: str) -> None:
         dsn=dsn,
         environment=env("SENTRY_ENVIRONMENT", "hackathon"),
         traces_sample_rate=1.0,
-        send_default_pii=False,
+        data_collection={"user_info": False},
         enable_logs=True,
         before_send=_scrub,
         server_name=f"billo-{service}",
