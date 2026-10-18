@@ -14,7 +14,10 @@ ROOT = Path(__file__).resolve().parents[2]
 SYN = ROOT / "data" / "synthetic"
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
-_mem: dict[str, dict] = {"estimates": {}, "visit_events": {}, "links": {}, "payments": {}, "stopped": set(), "reminders": {}}
+_mem: dict[str, dict] = {
+    "estimates": {}, "visit_events": {}, "after_care": {}, "benefit_checks": {},
+    "links": {}, "payments": {}, "stopped": set(), "reminders": {},
+}
 
 
 def _conn():
@@ -107,6 +110,38 @@ def visit_codes(case_id: str) -> set[str] | None:
             rows = c.execute("SELECT code FROM visit_events WHERE case_id=%s", (case_id,)).fetchall()
         ev = [{"code": r[0]} for r in rows] or None
     return {e["code"] for e in ev} if ev else None
+
+
+# ---------------------------------------------------------------- after-care records
+def save_after_care(case_id: str, record: dict) -> None:
+    _mem["after_care"][case_id] = record
+    if use_db():
+        with _conn() as c:
+            # Small compatibility migration for deployments created before the
+            # after-care pivot. `make db` creates the same table up front.
+            c.execute(
+                """CREATE TABLE IF NOT EXISTS after_care_records (
+                   record_id BIGSERIAL PRIMARY KEY, case_id TEXT NOT NULL, provider_npi TEXT,
+                   total NUMERIC NOT NULL, already_paid BOOLEAN NOT NULL DEFAULT false,
+                   payment_status TEXT NOT NULL DEFAULT 'unknown', provider_match BOOLEAN NOT NULL,
+                   estimate_amount NUMERIC, estimate_difference NUMERIC, visit_items_matched INT NOT NULL DEFAULT 0,
+                   payload JSONB NOT NULL, created_at TIMESTAMPTZ DEFAULT now())"""
+            )
+            c.execute("ALTER TABLE after_care_records ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'unknown'")
+            c.execute(
+                """INSERT INTO after_care_records
+                   (case_id, provider_npi, total, already_paid, payment_status, provider_match, estimate_amount,
+                    estimate_difference, visit_items_matched, payload)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                (case_id, record["hospital_npi"], record["total"], record["payment_status"] == "paid",
+                 record["payment_status"],
+                 record["provider_match"], record.get("estimate_amount"), record.get("estimate_difference"),
+                 record["visit_items_matched"], json.dumps(record)),
+            )
+
+
+def save_benefit_check(case_id: str, result: dict) -> None:
+    _mem["benefit_checks"][case_id] = result
 
 
 # ---------------------------------------------------------------- iMessage link codes (QR join)

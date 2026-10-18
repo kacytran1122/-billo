@@ -3,8 +3,7 @@
 REFUSE if the hospital NPI does not check out (NPI Registry)
 REFUSE if the pay link domain is not trusted (hospital, Visa, or heybillo.tech)
 REFUSE if the amount is over the patient's signed limit
-REFUSE if any disputed money is included
-Only then: ask the Core API for a Visa pay link for the fair part only.
+Only then: ask the Core API for a Visa pay link for the verified final amount.
 """
 from uagents import Agent, Context
 
@@ -22,7 +21,7 @@ agent = Agent(
     mailbox=True,
     publish_agent_details=True,
     readme_path=str(READMES / "payment_guard.md"),
-    description="Verifies the hospital and the amount, then pays only the fair part of a medical bill with Visa. Never pays disputed money.",
+    description="Verifies the provider, destination, amount and patient limit before creating a Visa checkout for an unpaid final bill.",
 )
 
 

@@ -4,8 +4,8 @@ Fetch.ai rule: the complete primary workflow must run inside one ASI:One
 conversation, with no custom frontend. This file is that workflow:
 
   symptoms -> Red-Flag Screener -> Care Finder -> "book 1" (estimate + calendar)
-  -> bill photo -> Bill Auditor (live, line by line) -> "approve"
-  -> Payment Guard -> Agent Payment Protocol (RequestPayment) -> paid
+  -> receipt/final bill -> After-Care Organizer -> optional benefits check
+  -> if unpaid: "approve" -> Payment Guard -> Agent Payment Protocol -> paid
 
 It also runs the visit follow-up ("Did you go to your visit today?") on a timer,
 watched by Sentry Crons, and applies Case Medic actions.
@@ -35,9 +35,8 @@ from common.chat import ack, resources_of, say, text_of
 from common.config import ADDR, FOLLOWUP_MINUTES, PORTS, READMES, require_seed
 from common.core import core_get, core_post
 from common.models import (
-    AuditRequest,
-    AuditResult,
-    AuditUpdate,
+    AfterCareRequest,
+    AfterCareResult,
     CareOptions,
     FindCareRequest,
     InboundText,
@@ -59,16 +58,16 @@ agent = Agent(
     port=PORTS["coordinator"],
     mailbox=True,
     publish_agent_details=True,
-    handle_messages_concurrently=True,  # live audit updates must not wait behind a long handler
+    handle_messages_concurrently=True,
     readme_path=str(READMES / "coordinator.md"),
     description=(
-        "Billo: care without the sticker shock. Finds affordable care near you, checks your medical bill "
-        "line by line for mistakes, disputes unfair charges and pays only the fair amount with Visa."
+        "Billo plans affordable care before a visit, then organizes the receipt, payment, paperwork, "
+        "benefit options and next steps after care."
     ),
 )
 
 DEFAULT_LIMIT = 500.0  # demo mandate: max the patient lets Billo pay without asking again
-BILL_WORDS = ("bill", "invoice", "statement", "charged", "owe")
+BILL_WORDS = ("bill", "invoice", "statement", "receipt", "charged", "owe")
 DONE_WORDS = ("they did", "gave me", "x-ray", "xray", "splint", "brace", "shot", "stitches")
 
 
@@ -82,7 +81,7 @@ def get_case(ctx: Context, channel: str, who: str) -> dict:
     if case_id and ctx.storage.get(f"case:{case_id}"):
         return ctx.storage.get(f"case:{case_id}")
     case = {"id": uuid4().hex[:12], "channel": channel, "who": who, "stage": "new",
-            "places": [], "audit": None, "pay": None, "flags": {}, "followup_due": 0, "asked": False}
+            "places": [], "after_care": None, "pay": None, "flags": {}, "followup_due": 0, "asked": False}
     save(ctx, case)
     ctx.storage.set(_key(channel, who), case["id"])
     return case
@@ -158,7 +157,7 @@ async def step_book(ctx: Context, case: dict, n: int) -> None:
     link = await core_post("/link-codes", {"case_id": case["id"]})
     await reply(ctx, case, (
         f"Booked: {place['name']}, {place['address']}.\n"
-        f"Good Faith Estimate saved: ${est['amount']:,.0f}. If the bill is $400 or more over this, you can dispute it.\n"
+        f"Good Faith Estimate saved: ${est['amount']:,.0f}. I will use it to organize your final record after care.\n"
         f"Add to calendar: {est['ics_url']}  (or Google Calendar: {est['gcal_url']})\n"
         f"At the clinic you can tell me what they do (for example 'they did an X-ray') and I keep a running total.\n"
         f"Want this on your iPhone? Scan {link['qr_url']} or text {link['code']} to {link['line'] or 'Billo'} within 15 minutes."
@@ -170,45 +169,66 @@ async def step_visit_log(ctx: Context, case: dict, text: str) -> None:
     await reply(ctx, case, res["say"])
 
 
-async def step_audit(ctx: Context, case: dict, file_url: str) -> None:
-    case["stage"] = "auditing"
+async def step_after_care(ctx: Context, case: dict, file_url: str, payment_status: str) -> None:
+    case["stage"] = "organizing"
     save(ctx, case)
-    await reply(ctx, case, "Reading your bill now. I will check it line by line and tell you what I find as I go.")
-    await ctx.send(ADDR["bill_auditor"], AuditRequest(
+    await reply(ctx, case, "Reading the document now. I will organize the payment record and match it to your saved care plan.")
+    await ctx.send(ADDR["bill_auditor"], AfterCareRequest(
         case_id=case["id"], file_url=file_url, demo=not file_url,
-        hospital_npi=(case.get("place") or {}).get("npi", ""), reply_to=str(ctx.agent.address), trace=carry()))
+        hospital_npi=(case.get("place") or {}).get("npi", ""), payment_status=payment_status,
+        reply_to=str(ctx.agent.address), trace=carry()))
+
+
+async def step_benefits(ctx: Context, case: dict, text: str) -> None:
+    if not case.get("after_care"):
+        await reply(ctx, case, "Send a receipt or final bill first so I can attach any benefit path to the right visit.")
+        return
+    result = await core_post("/benefits/check", {"case_id": case["id"], "text": text})
+    lines = [result["message"]]
+    for path in result["paths"]:
+        lines.append(f"- {path['name']}: possible, not confirmed. Needed: {path['needed']}.")
+    if result["paths"]:
+        lines.append("Check each plan's rules and deadline before submitting anything.")
+    await reply(ctx, case, "\n".join(lines))
 
 
 async def step_approve(ctx: Context, case: dict) -> None:
-    audit = case.get("audit")
-    if not audit:
-        await reply(ctx, case, "There is nothing to approve yet. Send me a photo of your bill first.")
+    record = case.get("after_care")
+    if not record:
+        await reply(ctx, case, "There is nothing to approve yet. Send me a photo of your final bill first.")
+        return
+    if record["payment_status"] == "paid":
+        await reply(ctx, case, "This receipt is already paid, so I will not create another charge. Say which benefit you have if you want me to check possible reimbursement paths.")
+        return
+    if record["payment_status"] != "unpaid":
+        await reply(ctx, case, "I did not create a payment because I do not know whether this document is paid. Send it again with the words 'paid receipt' or 'unpaid bill'.")
+        return
+    if not record["provider_match"]:
+        await reply(ctx, case, "I did not create a payment because the provider does not match the saved care plan. Please confirm the provider first.")
         return
     if case["flags"].get("pause_guard"):
         await reply(ctx, case, "Payments are paused on this case for safety. I will tell you when it is safe.")
         return
     dec, _ = await ctx.send_and_receive(ADDR["payment_guard"], PayRequest(
-        case_id=case["id"], hospital_npi=audit["hospital_npi"], amount=audit["fair_amount"],
-        disputed_amount=audit["disputed_amount"], mandate_max=max(DEFAULT_LIMIT, audit["fair_amount"]), trace=carry()),
+        case_id=case["id"], hospital_npi=record["hospital_npi"], amount=record["total"],
+        disputed_amount=0, mandate_max=max(DEFAULT_LIMIT, record["total"]), trace=carry()),
         response_type=PayDecision, timeout=30)
     if dec is None or not dec.approved:
         why = "; ".join(dec.reasons) if dec else "the Payment Guard did not answer"
         await reply(ctx, case, f"I did not pay. Reason: {why}.")
         return
-    case.update(stage="paying", pay={"payment_id": dec.payment_id, "link": dec.pay_link, "amount": audit["fair_amount"]})
+    case.update(stage="paying", pay={"payment_id": dec.payment_id, "link": dec.pay_link, "amount": record["total"]})
     save(ctx, case)
-    letter = await core_post("/disputes/letter", {"case_id": case["id"]})
     await reply(ctx, case, (
         "Verified: " + "; ".join(dec.reasons) + ".\n"
-        f"Dispute letter ready: {letter['url']}\n"
-        f"Pay only the fair part, ${audit['fair_amount']:,.2f}, here: {dec.pay_link}\n"
-        f"The disputed ${audit['disputed_amount']:,.2f} is held back until the hospital answers."
+        f"Review and pay the final amount, ${record['total']:,.2f}, here: {dec.pay_link}\n"
+        "Your approval applies only to this provider and this amount."
     ))
     if case["channel"] == "asi1":  # Fetch.ai Agent Payment Protocol
         await ctx.send(case["who"], RequestPayment(
-            accepted_funds=[Funds(amount=f"{audit['fair_amount']:.2f}", currency="USD", payment_method="visa_pay_link")],
+            accepted_funds=[Funds(amount=f"{record['total']:.2f}", currency="USD", payment_method="visa_pay_link")],
             recipient=str(ctx.agent.address), deadline_seconds=3600, reference=case["id"],
-            description="Fair part of your bill (disputed part held back)",
+            description="Verified final care payment",
             metadata={"pay_link": dec.pay_link, "payment_id": dec.payment_id}))
 
 
@@ -217,7 +237,7 @@ async def step_check_paid(ctx: Context, case: dict) -> None:
     if status.get("paid"):
         case["stage"] = "paid"
         save(ctx, case)
-        await reply(ctx, case, "Paid. The fair part is done, and the disputed part is still held back.")
+        await reply(ctx, case, "Paid. I added the payment confirmation to your after-care record. You can now check benefits or plan the next follow-up.")
     else:
         await reply(ctx, case, "I do not see the payment yet. Please finish it on the Visa page first.")
 
@@ -234,19 +254,24 @@ async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_g
     if m and case["places"]:
         await step_book(ctx, case, int(m.group(2)))
     elif files or (any(w in low for w in BILL_WORDS) and ("demo" in low or "photo" in low or "here" in low)):
-        await step_audit(ctx, case, files[0] if files else "")
+        payment_status = "paid" if any(w in low for w in ("paid receipt", "already paid", "i paid", "payment confirmation")) else (
+            "unpaid" if any(w in low for w in ("unpaid", "amount due", "i owe")) else "unknown"
+        )
+        await step_after_care(ctx, case, files[0] if files else "", payment_status)
+    elif any(w in low for w in ("hsa", "fsa", "hra", "out of network", "out-of-network", "employer benefit", "student benefit", "travel insurance", "accident insurance", "check benefits")):
+        await step_benefits(ctx, case, text)
     elif low in ("approve", "approve dispute", "yes approve", "pay") or low.startswith("approve"):
         await step_approve(ctx, case)
     elif low in ("paid", "i paid", "done") and case.get("pay"):
         await step_check_paid(ctx, case)
     elif case["stage"] == "booked" and case.get("asked") and low in ("yes", "y", "i went", "yes i went"):
-        await reply(ctx, case, "Great. When your bill comes, send me a photo and I will check it.")
+        await reply(ctx, case, "Great. After care, send the final bill or paid receipt. I will organize it and show the next steps.")
     elif case["stage"] == "booked" and case.get("asked") and low in ("no", "n", "not yet"):
         await reply(ctx, case, "No problem. Do you want me to find another time or place? Tell me what happened.")
     elif case["stage"] == "booked" and any(w in low for w in DONE_WORDS):
         await step_visit_log(ctx, case, text)
     elif low in ("help", "?"):
-        await reply(ctx, case, "Tell me what happened, or send a photo of a medical bill. Text STOP to stop messages.")
+        await reply(ctx, case, "Tell me what happened, or send a final bill or paid receipt. Afterward I can organize follow-up and check benefits you already have. Text STOP to stop messages.")
     else:
         await step_symptoms(ctx, case, text)
 
@@ -290,7 +315,7 @@ async def on_commit(ctx: Context, sender: str, msg: CommitPayment):
         case["stage"] = "paid"
         save(ctx, case)
         await ctx.send(sender, CompletePayment(transaction_id=msg.transaction_id))
-        await reply(ctx, case, "Paid. The fair part is done, and the disputed part is still held back.")
+        await reply(ctx, case, "Paid. I added the payment confirmation to your after-care record.")
     else:
         await reply(ctx, case, "I do not see the Visa payment yet. Please finish it on the Visa page, then tell me 'paid'.")
 
@@ -322,43 +347,43 @@ async def on_imessage(ctx: Context, sender: str, msg: InboundText):
         await route_text(ctx, case, msg.text, files, is_group=msg.is_group)
 
 
-# ------------------------------------------------------------------ live audit stream
-@agent.on_message(model=AuditUpdate)
-async def on_update(ctx: Context, sender: str, up: AuditUpdate):
-    case = load(ctx, up.case_id)
-    if case and up.status != "ok":  # only speak when there is something to say
-        await reply(ctx, case, f"Line {up.line_no} of {up.total_lines}: {up.text}  (possible savings so far: ${up.running_total:,.0f})")
-
-
-@agent.on_message(model=AuditResult)
-async def on_result(ctx: Context, sender: str, res: AuditResult):
+# ------------------------------------------------------------------ after-care result
+@agent.on_message(model=AfterCareResult)
+async def on_result(ctx: Context, sender: str, res: AfterCareResult):
     case = load(ctx, res.case_id)
     if not case:
         return
-    case["audit"] = {"fair_amount": res.fair_amount, "disputed_amount": res.disputed_amount,
-                     "hospital_npi": res.hospital_npi, "flags": [dump(f) for f in res.flags],
-                     "reader": res.reader}
-    case["stage"] = "audited"
+    case["after_care"] = {"total": res.total, "hospital_npi": res.hospital_npi,
+                          "payment_status": res.payment_status, "provider_match": res.provider_match,
+                          "estimate_amount": res.estimate_amount, "estimate_difference": res.estimate_difference,
+                          "reader": res.reader}
+    case["stage"] = "organized"
     save(ctx, case)
-    disputes = [f for f in res.flags if f.kind == "dispute"]
-    asks = [f for f in res.flags if f.kind == "ask_hospital"]
-    text = [f"Done. Your bill is ${res.total_billed:,.2f}. I found {len(disputes)} thing(s) to dispute and {len(asks)} to ask about."]
+    kind = "paid receipt" if res.payment_status == "paid" else "unpaid final bill" if res.payment_status == "unpaid" else "document with unconfirmed payment status"
+    text = [f"Done. I organized this {kind} for ${res.total:,.2f}."]
     if res.reader == "ocr":
-        text.append("I read the bill locally with OCR, and the parsed charges matched the printed total.")
+        text.append("I read it locally with OCR, and the parsed charges matched the printed total.")
     elif res.reader == "vision":
-        text.append("Local OCR was not confident enough, so I used the vision fallback and checked its numbers against the photo.")
+        text.append("Local OCR was not confident enough, so I used the vision fallback and checked its numbers against the image.")
     elif res.reader == "demo_fallback":
-        text.append("I could not read that photo safely, so this result uses the demo bill. Please send a clearer photo.")
+        text.append("I could not read that image safely, so this result uses the demo document. Please send a clearer photo.")
     if res.unreviewed_lines:
         text.append(f"Ask the hospital about {res.unreviewed_lines} charge(s) that had no readable billing code.")
     if res.needs_review:
         nums = ", ".join(str(n) for n in res.needs_review)
         text.append(f"Please verify line(s) {nums}; OCR could not confirm both the code and charge.")
-    text += [f"- Dispute: {f.explanation}" for f in disputes]
-    text += [f"- Ask the hospital: {f.explanation}" for f in asks]
-    if res.charity_care_hint:
-        text.append(f"- {res.charity_care_hint}")
-    text.append(f"Fair amount: ${res.fair_amount:,.2f}. Reply 'approve' to send the dispute and pay only the fair part.")
+    text.append("Provider matches the saved care plan." if res.provider_match else "Provider does not match the saved care plan; payment is paused for review.")
+    if res.estimate_amount is not None:
+        text.append(f"Saved estimate: ${res.estimate_amount:,.2f}; difference: ${res.estimate_difference:,.2f}.")
+    if res.visit_items_matched:
+        text.append(f"Matched {res.visit_items_matched} documented visit item(s).")
+    text.extend(f"- {step}" for step in res.next_steps)
+    if res.payment_status == "paid":
+        text.append("If you have an HSA, FSA, HRA, out-of-network plan, employer, school, travel, or accident benefit, tell me which one. I will check possible paths without promising eligibility.")
+    elif res.payment_status == "unpaid" and res.provider_match:
+        text.append("Reply 'approve' to create a Visa checkout for this exact provider and amount.")
+    else:
+        text.append("Before any payment action, send the document again and say either 'paid receipt' or 'unpaid bill'.")
     await reply(ctx, case, "\n".join(text))
 
 
@@ -381,8 +406,8 @@ async def on_medic(ctx: Context, sender: str, act: MedicAction):
     case["flags"][act.action] = True
     save(ctx, case)
     await reply(ctx, case, act.patient_text)
-    if act.action == "retry_reader" and case["stage"] == "auditing":
-        await step_audit(ctx, case, "")
+    if act.action == "retry_reader" and case["stage"] == "organizing":
+        await step_after_care(ctx, case, "", (case.get("after_care") or {}).get("payment_status", "unknown"))
 
 
 # ------------------------------------------------------------------ "Did you go?" follow-up

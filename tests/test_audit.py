@@ -67,6 +67,47 @@ def test_live_visit_log_running_total():
     assert r["total"] > 240
 
 
+def test_after_care_paid_receipt_organizes_without_payment():
+    case_id = "after-paid"
+    c.post("/estimates", json={"case_id": case_id, "npi": "1999999901", "place": "Westwood", "amount": 240}, headers=H)
+    c.post("/visit-events", json={"case_id": case_id, "text": "They did an X-ray"}, headers=H)
+    bill = c.post("/reader/extract", json={"case_id": case_id, "demo": True}, headers=H).json()
+    r = c.post("/after-care/organize", json={
+        "case_id": case_id, "lines": bill["lines"], "hospital_npi": "1999999901", "payment_status": "paid",
+    }, headers=H).json()
+    assert r["payment_status"] == "paid"
+    assert r["provider_match"] is True
+    assert r["total"] == 2140.0
+    assert r["estimate_difference"] == 1900.0
+    assert r["visit_items_matched"] == 1
+    assert any("No payment is needed" in step for step in r["next_steps"])
+
+
+def test_after_care_unknown_status_cannot_imply_payment():
+    bill = c.post("/reader/extract", json={"case_id": "unknown", "demo": True}, headers=H).json()
+    r = c.post("/after-care/organize", json={"case_id": "unknown", "lines": bill["lines"]}, headers=H).json()
+    assert r["payment_status"] == "unknown"
+    assert any("Confirm whether" in step for step in r["next_steps"])
+
+
+def test_benefits_require_a_named_coverage_source():
+    none = c.post("/benefits/check", json={"case_id": "benefits", "text": "Can I get money back?"}, headers=H).json()
+    assert none["paths"] == []
+    named = c.post("/benefits/check", json={"case_id": "benefits", "text": "I have an HSA and an out-of-network PPO"}, headers=H).json()
+    assert {p["name"] for p in named["paths"]} == {"HSA self-reimbursement", "Out-of-network insurance claim"}
+    assert all(p["status"] == "possible_not_confirmed" for p in named["paths"])
+    false_positive = c.post("/benefits/check", json={"case_id": "benefits", "text": "I need support"}, headers=H).json()
+    assert false_positive["paths"] == []
+
+
+def test_after_care_requires_a_provider_for_a_match():
+    bill = c.post("/reader/extract", json={"case_id": "no-provider", "demo": True}, headers=H).json()
+    r = c.post("/after-care/organize", json={
+        "case_id": "no-provider", "lines": bill["lines"], "hospital_npi": "", "payment_status": "unpaid",
+    }, headers=H).json()
+    assert r["provider_match"] is False
+
+
 def test_uploaded_bill_is_deleted_after_extraction(tmp_path, monkeypatch):
     upload = tmp_path / "bill.png"
     upload.write_bytes(b"private bill")

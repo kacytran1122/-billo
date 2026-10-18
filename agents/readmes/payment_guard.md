@@ -3,4 +3,4 @@
 ![tag:innovationlab](https://img.shields.io/badge/innovationlab-3D8BD3)
 ![tag:hackathon](https://img.shields.io/badge/hackathon-5F43F1)
 
-Verifies the hospital (NPI Registry), the payment link and the amount before any money moves. Pays only the fair part of a bill with Visa, inside the patient's signed limit. Never pays a disputed amount. Never takes a deposit for an ER visit. Part of Billo.
+For an unpaid final bill, verifies the provider (NPI Registry), payment destination, exact amount, and patient limit before creating a Visa checkout. A paid receipt never creates another charge, and silence never moves money. Part of Billo.

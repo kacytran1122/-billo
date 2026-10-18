@@ -52,7 +52,7 @@ class CareOptions(Traced):
     code: str  # main billing code we priced, e.g. 73560
 
 
-# ---------- Bill Auditor ----------
+# ---------- After-Care Organizer ----------
 class BillLine(Model):
     line_no: int
     code: str
@@ -62,45 +62,26 @@ class BillLine(Model):
     service_date: str = ""
 
 
-class Flag(Model):
-    rule_id: str  # DUP-001, NCCI-PTP, GFE-400, NOT-IN-LOG, PRICE-P90
-    kind: str  # dispute | ask_hospital
-    rules_check: bool
-    price_check: bool
-    line_nos: List[int]
-    amount_at_stake: float
-    explanation: str
-    source_ids: List[str] = []
-
-
-class AuditRequest(Traced):
+class AfterCareRequest(Traced):
     case_id: str
-    file_url: str = ""  # bill photo URL; empty + demo=True uses the synthetic bill
+    file_url: str = ""  # receipt/final bill photo; empty + demo=True uses the synthetic document
     demo: bool = False
     hospital_npi: str = ""
-    reply_to: str = ""  # who receives the streamed updates (the Coordinator)
+    payment_status: str = "unknown"  # paid | unpaid | unknown
+    reply_to: str = ""
 
 
-class AuditUpdate(Traced):
-    """Streamed live: one per bill line that was checked."""
-    case_id: str
-    line_no: int
-    total_lines: int
-    status: str  # ok | checking | dispute | ask_hospital
-    flag: Optional[Flag] = None
-    running_total: float  # possible savings so far
-    text: str  # ready-to-send sentence for the patient
-
-
-class AuditResult(Traced):
+class AfterCareResult(Traced):
     case_id: str
     lines: List[BillLine]
-    flags: List[Flag]
-    total_billed: float
-    fair_amount: float
-    disputed_amount: float
+    total: float
     hospital_npi: str
-    charity_care_hint: str = ""
+    payment_status: str  # paid | unpaid | unknown
+    provider_match: bool
+    estimate_amount: Optional[float] = None
+    estimate_difference: Optional[float] = None
+    visit_items_matched: int = 0
+    next_steps: List[str] = []
     reader: str = "unknown"  # ocr | vision | demo | demo_fallback
     unreviewed_lines: int = 0  # charges OCR saw without a CPT/HCPCS code
     needs_review: List[int] = []  # vision lines OCR could not confirm
@@ -111,8 +92,8 @@ class AuditResult(Traced):
 class PayRequest(Traced):
     case_id: str
     hospital_npi: str
-    amount: float  # the fair part only
-    disputed_amount: float
+    amount: float  # exact final amount explicitly approved by the patient
+    disputed_amount: float  # legacy compatibility; new after-care flow always sends 0
     mandate_max: float
     pay_link: str = ""  # link from the hospital, if any; checked by the Guard
 

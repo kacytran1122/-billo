@@ -8,7 +8,7 @@
  *  1 Code + STOP + HELP handler  (same result every time per message id; typing dots)
  *  2 @Billo filter               (groups: reply only when someone writes @Billo)
  *  3 Privacy router              (bills, payments, approvals: private chat only)
- *  4 Bill photo in / live audit  (attachments forwarded; findings come back line by line)
+ *  4 Receipt/final bill upload    (attachments forwarded to the After-Care Organizer)
  *  5 Approve                     (patient's own message in the private chat)
  *  6 Billo texts first           (the Coordinator's 30-min check arrives via /send)
  *  7 Phone numbers masked        (we only ever log and forward a hash)
@@ -87,7 +87,7 @@ function parse(message: Message): { sender: string; text: string; att?: Att } | 
   return undefined;
 }
 
-/** Upload a photo (bill) to the Core API, which keeps it for the Document Reader. */
+/** Upload a receipt/final-bill image to the Core API for immediate extraction. */
 async function upload(att: Att): Promise<string> {
   if (!att.mimeType.startsWith("image/") && att.mimeType !== "application/pdf") return "";
   const buf = await att.read();

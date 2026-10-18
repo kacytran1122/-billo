@@ -48,6 +48,13 @@ CREATE TABLE IF NOT EXISTS payments (
   payment_id TEXT PRIMARY KEY, case_id TEXT NOT NULL, amount NUMERIC NOT NULL,
   status TEXT NOT NULL DEFAULT 'created', url TEXT, created_at TIMESTAMPTZ DEFAULT now()
 );
+CREATE TABLE IF NOT EXISTS after_care_records (
+  record_id BIGSERIAL PRIMARY KEY, case_id TEXT NOT NULL, provider_npi TEXT,
+  total NUMERIC NOT NULL, already_paid BOOLEAN NOT NULL DEFAULT false,
+  payment_status TEXT NOT NULL DEFAULT 'unknown', provider_match BOOLEAN NOT NULL,
+  estimate_amount NUMERIC, estimate_difference NUMERIC, visit_items_matched INT NOT NULL DEFAULT 0,
+  payload JSONB NOT NULL, created_at TIMESTAMPTZ DEFAULT now()
+);
 
 -- 4. Live visit log (real-time running estimate) ---------------------------------------
 CREATE TABLE IF NOT EXISTS visit_events (

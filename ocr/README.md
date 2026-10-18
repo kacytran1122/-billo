@@ -48,7 +48,7 @@ auditing. They are additive and safe to ignore.
 
 ## Integration
 
-This package is wired into `core/app/reader.py`; `/reader/extract` and the Bill Auditor keep the
+This package is wired into `core/app/reader.py`; `/reader/extract` and the After-Care Organizer keep the
 same interface. OCR dependencies are included in `core/requirements.txt`, so the normal
 `make setup` installs them. Run all project and OCR tests from the repo root:
 
@@ -72,7 +72,7 @@ patient data, and is skipped if RapidOCR is not installed.
 ## Sentry
 
 OCR runs inside a span `op="ocr"`; the fallback runs inside `op="gen_ai.vision"` (same op the
-Bill Auditor already uses). `fallback_reason` is a good tag for the Case Medic story.
+After-Care Organizer already uses). `fallback_reason` is a good tag for the Case Medic story.
 
 ## Known limits
 

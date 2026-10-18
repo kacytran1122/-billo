@@ -8,6 +8,7 @@ from __future__ import annotations
 import io
 import os
 import random
+import re
 import time
 from pathlib import Path
 from urllib.parse import quote
@@ -165,7 +166,7 @@ async def upload(request: Request, x_internal_token: str | None = Header(None)):
     return {"file_url": f"file:{name}"}
 
 
-# ------------------------------------------------------------------ Bill Auditor tools
+# ------------------------------------------------------------------ document reader + after-care organizer
 class ExtractIn(BaseModel):
     case_id: str
     file_url: str = ""
@@ -187,6 +188,83 @@ def extract(body: ExtractIn, x_internal_token: str | None = Header(None)):
         # OCR/vision has finished; extracted typed lines continue through the flow.
         if uploaded:
             uploaded.unlink(missing_ok=True)
+
+
+class AfterCareIn(BaseModel):
+    case_id: str
+    lines: list[dict]
+    hospital_npi: str = ""
+    payment_status: str = "unknown"
+
+
+@app.post("/after-care/organize")
+def organize_after_care(body: AfterCareIn, x_internal_token: str | None = Header(None)):
+    """Create a factual care record. This does not decide that any benefit is available."""
+    auth(x_internal_token)
+    if body.payment_status not in {"paid", "unpaid", "unknown"}:
+        raise HTTPException(422, "payment_status must be paid, unpaid, or unknown")
+    total = round(sum(float(line.get("charge", 0)) * int(line.get("units", 1)) for line in body.lines), 2)
+    est = store.get_estimate(body.case_id)
+    estimate_amount = float(est["amount"]) if est else None
+    estimate_difference = round(total - estimate_amount, 2) if estimate_amount is not None else None
+    provider_match = bool(body.hospital_npi) and (not est or body.hospital_npi == est.get("npi"))
+    logged = store.visit_codes(body.case_id) or set()
+    document_codes = {str(line.get("code", "")) for line in body.lines if line.get("code")}
+    matched = len(logged & document_codes)
+    next_steps = ["Keep this verified record with the original document."]
+    if body.payment_status == "paid":
+        next_steps.append("No payment is needed; check benefits only if you have a real coverage source.")
+    elif body.payment_status == "unpaid":
+        next_steps.append("Verify the provider and final amount before approving Visa checkout.")
+    else:
+        next_steps.append("Confirm whether this document is paid or unpaid before any payment action.")
+    next_steps.append("Track follow-up care, records, and future costs from this visit.")
+    record = {
+        "case_id": body.case_id, "hospital_npi": body.hospital_npi, "total": total,
+        "payment_status": body.payment_status, "provider_match": provider_match,
+        "estimate_amount": estimate_amount, "estimate_difference": estimate_difference,
+        "visit_items_matched": matched, "next_steps": next_steps,
+    }
+    store.save_after_care(body.case_id, record)
+    return record
+
+
+class BenefitsIn(BaseModel):
+    case_id: str
+    text: str = ""
+
+
+@app.post("/benefits/check")
+def check_benefits(body: BenefitsIn, x_internal_token: str | None = Header(None)):
+    """Surface possible paths from coverage the patient names; never promise eligibility."""
+    auth(x_internal_token)
+    low = body.text.lower()
+    catalog = [
+        (("hsa", "health savings"), "HSA self-reimbursement", "receipt and proof of payment"),
+        (("fsa", "flexible spending"), "FSA reimbursement", "itemized receipt and plan claim form"),
+        (("hra", "health reimbursement"), "HRA reimbursement", "itemized receipt and employer plan rules"),
+        (("out of network", "out-of-network", "ppo"), "Out-of-network insurance claim", "superbill and insurer claim form"),
+        (("employer", "work benefit"), "Employer health benefit", "receipt and employer program terms"),
+        (("university", "student benefit", "school"), "Student health benefit", "receipt and school program terms"),
+        (("travel insurance",), "Travel insurance claim", "receipt, trip details, and policy terms"),
+        (("accident insurance",), "Accident insurance claim", "receipt, incident details, and policy terms"),
+    ]
+    paths = [
+        {"name": name, "status": "possible_not_confirmed", "needed": needed,
+         "next_step": "Check the plan rules and submission deadline before filing."}
+        for terms, name, needed in catalog
+        if any(re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", low) for term in terms)
+    ]
+    result = {
+        "paths": paths,
+        "message": (
+            "I found possible benefit paths, but eligibility depends on your plan rules."
+            if paths else
+            "I did not identify a coverage source. Tell me only if you have an HSA, FSA, HRA, out-of-network plan, employer, school, travel, or accident benefit."
+        ),
+    }
+    store.save_benefit_check(body.case_id, result)
+    return result
 
 
 class LineIn(BaseModel):
@@ -269,7 +347,10 @@ async def guard_verify(body: VerifyIn, x_internal_token: str | None = Header(Non
     within = body.amount <= body.mandate_max
     reasons.append(f"amount within your limit of ${body.mandate_max:,.0f}" if within else "amount is over your limit")
     ok &= within
-    reasons.append(f"${body.disputed_amount:,.2f} disputed money held back")
+    if body.disputed_amount:
+        reasons.append(f"${body.disputed_amount:,.2f} disputed money held back")
+    else:
+        reasons.append("final amount requires your explicit approval")
     return {"ok": ok, "reasons": reasons}
 
 
@@ -292,7 +373,7 @@ def mock_pay_page(payment_id: str):
     if not rec:
         raise HTTPException(404)
     return (f"<html><body style='font-family:sans-serif;max-width:420px;margin:40px auto'>"
-            f"<h2>Visa sandbox (mock)</h2><p>Pay <b>${rec['amount']:,.2f}</b> (fair part only).</p>"
+            f"<h2>Visa sandbox (mock)</h2><p>Pay the verified final amount: <b>${rec['amount']:,.2f}</b>.</p>"
             f"<form method='post' action='/pay/{payment_id}'><button>Pay with test card</button></form>"
             f"<p style='color:#666'>Demo only. No real card is charged.</p></body></html>")
 

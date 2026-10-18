@@ -6,7 +6,7 @@ VISA_MODE=sandbox  -> Visa Acceptance (Cybersource) sandbox pay-by-link / invoic
 Rules that never change, whatever the mode:
 - Billo never sees card numbers (Visa's hosted page collects the card).
 - One idempotency key per (case, amount), so a retry never charges twice.
-- Only the fair part is ever sent here; the Payment Guard already checked it.
+- Only an explicitly approved, verified final amount is sent here.
 """
 from __future__ import annotations
 
