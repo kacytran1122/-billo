@@ -56,8 +56,8 @@ agent = Agent(
     handle_messages_concurrently=True,
     readme_path=str(READMES / "coordinator.md"),
     description=(
-        "Billo plans affordable care before a visit, then organizes the receipt, benefits, paperwork, "
-        "benefit options and next steps after care."
+        "Billo compares real care prices before a visit and organizes bills, receipts, benefits, "
+        "reimbursements, and next steps after care with safety first."
     ),
 )
 
