@@ -25,7 +25,7 @@ Billo keeps those steps connected. Before care, it screens for emergency signs, 
 | Track | How Billo fits |
 | --- | --- |
 | **Fetch.ai / ASI:One** | A coordinator routes each case through specialist agents for safety screening, care search, document organization, settlement checks, and recovery. |
-| **Photon** | Billo joins iMessage through Spectrum and responds only when a user explicitly tags `@Billo`. |
+| **Photon** | Billo joins private or group iMessage chats through Spectrum and responds only when a user explicitly tags `@Billo`. |
 | **TigerData** | Stores price history, visit events, document results, and after-care records for fast retrieval and comparison. |
 | **Sentry** | Traces one case across the bridge, agents, OCR, API, and database, then wakes Case Medic when a monitored workflow fails. |
 | **Visa** | Demonstrates guarded clinic-QR payment and reimbursement flows as simulations; no card data is collected and no money moves. |

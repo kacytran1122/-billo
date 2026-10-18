@@ -6,10 +6,10 @@
  *
  * The 7 bridge responsibilities:
  *  1 STOP handler                (same result every time per message id; typing dots)
- *  2 @Billo filter               (group chats only; every request must tag @Billo)
- *  3 Group-only router           (DMs are ignored; the full workflow stays in one group)
+ *  2 @Billo filter               (every request in every chat must tag @Billo)
+ *  3 Chat router                 (private and group chats use the same workflow)
  *  4 Receipt/final bill upload    (attachments forwarded to the After-Care Organizer)
- *  5 Approve                     (patient's own tagged message in the group)
+ *  5 Approve                     (patient's own tagged message in the chat)
  *  6 Billo texts first           (the Coordinator's 30-min check arrives via /send)
  *  7 Phone numbers masked        (we only ever log and forward a hash)
  *
@@ -130,22 +130,20 @@ async function handle(space: Space, message: Message) {
   const rawUpper = rawText.toUpperCase();
   Sentry.getActiveSpan()?.setAttributes({ "chat.group": isGroup, "chat.has_file": Boolean(ev.att) });
 
-  // STOP remains available in a DM solely as a universal opt-out.
-  if (!isGroup && ["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"].includes(rawUpper)) {
+  // STOP is always available as a universal opt-out, with or without a mention.
+  if (["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"].includes(rawUpper)) {
     await core("/link/stop", { handle_hash: handleHash });
     await space.send("You are unsubscribed. Billo will not text you again.");
     return;
   }
 
-  // Billo is group-only. DMs are never read or forwarded beyond the STOP check above.
-  if (!isGroup) return;
-
-  // A visible mention is mandatory. Untagged group content is never forwarded or read further.
+  // A visible mention is mandatory. Untagged chat content is never forwarded or read further.
   if (!hasBilloMention(rawText)) return;
 
-  console.log(`[bridge] group mention from ${mask(ev.sender)} (${text.length} chars${ev.att ? ", attachment" : ""})`);
+  const chatKind = isGroup ? "group" : "private";
+  console.log(`[bridge] ${chatKind} mention from ${mask(ev.sender)} (${text.length} chars${ev.att ? ", attachment" : ""})`);
   if (!text && !ev.att) {
-    await space.send("@Billo is here. Tell me what happened or attach a bill or receipt in this group.");
+    await space.send("@Billo is here. Tell me what happened or attach a bill or receipt in this chat.");
     return;
   }
   await typing(space, true);
@@ -153,7 +151,7 @@ async function handle(space: Space, message: Message) {
     handle_hash: handleHash,
     space_id: space.id,
     text,
-    is_group: true,
+    is_group: isGroup,
     attachment_url: ev.att ? await upload(ev.att) : "",
     message_id: message.id,
   });

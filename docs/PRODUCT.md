@@ -108,7 +108,7 @@ The complete journey runs inside one ASI:One conversation using Agent Chat Proto
 
 ### Photon Spectrum
 
-Photon provides the iMessage door through one designated group chat. Every request must visibly tag `@Billo`; untagged group content and all direct messages are ignored, except that a direct `STOP` still opts out. The tagged group supports the complete before-care and after-care workflow, including receipt upload and benefit checks.
+Photon provides the iMessage door through private and group chats. Every request must visibly tag `@Billo`; untagged content is ignored, while `STOP` always opts out. Both chat types support the complete before-care and after-care workflow, including receipt upload and benefit checks.
 
 ### Visa
 
