@@ -7,20 +7,20 @@ const landing = readFileSync(
   "utf8",
 );
 const modal = readFileSync(
-  new URL("../../../frontend/src/features/simulation/FeatureSimulationModal.tsx", import.meta.url),
+  new URL("../../../frontend/src/features/simulation/FeatureSimulation.tsx", import.meta.url),
   "utf8",
 );
 const modalStyles = readFileSync(
-  new URL("../../../frontend/src/features/simulation/FeatureSimulationModal.module.css", import.meta.url),
+  new URL("../../../frontend/src/features/simulation/FeatureSimulation.module.css", import.meta.url),
   "utf8",
 );
 
-test("each original feature card opens its own full-screen simulation", () => {
+test("each original feature card selects its inline simulation", () => {
   for (const step of ["safety", "prices", "estimate", "visit", "scan", "match", "payment", "benefits"]) {
     assert.match(landing, new RegExp(`featureCard\\("${step}"\\)`));
   }
-  assert.match(landing, /FeatureSimulationModal/);
-  assert.match(landing, /aria-haspopup/);
+  assert.match(landing, /FeatureSimulation step=\{featureStep\}/);
+  assert.match(landing, /aria-pressed/);
 });
 
 test("feature simulations support mouse and keyboard interaction", () => {
@@ -29,22 +29,23 @@ test("feature simulations support mouse and keyboard interaction", () => {
   assert.match(landing, /setFeatureStep/);
 });
 
-test("the original card grid remains while simulations render in a dialog", () => {
+test("the original card grid remains below the embedded simulation", () => {
   assert.doesNotMatch(landing, /BilloSimulation/);
   assert.match(landing, /className=\{hv\.featureGrid\}/);
 });
 
 test("simulation matches the full case-workspace reference", () => {
-  assert.match(modal, /role="dialog"/);
-  assert.match(modal, /Case 8F2A · private demo/);
+  assert.match(modal, /Interactive Billo workflow simulation/);
+  assert.match(modal, /Case 8F2A · interactive demo/);
   assert.match(modal, /COMPARE CARE/);
   assert.match(modal, /Westwood Urgent Care/);
-  assert.match(modalStyles, /position: fixed/);
+  assert.match(modalStyles, /\.embed/);
+  assert.doesNotMatch(modalStyles, /position: fixed/);
 });
 
-test("simulation can complete reset and close", () => {
+test("simulation can switch steps complete and reset inline", () => {
   assert.match(modal, /setComplete\(true\)/);
   assert.match(modal, /setComplete\(false\)/);
-  assert.match(modal, /event\.key === "Escape"/);
-  assert.match(modal, /onClick=\{onClose\}/);
+  assert.match(modal, /onStepChange/);
+  assert.match(modal, /Simulation steps/);
 });

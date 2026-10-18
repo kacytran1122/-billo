@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BilloWord } from "@/components/BilloWord";
-import styles from "./FeatureSimulationModal.module.css";
+import styles from "./FeatureSimulation.module.css";
 
 export type FeatureStep = "safety" | "prices" | "estimate" | "visit" | "scan" | "match" | "payment" | "benefits";
 
@@ -23,6 +23,11 @@ const PROVIDERS = [
   ["03", "Santa Monica Emergency Room", "ER", "$1,800", "from $1,200"],
 ];
 
+const STEPS: ReadonlyArray<readonly [FeatureStep, string]> = [
+  ["safety", "Safety"], ["prices", "Prices"], ["estimate", "Estimate"], ["visit", "Visit log"],
+  ["scan", "Bill scan"], ["match", "Match"], ["payment", "Payment"], ["benefits", "Benefits"],
+];
+
 function Results({ step, complete }: { step: FeatureStep; complete: boolean }) {
   if (step === "prices") return <div className={styles.providerList}>{PROVIDERS.map((provider) => <div className={styles.provider} key={provider[0]}><span className={styles.number}>{provider[0]}</span><div><h3>{provider[1]}</h3><span className={styles.tag}>{provider[2]}</span><p>Los Angeles · open today · public price data</p></div><div className={styles.price}><small>TYPICAL</small><strong>{provider[3]}</strong><span>{provider[4]}</span></div></div>)}</div>;
 
@@ -38,22 +43,19 @@ function Results({ step, complete }: { step: FeatureStep; complete: boolean }) {
   return <div className={styles.resultCard}>{rows[step].map(([label, value], index) => <div className={styles.resultRow} key={label}><span className={index < rows[step].length - 1 ? styles.check : styles.count}>{index < rows[step].length - 1 ? "✓" : complete ? "2" : "…"}</span><div><strong>{label}</strong><small>{index < rows[step].length - 1 ? "Billo checked the record" : "Personal review required"}</small></div><b>{value}</b></div>)}</div>;
 }
 
-export function FeatureSimulationModal({ step, onClose }: { step: FeatureStep; onClose: () => void }) {
+export function FeatureSimulation({ step, onStepChange }: { step: FeatureStep; onStepChange: (step: FeatureStep) => void }) {
   const [complete, setComplete] = useState(false);
   const [eyebrow, title, action, done, accent] = COPY[step];
 
-  useEffect(() => {
+  const selectStep = (nextStep: FeatureStep) => {
     setComplete(false);
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const close = (event: KeyboardEvent) => event.key === "Escape" && onClose();
-    window.addEventListener("keydown", close);
-    return () => { document.body.style.overflow = previous; window.removeEventListener("keydown", close); };
-  }, [step, onClose]);
+    onStepChange(nextStep);
+  };
 
-  return <div className={styles.backdrop} role="dialog" aria-modal="true" aria-labelledby="simulation-title">
+  return <div className={styles.embed} aria-label="Interactive Billo workflow simulation">
     <div className={styles.window} data-accent={accent}>
-      <div className={styles.chrome}><span className={styles.dots}>● ● ●</span><strong>Case 8F2A · private demo</strong><button type="button" onClick={onClose} aria-label="Close simulation">×</button></div>
+      <div className={styles.chrome}><span className={styles.dots}>● ● ●</span><strong>Case 8F2A · interactive demo</strong></div>
+      <nav className={styles.stepbar} aria-label="Simulation steps">{STEPS.map(([id, label]) => <button type="button" key={id} aria-pressed={step === id} onClick={() => selectStep(id)}>{label}</button>)}</nav>
       <div className={styles.layout}>
         <aside><strong><BilloWord /></strong><button className={styles.selected}>Overview</button><button>Inputs</button><button>Results</button><span>Interactive demo</span></aside>
         <main>

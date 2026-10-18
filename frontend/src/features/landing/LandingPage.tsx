@@ -12,7 +12,7 @@ import { BilloWord } from "@/components/BilloWord";
 import { LandingIntro } from "@/components/loading/LandingIntro";
 import { QRCells } from "@/components/QRCells";
 import { makeQR } from "@/lib/qr";
-import { FeatureSimulationModal, type FeatureStep } from "@/features/simulation/FeatureSimulationModal";
+import { FeatureSimulation, type FeatureStep } from "@/features/simulation/FeatureSimulation";
 import hv from "./LandingPage.module.css";
 
 export type HeroPhones = "Both" | "ASI:One only" | "iMessage only";
@@ -85,7 +85,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
   const [menu, setMenu] = useState(false);
   const [active, setActive] = useState<SectionId>("top");
   const [chooser, setChooser] = useState(false);
-  const [featureStep, setFeatureStep] = useState<FeatureStep | null>(null);
+  const [featureStep, setFeatureStep] = useState<FeatureStep>("prices");
   const activeRef = useRef<SectionId>("top");
   const progressRef = useRef<HTMLSpanElement>(null);
 
@@ -163,7 +163,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
   const featureCard = (step: FeatureStep) => ({
     role: "button" as const,
     tabIndex: 0,
-    "aria-haspopup": "dialog" as const,
+    "aria-pressed": featureStep === step,
     onClick: () => setFeatureStep(step),
     onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
       if (event.key !== "Enter" && event.key !== " ") return;
@@ -171,7 +171,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
       setFeatureStep(step);
     },
   });
-  const featureHint = () => <span className={hv.simulateHint}>Open simulation →</span>;
+  const featureHint = (step: FeatureStep) => <span className={hv.simulateHint}>{featureStep === step ? "Showing above ✓" : "Show simulation ↑"}</span>;
 
   return (
     <div className="page page--neutral-100">
@@ -505,6 +505,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
           <BilloWord />
           .
         </h2>
+        <FeatureSimulation step={featureStep} onStepChange={setFeatureStep} />
         <div className={hv.featureGrid} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,max(calc((100% - 60px) / 4),min(calc((100% - 20px) / 2),calc((270px - (100% - 60px) / 4) * 9999)))),1fr))", gridAutoRows: "1fr", gap: "20px", marginTop: "64px" }}>
           <div {...featureCard("safety")} className={hv.featureCard} style={{ background: "oklch(0.92 0.06 165)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
             <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>Safety first</div>
@@ -522,7 +523,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
                 <span>{featureStep === "safety" ? "Clear ✓" : "Clear"}</span>
               </div>
             </div>
-            {featureHint()}
+            {featureHint("safety")}
           </div>
           <div {...featureCard("prices")} className={hv.featureCard} style={{ background: "oklch(0.94 0.08 95)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
             <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>{featureStep === "prices" ? "Best price found" : "3 real prices"}</div>
@@ -560,7 +561,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
                 <span>$1,800</span>
               </div>
             </div>
-            {featureHint()}
+            {featureHint("prices")}
           </div>
           <div {...featureCard("estimate")} className={hv.featureCard} style={{ background: "oklch(0.90 0.06 50)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
             <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>{featureStep === "estimate" ? "Estimate saved ✓" : "Expected price"}</div>
@@ -578,7 +579,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
                 <span style={{ background: "oklch(0.92 0.06 165)", padding: "4px 10px", borderRadius: "99px", fontSize: "11px" }}>Westwood</span>
               </div>
             </div>
-            {featureHint()}
+            {featureHint("estimate")}
           </div>
           <div {...featureCard("visit")} className={hv.featureCard} style={{ background: "oklch(0.91 0.06 300)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
             <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>Log the visit</div>
@@ -593,7 +594,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
                 <span style={{ fontFamily: "var(--font-heading)", fontSize: "24px" }}>{featureStep === "visit" ? "≈ $360" : "$240"}</span>
               </div>
             </div>
-            {featureHint()}
+            {featureHint("visit")}
           </div>
           <div {...featureCard("scan")} className={hv.featureCard} style={{ background: "oklch(0.91 0.05 235)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
             <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>{featureStep === "scan" ? "Bill read ✓" : "Snap the bill"}</div>
@@ -616,7 +617,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
                 <div style={{ position: "absolute", inset: "-8px", border: "2px solid var(--color-text)", borderRadius: "16px", clipPath: "polygon(0 0,22% 0,22% 3px,3px 3px,3px 22%,0 22%,0 78%,3px 78%,3px calc(100% - 3px),22% calc(100% - 3px),22% 100%,78% 100%,78% calc(100% - 3px),calc(100% - 3px) calc(100% - 3px),calc(100% - 3px) 78%,100% 78%,100% 22%,calc(100% - 3px) 22%,calc(100% - 3px) 3px,78% 3px,78% 0,100% 0,100% 100%,0 100%)" }} />
               </div>
             </div>
-            {featureHint()}
+            {featureHint("scan")}
           </div>
           <div {...featureCard("match")} className={hv.featureCard} style={{ background: "var(--color-text)", color: "var(--color-neutral-100)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
             <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>
@@ -636,7 +637,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
               <span style={{ background: "oklch(0.92 0.06 165)", color: "var(--color-text)", borderRadius: "14px", padding: "8px 12px", fontSize: "28px" }}>{featureStep === "match" ? "$360" : "?"}</span>
             </div>
             <div style={{ fontSize: "13px", color: "var(--color-neutral-300)" }}>{featureStep === "match" ? "All lines verified ✓" : "Tap to match the bill to the visit"}</div>
-            {featureHint()}
+            {featureHint("match")}
           </div>
           <div {...featureCard("payment")} className={hv.featureCard} style={{ background: "oklch(0.92 0.06 165)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
             <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>{featureStep === "payment" ? "Payment simulation ready" : "Pay the right clinic"}</div>
@@ -651,7 +652,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
                 <span style={{ fontWeight: "600" }}>{featureStep === "payment" ? "Ready for your approval" : "You say yes first"}</span>
               </div>
             </div>
-            {featureHint()}
+            {featureHint("payment")}
           </div>
           <div {...featureCard("benefits")} className={hv.featureCard} style={{ background: "oklch(0.94 0.08 95)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
             <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>{featureStep === "benefits" ? "HSA path found" : "Can you get money back?"}</div>
@@ -668,11 +669,10 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
               {" "}
               <span style={{ border: "1px dashed var(--color-text)", padding: "6px 13px", borderRadius: "99px", fontSize: "13px", fontStyle: "italic" }}>{featureStep === "benefits" ? "Possible · review eligibility" : "Billo helps you check"}</span>
             </div>
-            {featureHint()}
+            {featureHint("benefits")}
           </div>
         </div>
       </section>
-      {featureStep && <FeatureSimulationModal step={featureStep} onClose={() => setFeatureStep(null)} />}
       <section id="pages" className={hv.balancedSection} style={{ scrollMarginTop: "80px", padding: "110px 24px 120px" }}>
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "clamp(44px,6vw,76px)", lineHeight: ".95", margin: "0", textAlign: "center", letterSpacing: "-.015em" }}>
           Before, during,{" "}
