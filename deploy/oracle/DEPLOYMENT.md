@@ -6,7 +6,7 @@ This deployment keeps the Billo backend running continuously on one Oracle Amper
 
 Create an Ubuntu 24.04 Ampere A1 instance in the account's home region. Stay inside the Always Free allowance, assign a public IPv4 address, paste `cloud-init.yaml` into the instance initialization script field, and add the user's SSH public key.
 
-Open inbound TCP 22, 80 and 443 in the Oracle subnet security list. Open UDP 443 for HTTP/3. Do not expose ports 3000 or 8000–8007.
+Open inbound TCP 22, 80 and 443 in the host firewall. Open UDP 443 for HTTP/3. The system Caddy service proxies to Core on loopback port 8000; never expose ports 3000 or 8000–8007 publicly. The Compose `docker-gateway` profile is only for hosts that do not already run Caddy.
 
 ## DNS
 

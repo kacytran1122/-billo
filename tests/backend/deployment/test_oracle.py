@@ -26,9 +26,15 @@ def test_oracle_stack_contains_every_backend_layer():
     }
 
 
-def test_only_https_gateway_publishes_host_ports():
-    exposed = {name for name, service in services().items() if service.get("ports")}
-    assert exposed == {"caddy"}
+def test_only_loopback_core_is_published_by_default_and_https_gateway_is_opt_in():
+    stack = services()
+    default_exposed = {
+        name for name, service in stack.items()
+        if service.get("ports") and not service.get("profiles")
+    }
+    assert default_exposed == {"core"}
+    assert stack["core"]["ports"] == ["127.0.0.1:8000:8000"]
+    assert stack["caddy"]["profiles"] == ["docker-gateway"]
     assert set(services()["caddy"]["ports"]) == {"80:80", "443:443", "443:443/udp"}
 
 
