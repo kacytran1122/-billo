@@ -42,7 +42,7 @@ def screen_for(text: str, stage: str = "new") -> str:
     )):
         return "scan"
     if any(phrase in low for phrase in (
-        "care plan saved", "care plan is saved", "saved estimate", "estimated price", "expected price",
+        "care plan saved", "care plan is saved", "saved estimate", "estimate saved",
     )):
         return "estimate"
     if any(phrase in low for phrase in (

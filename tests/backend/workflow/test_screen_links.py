@@ -34,5 +34,18 @@ def test_completed_bill_review_wins_over_generic_benefit_wording():
     assert screen_for(text, "organized") == "match"
 
 
+def test_unsaved_care_options_link_to_comparison_instead_of_saved_estimate():
+    text = (
+        "Location: Chicago, IL\n"
+        "Care options (3):\n"
+        "1. Chicago Urgent Care (demo)\n"
+        "Estimated price: $260 (from $190)\n"
+        "Next step: reply 'book 1' to save an option and estimate."
+    )
+    linked = with_screen_link(text, "choosing")
+    assert "Care comparison screen" in linked
+    assert linked.endswith("/tools/prices")
+
+
 def test_booked_stage_routes_the_next_step_to_the_visit_log():
     assert screen_for("Tell me what service you received.", "booked") == "visit"
