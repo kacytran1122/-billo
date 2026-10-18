@@ -3,9 +3,9 @@
     <style>
       .bg{fill:#f8fafc}.ink{fill:#13233b}.muted{fill:#5d6b7f}.title{font:700 44px Arial,sans-serif}.sub{font:20px Arial,sans-serif}.section{font:700 17px Arial,sans-serif;letter-spacing:1.5px}.h{font:700 23px Arial,sans-serif}.boxh{font:700 19px Arial,sans-serif}.body{font:17px Arial,sans-serif}.small{font:15px Arial,sans-serif}.tiny{font:14px Arial,sans-serif}.flow{stroke:#243247;stroke-width:4;fill:none;marker-end:url(#flowArrow)}.bus{stroke:#243247;stroke-width:4;fill:none}.observe{stroke:#b51f5d;stroke-width:4;stroke-dasharray:10 8;fill:none;marker-end:url(#observeArrow)}.recover{stroke:#b51f5d;stroke-width:4;fill:none;marker-end:url(#recoverArrow)}.edge{stroke:#d6dde8;stroke-width:2}.labelbg{fill:#f8fafc}.step{font:700 15px Arial,sans-serif;fill:#fff}
     </style>
-    <marker id="flowArrow" markerWidth="18" markerHeight="18" refX="17" refY="9" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L18 9 L0 18 Z" fill="#243247"/></marker>
-    <marker id="observeArrow" markerWidth="18" markerHeight="18" refX="17" refY="9" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L18 9 L0 18 Z" fill="#b51f5d"/></marker>
-    <marker id="recoverArrow" markerWidth="18" markerHeight="18" refX="17" refY="9" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L18 9 L0 18 Z" fill="#b51f5d"/></marker>
+    <marker id="flowArrow" markerWidth="16" markerHeight="16" refX="14" refY="8" orient="auto" markerUnits="userSpaceOnUse"><path d="M2 2 L14 8 L2 14" fill="none" stroke="#243247" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    <marker id="observeArrow" markerWidth="16" markerHeight="16" refX="14" refY="8" orient="auto" markerUnits="userSpaceOnUse"><path d="M2 2 L14 8 L2 14" fill="none" stroke="#b51f5d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    <marker id="recoverArrow" markerWidth="16" markerHeight="16" refX="14" refY="8" orient="auto" markerUnits="userSpaceOnUse"><path d="M2 2 L14 8 L2 14" fill="none" stroke="#b51f5d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></marker>
   </defs>
 
   <rect class="bg" width="1800" height="1800"/>
