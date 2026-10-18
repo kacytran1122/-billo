@@ -6,7 +6,7 @@
  *
  * The 7 bridge responsibilities:
  *  1 Code + STOP + HELP handler  (same result every time per message id; typing dots)
- *  2 @Billo filter               (groups: reply only when someone writes @Billo)
+ *  2 @Billo filter               (every chat: reply only when someone writes @Billo)
  *  3 Privacy router              (bills, payments, approvals: private chat only)
  *  4 Receipt/final bill upload    (attachments forwarded to the After-Care Organizer)
  *  5 Approve                     (patient's own message in the private chat)
@@ -128,11 +128,21 @@ async function handle(space: Space, message: Message) {
   const handleHash = hashHandle(ev.sender);
   const rawText = ev.text.trim();
   const text = stripBilloMention(rawText);
+  const rawUpper = rawText.toUpperCase();
   Sentry.getActiveSpan()?.setAttributes({ "chat.group": isGroup, "chat.has_file": Boolean(ev.att) });
+
+  // STOP is the sole mention exception: opting out must always work in a private chat.
+  if (!isGroup && ["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"].includes(rawUpper)) {
+    await core("/link/stop", { handle_hash: handleHash });
+    await space.send("You are unsubscribed. Billo will not text you again.");
+    return;
+  }
+
+  // One activation rule for DMs and groups. Untagged content is never forwarded or read further.
+  if (!hasBilloMention(rawText)) return;
 
   // ---- 2. @Billo filter + 3. privacy router (groups) ----
   if (isGroup) {
-    if (!hasBilloMention(rawText)) return; // never read (or log) the rest of the group's chat
     console.log(`[bridge] group mention from ${mask(ev.sender)} (${text.length} chars)`);
     if (ev.att || isPrivateOnlyGroupRequest(text)) { // private workflows never run in a group
       await space.send("Bills, benefits, and payments are private. Please message Billo in a private chat.");
@@ -150,7 +160,7 @@ async function handle(space: Space, message: Message) {
   console.log(`[bridge] dm from ${mask(ev.sender)} (${text.length} chars${ev.att ? ", attachment" : ""})`);
 
   if (!text && !ev.att) {
-    await space.send("@Billo is here. Tell me what happened or send a bill or receipt privately.");
+    await space.send("@Billo is here. Tell me what happened or attach a bill or receipt.");
     return;
   }
 
@@ -158,7 +168,7 @@ async function handle(space: Space, message: Message) {
   const upper = text.toUpperCase();
   if (["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"].includes(upper)) {
     await core("/link/stop", { handle_hash: handleHash });
-    await space.send("You are unsubscribed. Billo will not text you again. Reply START to come back.");
+    await space.send("You are unsubscribed. Billo will not text you again.");
     return;
   }
   if (upper === "HELP") {

@@ -2,7 +2,7 @@
 const MENTION_RE = /@billo\b/i;
 const PRIVATE_ONLY_WORDS = /\b(bill|invoice|statement|receipt|owe|charged|pay|payment|card|benefit|reimbursement|hsa|fsa|hra|approve|settlement|qr)\b/i;
 
-/** A visible @Billo mention activates a group and is optional in a private chat. */
+/** A visible @Billo mention activates Billo in every chat. */
 export const hasBilloMention = (text: string): boolean => MENTION_RE.test(text);
 
 /** Remove every mention before the message reaches the care workflow. */
