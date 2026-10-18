@@ -4,6 +4,7 @@ import re
 import sys
 from pathlib import Path
 from unittest.mock import AsyncMock
+from types import SimpleNamespace
 
 import pytest
 
@@ -44,15 +45,17 @@ def test_payment_status_uses_boundaries_and_unpaid_wins(text, expected):
     assert payment_status(text) == expected
 
 
-def coordinator_functions():
+def coordinator_functions(actual=()):
     """Exercise the actual route without starting a networked uAgent."""
     tree = ast.parse((ROOT / "backend/fetch.ai/coordinator.py").read_text())
-    names = {"route_text", "step_approve_clinic_payment", "step_reimburse"}
+    names = {"route_text", "step_approve_clinic_payment", "step_reimburse", *actual}
     nodes = [ast.ImportFrom(module="__future__", names=[ast.alias(name="annotations")], level=0)]
     nodes += [node for node in tree.body if isinstance(node, ast.AsyncFunctionDef) and node.name in names]
     env = dict(re=re, normalize_request=normalize_request, quick_reply=quick_reply,
                document_payment_status=payment_status, BILL_WORDS=("bill", "receipt"),
-               QR_WORDS=("clinic qr", "scan qr"), DONE_WORDS=("they did", "x-ray"), save=lambda *args: None)
+               QR_WORDS=("clinic qr", "scan qr"), DONE_WORDS=("they did", "x-ray"), save=lambda *args: None,
+               say=AsyncMock(), ADDR={"gateway": "test-gateway", "payment_guard": "test-settlement"},
+               OutboundText=lambda **kwargs: SimpleNamespace(**kwargs), carry=lambda: {})
     for name in ["reply", "step_book", "step_symptoms", "step_after_care", "step_benefits", "step_visit_log", "step_scan_clinic_qr"]:
         env[name] = AsyncMock()
     exec(compile(ast.fix_missing_locations(ast.Module(body=nodes, type_ignores=[])), "coordinator.py", "exec"), env)
@@ -98,3 +101,101 @@ def test_paused_settlement_blocks_both_actions():
     asyncio.run(env["step_reimburse"](ctx, {"settlement_paused": True}, "approve reimbursement $120 demo"))
     assert env["reply"].await_count == 2
     ctx.send.assert_not_awaited()
+
+
+def delivered_reply(env, ctx, channel):
+    if channel == "asi1":
+        ctx.send.assert_not_awaited()
+        return env["say"].await_args.args[-1]
+    env["say"].assert_not_awaited()
+    assert ctx.send.await_args.args[0] == "test-gateway"
+    message = ctx.send.await_args.args[1]
+    assert message.space_id == "whatsapp_business:test-user"
+    return message.text
+
+
+@pytest.mark.parametrize("channel", ["asi1", "imessage"])  # WhatsApp uses the legacy gateway transport.
+@pytest.mark.parametrize("text,expected", [
+    ("hello", "Hi, I'm Billo"), ("@Billo hi", "Hi, I'm Billo"),
+    ("good evening", "Hi, I'm Billo"), ("what can you help me with?", "compare care prices"),
+    ("help", "https://www.getbillo.us"), ("thank you", "You're welcome"),
+    ("bye", "STOP"), ("yes", "What would you like"),
+    ("bill", "Attach a clear"), ("receipt", "Attach a clear"),
+    ("can you check my bill?", "Attach a clear"),
+    ("pay bill", "Payments are simulated"), ("reimbursement", "administrator approval"),
+    ("status", "Tell me what care"), ("book 1", "Find care first"),
+    ("this is paid", "resend the document"), ("tell me a joke", "healthcare costs"),
+])
+def test_actual_coordinator_replies_on_the_correct_channel_without_searching(channel, text, expected):
+    env = coordinator_functions(actual=("reply",))
+    ctx = SimpleNamespace(send=AsyncMock())
+    case = {"id": "synthetic", "stage": "new", "places": [], "channel": channel,
+            "who": "asi-test-user" if channel == "asi1" else "whatsapp_business:test-user"}
+    asyncio.run(env["route_text"](ctx, case, text, []))
+    assert expected in delivered_reply(env, ctx, channel)
+    env["step_symptoms"].assert_not_awaited()
+    assert case["stage"] == "new"
+
+
+@pytest.mark.parametrize("channel", ["asi1", "imessage"])
+@pytest.mark.parametrize("text,expected", [
+    ("check my HSA", "receipt or final bill first"),
+    ("scan clinic QR", "unpaid final bill"),
+    ("approve clinic payment", "verify the clinic Visa QR first"),
+    ("approve reimbursement $120 demo", "paid receipt must be organized"),
+])
+def test_actual_coordinator_blocks_out_of_order_actions_on_both_channels(channel, text, expected):
+    env = coordinator_functions(actual=("reply", "step_benefits", "step_scan_clinic_qr"))
+    ctx = SimpleNamespace(send=AsyncMock())
+    case = {"id": "synthetic", "stage": "new", "places": [], "channel": channel,
+            "who": "asi-test-user" if channel == "asi1" else "whatsapp_business:test-user"}
+    asyncio.run(env["route_text"](ctx, case, text, []))
+    assert expected in delivered_reply(env, ctx, channel)
+
+
+@pytest.mark.parametrize("channel", ["asi1", "imessage"])
+@pytest.mark.parametrize("text", ["hi, I have chest pain", "hello I can't breathe"])
+def test_both_channels_preserve_safety_screening_for_mixed_greetings(channel, text):
+    env = coordinator_functions(actual=("reply",))
+    ctx = SimpleNamespace(send=AsyncMock())
+    case = {"id": "synthetic", "stage": "new", "places": [], "channel": channel, "who": "test-user"}
+    asyncio.run(env["route_text"](ctx, case, text, []))
+    env["step_symptoms"].assert_awaited_once()
+    env["say"].assert_not_awaited()
+    ctx.send.assert_not_awaited()
+
+
+@pytest.mark.parametrize("stage,expected", [("booked", "not a clinic-confirmed"), ("organizing", "being organized"), ("settled", "does not mean real money moved"), ("emergency", "911")])
+def test_status_responses_are_stage_specific_without_inventing_success(stage, expected):
+    assert expected in quick_reply("status", stage=stage)
+
+
+@pytest.mark.parametrize("channel", ["asi1", "imessage"])
+@pytest.mark.parametrize("text,expected", [("yes", "send the final bill"), ("no", "another time or place")])
+def test_followup_answers_keep_their_context_instead_of_becoming_small_talk(channel, text, expected):
+    env = coordinator_functions(actual=("reply",))
+    ctx = SimpleNamespace(send=AsyncMock())
+    case = {"id": "synthetic", "stage": "booked", "places": [], "asked": True, "channel": channel,
+            "who": "asi-test-user" if channel == "asi1" else "whatsapp_business:test-user"}
+    asyncio.run(env["route_text"](ctx, case, text, []))
+    assert expected in delivered_reply(env, ctx, channel)
+    env["step_symptoms"].assert_not_awaited()
+
+
+@pytest.mark.parametrize("text,status", [("hello", "unknown"), ("help", "unknown"), ("paid receipt", "paid"), ("unpaid receipt", "unpaid")])
+def test_upload_captions_take_precedence_over_quick_reply(text, status):
+    env = coordinator_functions()
+    asyncio.run(env["route_text"](None, {"stage": "new", "places": []}, text, ["file:synthetic"]))
+    assert env["step_after_care"].await_args.args[-2:] == ("file:synthetic", status)
+    env["reply"].assert_not_awaited()
+
+
+@pytest.mark.parametrize("channel", ["asi1", "imessage"])
+def test_stop_cancels_reminders_on_both_coordinator_paths(channel):
+    env = coordinator_functions(actual=("reply",))
+    ctx = SimpleNamespace(send=AsyncMock())
+    case = {"id": "synthetic", "stage": "booked", "places": [], "followup_due": 100, "channel": channel,
+            "who": "asi-test-user" if channel == "asi1" else "whatsapp_business:test-user"}
+    asyncio.run(env["route_text"](ctx, case, "STOP", []))
+    assert case["stopped"] is True and case["followup_due"] == 0
+    assert "Stopped" in delivered_reply(env, ctx, channel)

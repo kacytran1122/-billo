@@ -306,13 +306,6 @@ async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_g
         await reply(ctx, case, "No problem. Do you want me to find another time or place? Tell me what happened.")
     elif case["stage"] == "booked" and any(w in low for w in DONE_WORDS):
         await step_visit_log(ctx, case, text)
-    elif low in ("help", "?"):
-        await reply(
-            ctx,
-            case,
-            "Tell me what happened, or send a final bill or paid receipt. For an unpaid bill I can verify a clinic Visa QR; for a paid receipt I can route an approved reimbursement. Text STOP to stop messages.",
-            photon_text="👋 Your care companion\n\nPay less for care. Explore money-back options.\n\nTry one:\n@Billo find care near [ZIP]\n@Billo check this receipt + photo\n@Billo check my benefits\n\nClinic QR payments are simulated.\nText STOP to stop reminders.",
-        )
     else:
         await step_symptoms(ctx, case, text, group_safe=is_group)
 
