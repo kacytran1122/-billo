@@ -91,17 +91,47 @@
   }
 }
 
-@media (min-width: 901px) and (max-width: 1099px) {
-  .heroInner { padding-inline: 20px !important; }
-  .heroTitle { font-size: clamp(64px, 10vw, 88px) !important; }
+@media (min-width: 700px) and (max-width: 1099px) {
+  .heroInner {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) 306px;
+    grid-template-rows: auto auto auto auto;
+    column-gap: 20px;
+    align-items: center;
+    padding-inline: 20px !important;
+    text-align: left !important;
+  }
+  .heroEyebrow,
+  .heroTitle,
+  .heroSubtitle,
+  .heroActions { grid-column: 1; }
+  .heroEyebrow { justify-self: start; }
+  .heroTitle {
+    align-self: end;
+    font-size: clamp(52px, 7.5vw, 78px) !important;
+    margin-inline: 0 !important;
+  }
+  .heroSubtitle { margin-inline: 0 !important; }
+  .heroActions { justify-content: flex-start !important; }
   .heroPhones {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    align-self: center;
     flex-wrap: nowrap !important;
-    gap: 12px !important;
+    gap: 8px !important;
+    margin-top: 0 !important;
   }
   .phoneAsi,
-  .phoneIMessage {
-    margin-inline: 0;
+  .phoneIMessage { inline-size: 145px; }
+  .phoneFrame {
+    margin-bottom: -300px;
+    transform: scale(.5);
   }
+  .phoneAsi > span,
+  .phoneIMessage > span { font-size: 15px !important; }
+}
+
+@media (min-width: 901px) and (max-width: 1099px) {
   .caseFlow { gap: 14px !important; }
   .caseFlow > svg { rotate: 90deg; }
   .featureGrid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
@@ -125,17 +155,6 @@
     translate: -50% 0;
     white-space: nowrap;
   }
-  .heroInner { padding: 36px 18px 72px !important; }
-  .heroTitle { font-size: clamp(50px, 15vw, 68px) !important; }
-  .heroPhones {
-    align-items: center !important;
-    flex-direction: column;
-    flex-wrap: nowrap !important;
-    gap: 56px !important;
-    margin-top: 56px !important;
-  }
-  .phoneAsi { transform: rotate(-1.5deg) !important; }
-  .phoneIMessage { transform: rotate(1.5deg) !important; }
   .heroBadge { display: none !important; }
   .caseSection {
     border-radius: 32px !important;
@@ -156,6 +175,20 @@
     gap: 14px !important;
     margin-top: 42px !important;
   }
+}
+
+@media (max-width: 699px) {
+  .heroInner { padding: 36px 18px 72px !important; }
+  .heroTitle { font-size: clamp(50px, 15vw, 68px) !important; }
+  .heroPhones {
+    align-items: center !important;
+    flex-direction: column;
+    flex-wrap: nowrap !important;
+    gap: 56px !important;
+    margin-top: 56px !important;
+  }
+  .phoneAsi { transform: rotate(-1.5deg) !important; }
+  .phoneIMessage { transform: rotate(1.5deg) !important; }
 }
 
 @media (max-width: 390px) {
