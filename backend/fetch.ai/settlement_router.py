@@ -16,7 +16,10 @@ agent = Agent(
     mailbox=True,
     publish_agent_details=True,
     readme_path=str(READMES / "settlement_router.md"),
-    description="Verifies clinic Visa QR details before wallet handoff and routes externally approved reimbursements through Visa Direct.",
+    description=(
+        "Demonstrates clinic Visa QR verification and safeguarded payment or reimbursement handoffs. "
+        "All money movement is simulated."
+    ),
 )
 
 

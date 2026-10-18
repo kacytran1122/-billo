@@ -1,4 +1,6 @@
-"""Care Finder: nearby care sites and price context from the Core API."""
+"""Care Finder: location-matched demo care sites and price context."""
+import re
+
 from uagents import Agent, Context, Protocol
 from uagents_core.contrib.protocols.chat import ChatAcknowledgement, ChatMessage, chat_protocol_spec
 
@@ -17,8 +19,29 @@ agent = Agent(
     mailbox=True,
     publish_agent_details=True,
     readme_path=str(READMES / "care_finder.md"),
-    description="Finds urgent care, clinics and ERs for the requested location with transparent price context.",
+    description=(
+        "Finds urgent care, clinics, and ERs for the requested location using clearly labeled "
+        "synthetic demo estimates; results are not live quotes."
+    ),
 )
+
+
+def requested_location(text: str) -> str | None:
+    low = text.lower()
+    if re.search(r"\b(chicago|606\d{2})\b", low):
+        return "Chicago, IL"
+    if re.search(r"\b(los angeles|ucla|westwood|900\d{2})\b", low):
+        return "Los Angeles, CA"
+    match = re.search(
+        r"\b(?:near|around|(?:i(?:'m| am)|currently) in|location(?: is)?|zip(?: code)?(?: is)?)\s+([^,.;!?]+)",
+        text,
+        re.I,
+    )
+    if not match:
+        return None
+    candidate = match.group(1).strip()
+    rejected = {"me", "here", "my area", "my leg", "my arm", "my knee", "my ankle", "my head", "my chest"}
+    return None if candidate.lower() in rejected else candidate
 
 
 async def find(text: str, near: str) -> CareOptions:
@@ -42,7 +65,11 @@ def as_text(opts: CareOptions, group_safe: bool) -> str:
         for i, p in enumerate(opts.places, 1)
     ]
     tail = "" if group_safe else "\nReply with the number to book, for example: book 1"
-    return "\n".join([head, *rows]) + tail + "\nDemo estimates are not live quotes; confirm price and availability with the provider."
+    return (
+        "\n".join([head, *rows]) + tail
+        + "\nDemo estimates are not live quotes; confirm price and availability with the provider."
+        + "\nCare comparison screen (synthetic demo): https://www.getbillo.us/tools/prices"
+    )
 
 
 @agent.on_message(model=FindCareRequest, replies=CareOptions)
@@ -60,7 +87,12 @@ chat = Protocol(spec=chat_protocol_spec)
 @chat.on_message(ChatMessage)
 async def on_chat(ctx: Context, sender: str, msg: ChatMessage):
     await ack(ctx, sender, msg)
-    opts = await find(text_of(msg), "UCLA, Los Angeles, CA")
+    text = text_of(msg)
+    near = requested_location(text)
+    if not near:
+        await say(ctx, sender, "Which city or ZIP code should I search? I won’t assume your location. Example: ‘knee X-ray in Chicago.’")
+        return
+    opts = await find(text, near)
     await say(ctx, sender, as_text(opts, group_safe=True))
 
 

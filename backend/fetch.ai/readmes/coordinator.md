@@ -2,7 +2,7 @@
 
 **Make every care dollar count.**
 
-Billo is an AI care companion that helps patients understand costs before care and organize bills, receipts, benefits, reimbursements, and next steps afterward. One conversation keeps the care plan, expected price, visit record, and final document connected.
+Billo is a healthcare cost and after-care assistant. It provides location-matched demo estimates before care, then organizes bills and receipts and explains possible benefit paths and next steps. One conversation keeps the care plan, estimate, visit record, and final document connected.
 
 ## Why Billo exists
 
@@ -12,9 +12,9 @@ Patients are often asked to choose care before they know the price, then decode 
 
 1. Tell Billo what happened and where you are.
 2. Billo checks fixed emergency rules first.
-3. It compares nearby care options with clearly labeled estimated-price context.
-4. Choose a place and save the expected price.
-5. During the visit, tell Billo what services were added to keep a running total.
+3. It compares nearby care options using clearly labeled synthetic demo estimates.
+4. Choose an option and save a care plan. This does not confirm an appointment.
+5. During the visit, tell Billo what services were added to update the running estimate.
 
 ## After care
 
@@ -26,12 +26,25 @@ Patients are often asked to choose care before they know the price, then decode 
 
 ## Try these prompts
 
-- "My knee hurts after soccer and I am near UCLA."
-- "Book option 1."
+- "My knee hurts after soccer and I am in Chicago."
+- "Show location-matched urgent care estimates for a sprained ankle."
+- "Save option 1 as my care plan."
 - "They did an X-ray."
 - "Here is my unpaid final bill."
 - "Here is my paid receipt and I have an HSA."
-- "Show my case status."
+- "Show my case status and next step."
+
+## Open the right demo screen
+
+- Compare care by location: https://www.getbillo.us/tools/prices
+- Review a saved estimate: https://www.getbillo.us/tools/estimate
+- Log services during a visit: https://www.getbillo.us/tools/visit
+- Organize a bill or receipt: https://www.getbillo.us/tools/scan
+- Review extracted charges: https://www.getbillo.us/tools/match
+- Explore possible benefit paths: https://www.getbillo.us/tools/benefits
+- Review payment safeguards: https://www.getbillo.us/tools/payment
+
+These are interactive previews with synthetic data, not private case records.
 
 ## Safety and privacy
 

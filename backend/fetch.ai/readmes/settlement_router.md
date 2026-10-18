@@ -6,3 +6,7 @@ I route two opposite post-care money directions without storing card data.
 - **Patient is owed reimbursement:** require a paid receipt, a named benefit path, external benefit approval and explicit patient approval before recording a simulated Visa Direct payout.
 
 Every result is visibly simulated. Production money movement remains disabled until Visa wallet and Visa Direct onboarding are certified.
+
+Payment safeguards preview: https://www.getbillo.us/tools/payment
+
+The preview uses synthetic data. It cannot approve or move money.
