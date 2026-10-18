@@ -2,7 +2,7 @@
 
 Visa is active again through the new guarded Care Settlement Router. This
 directory preserves only the retired pay-link implementation; active code lives
-in `core/app/visa.py` and `agents/settlement_router.py`.
+in `core/app/visa.py` and `fetch.ai/settlement_router.py`.
 
 This directory preserves the earlier mock/sandbox scaffolding for possible future research:
 

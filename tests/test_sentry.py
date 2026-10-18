@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "core"))
-sys.path.insert(0, str(ROOT / "agents"))
+sys.path.insert(0, str(ROOT / "fetch.ai"))
 os.environ["BILLO_MODE"] = "demo"
 os.environ["DATABASE_URL"] = ""
 os.environ["SENTRY_DSN"] = ""

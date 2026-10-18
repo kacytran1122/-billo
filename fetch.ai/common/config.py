@@ -53,7 +53,7 @@ ADDR = {
     "case_medic": env("ADDR_CASE_MEDIC"),
 }
 
-READMES = ROOT / "agents" / "readmes"
+READMES = ROOT / "fetch.ai" / "readmes"
 
 
 def require_seed(key: str) -> str:
