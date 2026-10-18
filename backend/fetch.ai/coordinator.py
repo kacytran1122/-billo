@@ -382,9 +382,11 @@ async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_g
         await step_reimburse(ctx, case, text)
     elif any(word in low for word in QR_WORDS):
         await step_scan_clinic_qr(ctx, case, files[0] if files else "", demo="demo" in low)
-    elif files or (any(w in low for w in BILL_WORDS) and ("demo" in low or "photo" in low or "here" in low)):
+    elif files or (any(w in low for w in BILL_WORDS) and re.search(r"\bdemo\b", low)):
         payment_status = document_payment_status(text)
         await step_after_care(ctx, case, files[0] if files else "", payment_status)
+    elif any(w in low for w in BILL_WORDS) and ("photo" in low or "here" in low):
+        await reply(ctx, case, "I don’t see an attached document yet. Please attach a clear image or PDF and label it paid or unpaid. I won’t invent charges from a missing bill.")
     elif any(w in low for w in ("hsa", "fsa", "hra", "out of network", "out-of-network", "employer benefit", "student benefit", "travel insurance", "accident insurance", "check benefits")):
         await step_benefits(ctx, case, text)
     elif case["stage"] == "booked" and case.get("asked") and low in ("yes", "y", "i went", "yes i went"):

@@ -284,6 +284,14 @@ def test_display_name_changes_without_changing_the_seed_configuration():
     assert 'seed=require_seed("coordinator")' in source
 
 
+@pytest.mark.parametrize("text", ["here is my unpaid bill for $300", "photo of my receipt", "here is my receipt after my appointment"])
+def test_missing_upload_never_silently_generates_a_synthetic_bill(text):
+    env = coordinator_functions()
+    asyncio.run(env["route_text"](None, {"stage": "new", "places": []}, text, []))
+    env["step_after_care"].assert_not_awaited()
+    assert "don’t see an attached document" in env["reply"].await_args.args[-1]
+
+
 @pytest.mark.parametrize("text", ["book option 1", "pick #1", "choose number 1 please", "save option 1 as my care plan"])
 def test_natural_selection_variants_use_the_current_option(text):
     env = coordinator_functions()

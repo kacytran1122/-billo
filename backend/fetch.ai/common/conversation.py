@@ -10,7 +10,7 @@ WELCOME = (
     "• organize a bill or receipt\n"
     "• review possible benefit and reimbursement paths\n\n"
     "To begin, describe what happened and include your city or ZIP code. You can also attach a bill or receipt and label it paid or unpaid.\n\n"
-    "In one-to-one chats, no tag is needed. In group chats, mention @Billo.\n\n"
+    "In one-to-one chats, no tag is needed. The current shared Photon line supports direct iMessage chats only.\n\n"
     "Billo is not an emergency service or a substitute for medical, legal, insurance, or financial advice. Payment features are simulations.\n\n"
     "Open the relevant demo screen:\n"
     "• Compare care: https://www.getbillo.us/tools/prices\n"
