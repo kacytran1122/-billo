@@ -3,11 +3,11 @@
 Bridge (Photon Spectrum, TypeScript)  --POST /imessage-->  this agent  --> Coordinator
 Coordinator --OutboundText--> this agent --POST {BRIDGE_URL}/send--> Bridge --> iMessage
 """
-import httpx
 from uagents import Agent, Context
 
 from common.config import ADDR, BRIDGE_URL, INTERNAL_TOKEN, PORTS, READMES, require_seed
 from common.models import Ack, InboundText, OutboundText
+from common.core import client as api_client
 import sentry_sdk
 
 from common.tracing import carry, case_scope, case_span, init_sentry
@@ -48,9 +48,9 @@ async def to_bridge(ctx: Context, sender: str, msg: OutboundText):
         ctx.logger.warning("ignored OutboundText from unknown sender")
         return
     with case_span(msg, op="gateway.outbound", name="coordinator -> imessage"):
-        async with httpx.AsyncClient(timeout=15) as c:
-            r = await c.post(f"{BRIDGE_URL}/send", json={"space_id": msg.space_id, "text": msg.text},
-                             headers={"x-internal-token": INTERNAL_TOKEN, **carry()})
+        c = await api_client()
+        r = await c.post(f"{BRIDGE_URL}/send", json={"space_id": msg.space_id, "text": msg.text},
+                         headers={"x-internal-token": INTERNAL_TOKEN, **carry()}, timeout=15)
         if r.status_code >= 400:
             sentry_sdk.set_tag("check", "workflow")
             sentry_sdk.capture_message(f"bridge refused outbound message ({r.status_code})", level="error")

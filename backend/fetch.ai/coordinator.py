@@ -25,6 +25,7 @@ from uagents_core.contrib.protocols.chat import ChatAcknowledgement, ChatMessage
 from common.chat import ack, resources_of, say, text_of
 from common.config import ADDR, FOLLOWUP_MINUTES, MODE, PORTS, READMES, require_seed
 from common.core import core_get, core_post
+from common.conversation import normalize_request, payment_status as document_payment_status, quick_reply
 from common.models import (
     AfterCareRequest,
     AfterCareResult,
@@ -228,6 +229,9 @@ async def step_scan_clinic_qr(ctx: Context, case: dict, file_url: str, demo: boo
 
 
 async def step_approve_clinic_payment(ctx: Context, case: dict) -> None:
+    if case.get("settlement_paused"):
+        await reply(ctx, case, "This settlement is paused for review. I cannot approve it while a safety check is unresolved. No money moved.")
+        return
     settlement = case.get("settlement") or {}
     if settlement.get("status") != "verified" or not settlement.get("settlement_id"):
         await reply(ctx, case, "Scan and verify the clinic Visa QR first.")
@@ -238,6 +242,9 @@ async def step_approve_clinic_payment(ctx: Context, case: dict) -> None:
 
 
 async def step_reimburse(ctx: Context, case: dict, text: str) -> None:
+    if case.get("settlement_paused"):
+        await reply(ctx, case, "This settlement is paused for review. I cannot start reimbursement while a safety check is unresolved.")
+        return
     if not case.get("after_care") or case["after_care"].get("payment_status") != "paid":
         await reply(ctx, case, "A paid receipt must be organized before reimbursement.")
         return
@@ -260,8 +267,10 @@ async def step_reimburse(ctx: Context, case: dict, text: str) -> None:
 
 
 async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_group: bool = False) -> None:
+    text = normalize_request(text)
     low = text.lower().strip()
-    m = re.match(r"^(book|pick|choose)\s*#?\s*(\d)", low)
+    m = re.fullmatch(r"(?:book|pick|choose)\s*#?\s*(\d+)", low)
+    immediate = quick_reply(text, has_files=bool(files), stage=case["stage"], asked=case.get("asked", False))
     if low == "stop":
         case["stopped"] = True
         case["followup_due"] = 0
@@ -272,10 +281,14 @@ async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_g
             "Stopped. I canceled queued reminders for this case. Send a new message whenever you want to continue.",
             photon_text="✅ Stopped. Reminders canceled.\nTag @Billo whenever you want to restart.",
         )
+    elif immediate is not None:
+        await reply(ctx, case, immediate)
+    elif m and not case["places"]:
+        await reply(ctx, case, "Find care first so I can show valid choices. Tell me what care you need and your city or ZIP code.")
     elif m and case["places"]:
         if case.pop("stopped", False):
             save(ctx, case)
-        await step_book(ctx, case, int(m.group(2)))
+        await step_book(ctx, case, int(m.group(1)))
     elif low.startswith("approve clinic payment"):
         await step_approve_clinic_payment(ctx, case)
     elif low.startswith("approve reimbursement"):
@@ -283,9 +296,7 @@ async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_g
     elif any(word in low for word in QR_WORDS):
         await step_scan_clinic_qr(ctx, case, files[0] if files else "", demo="demo" in low)
     elif files or (any(w in low for w in BILL_WORDS) and ("demo" in low or "photo" in low or "here" in low)):
-        payment_status = "paid" if any(w in low for w in ("paid receipt", "already paid", "i paid", "payment confirmation")) else (
-            "unpaid" if any(w in low for w in ("unpaid", "amount due", "i owe")) else "unknown"
-        )
+        payment_status = document_payment_status(text)
         await step_after_care(ctx, case, files[0] if files else "", payment_status)
     elif any(w in low for w in ("hsa", "fsa", "hra", "out of network", "out-of-network", "employer benefit", "student benefit", "travel insurance", "accident insurance", "check benefits")):
         await step_benefits(ctx, case, text)
