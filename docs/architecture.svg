@@ -61,10 +61,11 @@
 
   <!-- Specialist agents -->
   <rect x="50" y="895" width="1500" height="205" rx="24" fill="#f1f2ff" stroke="#6658e8" stroke-width="3" stroke-dasharray="12 8"/>
-  <text x="78" y="932" class="section" fill="#5144d9">3 · COORDINATOR DELEGATES TO THE MATCHING SPECIALIST</text>
   <path d="M900 845 V870 H240" class="bus"/>
   <path d="M900 870 H1380" class="bus"/>
   <path d="M240 870 V955" class="flow"/><path d="M620 870 V955" class="flow"/><path d="M1000 870 V955" class="flow"/><path d="M1380 870 V955" class="flow"/>
+  <rect x="68" y="907" width="660" height="38" rx="8" fill="#f1f2ff"/>
+  <text x="78" y="932" class="section" fill="#5144d9">3 · COORDINATOR DELEGATES TO ONE SPECIALIST</text>
 
   <rect x="90" y="960" width="300" height="105" rx="18" fill="#fff" stroke="#ef6a6a" stroke-width="2"/>
   <text x="240" y="1000" text-anchor="middle" class="boxh ink">Red-Flag Screener</text><text x="240" y="1031" text-anchor="middle" class="body muted">fixed emergency rules</text>
@@ -77,8 +78,9 @@
 
   <!-- Core tools -->
   <rect x="50" y="1150" width="1500" height="225" rx="24" fill="#edfbf1" stroke="#16a34a" stroke-width="3" stroke-dasharray="12 8"/>
-  <text x="78" y="1188" class="section" fill="#12823d">4 · SPECIALISTS CALL DETERMINISTIC FASTAPI TOOLS ON ORACLE AMPERE A1</text>
   <path d="M240 1065 V1210" class="flow"/><path d="M620 1065 V1210" class="flow"/><path d="M1000 1065 V1210" class="flow"/><path d="M1380 1065 V1210" class="flow"/>
+  <rect x="68" y="1162" width="780" height="42" rx="8" fill="#edfbf1"/>
+  <text x="78" y="1188" class="section" fill="#12823d">4 · DETERMINISTIC FASTAPI TOOLS · ORACLE AMPERE A1</text>
 
   <rect x="90" y="1215" width="300" height="120" rx="18" fill="#fff" stroke="#16a34a" stroke-width="2"/>
   <text x="240" y="1257" text-anchor="middle" class="boxh ink">Rules engine</text><text x="240" y="1288" text-anchor="middle" class="body muted">safety · consent · routing</text><text x="240" y="1316" text-anchor="middle" class="small muted">AI cannot override decisions</text>
@@ -90,8 +92,8 @@
   <text x="1380" y="1257" text-anchor="middle" class="boxh ink">Settlement guardrails</text><text x="1380" y="1288" text-anchor="middle" class="body muted">provider · amount · consent</text><text x="1380" y="1316" text-anchor="middle" class="small muted">idempotent simulation records</text>
 
   <!-- Data and integrations -->
-  <text x="60" y="1423" class="section" fill="#526075">5 · TOOLS QUERY SOURCES, PERSIST THE CASE, OR ENTER THE SIMULATION BOUNDARY</text>
-  <path d="M620 1335 V1400 H285 V1460" class="flow"/>
+  <text x="60" y="1423" class="section" fill="#526075">5 · DATA + INTEGRATIONS</text>
+  <path d="M620 1335 V1400 H430 V1460" class="flow"/>
   <path d="M900 1375 V1460" class="flow"/>
   <path d="M1380 1335 V1460" class="flow"/>
 
