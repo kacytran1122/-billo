@@ -259,7 +259,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
         <div style={{ position: "absolute", width: "440px", height: "440px", borderRadius: "50%", background: "oklch(0.91 0.06 300)", right: "-120px", top: "60px" }} />
         <div style={{ position: "absolute", width: "300px", height: "300px", borderRadius: "50%", background: "oklch(0.94 0.08 95)", left: "48%", top: "520px" }} />
         <div className={hv.heroInner} style={{ position: "relative", maxWidth: "1240px", margin: "0 auto", padding: "48px 24px 96px", textAlign: "center" }}>
-          <div style={{ display: "inline-flex", gap: "8px", alignItems: "center", background: "var(--color-neutral-100)", border: "1px solid var(--color-divider)", borderRadius: "99px", padding: "6px 14px 6px 8px", fontSize: "13px" }}>
+          <div className={hv.heroEyebrow} style={{ display: "inline-flex", gap: "8px", alignItems: "center", background: "var(--color-neutral-100)", border: "1px solid var(--color-divider)", borderRadius: "99px", padding: "6px 14px 6px 8px", fontSize: "13px" }}>
             <span style={{ background: "oklch(0.90 0.06 50)", borderRadius: "99px", padding: "2px 10px" }}>New</span>
             Now in ASI:One{" "}
             &amp;
@@ -269,8 +269,8 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
             Make every care dollar{" "}
             <em style={{ color: "var(--color-accent-700)" }}>count.</em>
           </h1>
-          <p style={{ fontSize: "19px", lineHeight: "1.5", margin: "22px auto 0", maxWidth: "460px", color: "var(--color-neutral-800)" }}>Compare prices before. Check the bill after. All in one chat.</p>
-          <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginTop: "32px" }}>
+          <p className={hv.heroSubtitle} style={{ fontSize: "19px", lineHeight: "1.5", margin: "22px auto 0", maxWidth: "460px", color: "var(--color-neutral-800)" }}>Compare prices before. Check the bill after. All in one chat.</p>
+          <div className={hv.heroActions} style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginTop: "32px" }}>
             <Link href="/prototype#asi" style={{ display: "inline-flex", alignItems: "center", gap: "10px", minHeight: "54px", padding: "0 26px", borderRadius: "99px", background: "var(--color-text)", color: "var(--color-neutral-100)", textDecoration: "none", fontSize: "16px" }}>
               <span style={{ width: "22px", height: "22px", borderRadius: "6px", border: "1.5px solid var(--color-accent-300)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-heading)", fontStyle: "italic", fontSize: "14px", color: "var(--color-accent-300)" }}>A</span>
               Open in ASI:One

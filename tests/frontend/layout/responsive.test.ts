@@ -15,15 +15,22 @@ test("responsive navigation is CSS-driven without hydration-sensitive width stat
   assert.doesNotMatch(landingSource, /window\.innerWidth/);
   assert.match(landingSource, /desktopNavigation/);
   assert.match(landingSource, /mobileMenuButton/);
-  assert.match(landingStyles, /@media \(max-width: 720px\)/);
+  assert.match(landingStyles, /@media \(max-width: 900px\)/);
 });
 
 test("phone, tablet, laptop, and wide layouts have explicit balance rules", () => {
   assert.match(landingStyles, /@media \(max-width: 390px\)/);
-  assert.match(landingStyles, /@media \(min-width: 721px\) and \(max-width: 900px\)/);
+  assert.match(landingStyles, /@media \(min-width: 901px\) and \(max-width: 1099px\)/);
   assert.match(landingStyles, /@media \(max-width: 1180px\)/);
   assert.match(landingStyles, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(landingStyles, /grid-template-columns: 1fr/);
+});
+
+test("desktop navigation and hero use centered and side-by-side placement", () => {
+  assert.match(landingStyles, /\.desktopNavigation nav[\s\S]*left: 50%/);
+  assert.match(landingStyles, /translate: -50% 0/);
+  assert.match(landingStyles, /@media \(min-width: 1100px\)/);
+  assert.match(landingStyles, /\.heroPhones[\s\S]*grid-column: 2/);
 });
 
 test("below-the-fold sections use browser-native lazy rendering", () => {
