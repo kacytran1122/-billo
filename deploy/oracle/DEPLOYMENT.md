@@ -18,9 +18,8 @@ Clone the repository into `/opt/billo`, create `/opt/billo/.env` from `.env.exam
 
 ```sh
 cd /opt/billo
-docker compose -f deploy/oracle/compose.yml up -d --build
-docker compose -f deploy/oracle/compose.yml ps
-curl https://api.heybillo.tech/health
+deploy/oracle/install.sh
+deploy/oracle/smoke-test.py
 ```
 
 Caddy obtains and renews the TLS certificate automatically. Every service restarts after a process failure or VM reboot.

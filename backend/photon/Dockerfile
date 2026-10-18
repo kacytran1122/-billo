@@ -5,7 +5,7 @@ ENV NODE_ENV=production
 WORKDIR /app/backend/photon
 
 COPY backend/photon/package.json backend/photon/package-lock.json ./
-RUN npm ci && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 COPY backend/photon/tsconfig.json ./
 COPY backend/photon/src ./src

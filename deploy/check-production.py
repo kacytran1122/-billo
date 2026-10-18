@@ -32,7 +32,6 @@ def audit(values: dict[str, str]) -> tuple[list[str], list[str]]:
         "PHOTON_LINE_ADDRESS",
         "INTERNAL_TOKEN",
         "SENTRY_DSN",
-        "SENTRY_WEBHOOK_SECRET",
         "CASE_HASH_KEY",
         "BILLO_DOMAIN",
         "PUBLIC_BASE_URL",
@@ -56,9 +55,14 @@ def audit(values: dict[str, str]) -> tuple[list[str], list[str]]:
         blockers.append("INTERNAL_TOKEN (still dev-token)")
 
     warnings: list[str] = []
+    live = values.get("BILLO_MODE", "demo") == "live"
+    if live and not values.get("SENTRY_WEBHOOK_SECRET"):
+        blockers.append("SENTRY_WEBHOOK_SECRET")
+    elif not values.get("SENTRY_WEBHOOK_SECRET"):
+        warnings.append("SENTRY_WEBHOOK_SECRET (required before switching to live mode)")
     if not values.get("VISION_API_KEY"):
         warnings.append("VISION_API_KEY (optional fallback; local OCR remains enabled)")
-    if values.get("BILLO_MODE", "demo") != "live":
+    if not live:
         warnings.append("BILLO_MODE (keep demo until the production smoke test passes)")
     return sorted(set(blockers)), warnings
 

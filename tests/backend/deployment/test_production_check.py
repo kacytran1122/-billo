@@ -30,12 +30,20 @@ def test_complete_environment_has_no_blockers():
 def test_missing_signed_webhook_is_a_blocker():
     values = complete_environment()
     values["SENTRY_WEBHOOK_SECRET"] = ""
+    values["BILLO_MODE"] = "live"
     blockers, _ = MODULE.audit(values)
     assert blockers == ["SENTRY_WEBHOOK_SECRET"]
 
 
 def test_demo_mode_is_a_warning_during_staging():
-    values = complete_environment() | {"BILLO_MODE": "demo", "VISION_API_KEY": "configured"}
+    values = complete_environment() | {
+        "BILLO_MODE": "demo",
+        "VISION_API_KEY": "configured",
+        "SENTRY_WEBHOOK_SECRET": "",
+    }
     blockers, warnings = MODULE.audit(values)
     assert blockers == []
-    assert warnings == ["BILLO_MODE (keep demo until the production smoke test passes)"]
+    assert warnings == [
+        "SENTRY_WEBHOOK_SECRET (required before switching to live mode)",
+        "BILLO_MODE (keep demo until the production smoke test passes)",
+    ]
