@@ -305,7 +305,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
               Text on iMessage
             </Link>
           </div>
-          <div className={hv.heroPhones} style={{ position: "relative", display: "flex", justifyContent: "center", alignItems: "flex-start", gap: "40px", flexWrap: "wrap", marginTop: "72px" }}>
+          <div className={hv.heroPhones} data-single={heroPhones === "Both" ? "false" : "true"} style={{ position: "relative", display: "flex", justifyContent: "center", alignItems: "flex-start", gap: "40px", flexWrap: "wrap", marginTop: "72px" }}>
             {showAsi && (
               <div className={hv.phoneAsi} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "18px", transform: "rotate(-3deg)" }}>
                 <div className={hv.phoneFrame} style={{ width: "290px", height: "600px", borderRadius: "48px", background: "var(--color-text)", padding: "10px", boxShadow: "var(--shadow-lg)", boxSizing: "border-box" }}>

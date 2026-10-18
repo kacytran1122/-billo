@@ -1,5 +1,5 @@
 import LandingPage from "@/features/landing/LandingPage";
 
 export default function Home() {
-  return <LandingPage heroPhones="Both" />;
+  return <LandingPage heroPhones="iMessage only" />;
 }

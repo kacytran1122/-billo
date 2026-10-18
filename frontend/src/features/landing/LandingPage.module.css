@@ -46,6 +46,7 @@
   transform: scale(.86);
   transform-origin: top left;
 }
+.heroPhones[data-single="true"] .phoneIMessage { transform: rotate(1.5deg) !important; }
 
 @media (max-width: 1180px) {
   .headerInner { padding-inline: 20px !important; }
@@ -122,6 +123,11 @@
   }
   .phoneAsi > span,
   .phoneIMessage > span { font-size: 15px !important; }
+  .heroPhones[data-single="true"] .phoneIMessage { inline-size: 210px; }
+  .heroPhones[data-single="true"] .phoneFrame {
+    margin-bottom: -192px;
+    transform: scale(.68);
+  }
 }
 
 @media (min-width: 901px) and (max-width: 1099px) {

@@ -10,6 +10,16 @@ const landingStyles = readFileSync(
   new URL("../../../frontend/src/features/landing/LandingPage.module.css", import.meta.url),
   "utf8",
 );
+const homeSource = readFileSync(
+  new URL("../../../frontend/src/app/page.tsx", import.meta.url),
+  "utf8",
+);
+
+test("the first hero shows only the iMessage phone", () => {
+  assert.match(homeSource, /heroPhones="iMessage only"/);
+  assert.match(landingSource, /data-single/);
+  assert.match(landingStyles, /heroPhones\[data-single="true"\]/);
+});
 
 test("responsive navigation is CSS-driven without hydration-sensitive width state", () => {
   assert.doesNotMatch(landingSource, /window\.innerWidth/);
