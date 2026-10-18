@@ -261,7 +261,7 @@ def sentry_options(service: str, integrations: list | None = None) -> dict[str, 
 
 
 def _propagation_targets() -> list[str]:
-    """Only send trace headers to Billo's own services, never to OpenAI, NPI or Google."""
+    """Only send trace headers to Billo's own services, never to external APIs."""
     targets = ["localhost", "127.0.0.1"]
     for key in ("CORE_URL", "BRIDGE_URL", "GATEWAY_URL", "PUBLIC_BASE_URL", "CASE_MEDIC_URL"):
         url = os.getenv(key, "").strip()

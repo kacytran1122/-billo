@@ -148,8 +148,6 @@ async def step_symptoms(ctx: Context, case: dict, text: str, group_safe: bool = 
     lines = [f"No emergency signs found. Here are {len(opts.places)} places near you, with real prices:"]
     for i, p in enumerate(opts.places, 1):
         lines.append(f"{i}. {p.name} ({p.kind.replace('_', ' ')}) · about ${p.price_typical:,.0f} · {p.hours}")
-        if p.picture_url and not group_safe:
-            lines.append(f"   Picture: {p.picture_url}")
     lines.append("Booking happens in a private chat." if group_safe else "Reply 'book 1', 'book 2' or 'book 3'.")
     await reply(ctx, case, "\n".join(lines))
 

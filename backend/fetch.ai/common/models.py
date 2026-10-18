@@ -42,7 +42,6 @@ class Place(Model):
     price_typical: float
     price_source: str
     hours: str
-    picture_url: str = ""
     pay_domain: str = ""
 
 

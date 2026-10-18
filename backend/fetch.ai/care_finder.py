@@ -1,8 +1,4 @@
-"""Care Finder: places near you, real prices from Tiger Data, one picture each.
-
-Uses the Core API (/care/search), which reads Tiger Data price summaries and
-care_sites, and builds a Google Static Maps / Street View image URL.
-"""
+"""Care Finder: nearby care sites and price context from the Core API."""
 from uagents import Agent, Context, Protocol
 from uagents_core.contrib.protocols.chat import ChatAcknowledgement, ChatMessage, chat_protocol_spec
 
@@ -21,7 +17,7 @@ agent = Agent(
     mailbox=True,
     publish_agent_details=True,
     readme_path=str(READMES / "care_finder.md"),
-    description="Finds urgent care, clinics and ERs near you with real hospital prices and a picture of each place.",
+    description="Finds urgent care, clinics and ERs near you with real hospital price context.",
 )
 
 
@@ -35,7 +31,6 @@ def as_text(opts: CareOptions, group_safe: bool) -> str:
         f"Here are {len(opts.places)} places near you for this (billing code {opts.code}):"
     rows = [
         f"{i}. {p.name} · about ${p.price_typical:,.0f} (low ${p.price_low:,.0f}) · {p.hours}\n   {p.address}"
-        + (f"\n   Picture: {p.picture_url}" if p.picture_url else "")
         for i, p in enumerate(opts.places, 1)
     ]
     tail = "" if group_safe else "\nReply with the number to book, for example: book 1"

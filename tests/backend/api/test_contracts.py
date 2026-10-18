@@ -42,6 +42,7 @@ def test_care_search_maps_injury_words_to_knee_imaging_code():
     assert payload["code"] == "73560"
     assert len(payload["places"]) == 3
     assert all(place["price_typical"] >= place["price_low"] for place in payload["places"])
+    assert all("picture_url" not in place for place in payload["places"])
 
 
 def test_care_search_uses_office_visit_code_for_other_requests():

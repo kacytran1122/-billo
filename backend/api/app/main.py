@@ -78,19 +78,14 @@ def care_search(q: str = "", near: str = "UCLA", x_internal_token: str | None = 
     auth(x_internal_token)
     with task_span("care-search", "workflow.care_search", 1000, route="care"):
         code = "73560" if any(w in q.lower() for w in ("knee", "ankle", "leg", "fall", "soccer")) else "99213"
-        key = os.getenv("GOOGLE_MAPS_API_KEY", "")
         out = []
         for p in store.places():
-            pic = ""
-            if key:  # Google Static Maps (satellite). Show attribution in the UI; do not cache images.
-                pic = (f"https://maps.googleapis.com/maps/api/staticmap?center={p['lat']},{p['lng']}"
-                       f"&zoom=18&size=600x300&maptype=satellite&markers={p['lat']},{p['lng']}&key={key}")
             stats = store.price_stats(code, include_er=p["kind"] == "er")
             out.append({
                 "name": p["name"], "kind": p["kind"], "npi": p["npi"], "address": p["address"], "hours": p["hours"],
                 "price_low": p["price_low"], "price_typical": p["price_typical"],
                 "price_source": f"{stats['source']} p50 ${stats['p50']:,.0f} for {code}" if stats else "posted price",
-                "picture_url": pic, "pay_domain": p.get("pay_domain", ""),
+                "pay_domain": p.get("pay_domain", ""),
             })
         return {"code": code, "places": out}
 
