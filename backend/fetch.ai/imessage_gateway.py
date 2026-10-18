@@ -4,6 +4,7 @@ Bridge (Photon Spectrum, TypeScript)  --POST /imessage-->  this agent  --> Coord
 Coordinator --OutboundText--> this agent --POST {BRIDGE_URL}/send--> Bridge --> iMessage
 """
 from uagents import Agent, Context
+from uagents_core.types import DeliveryStatus
 
 from common.config import ADDR, BRIDGE_URL, INTERNAL_TOKEN, PORTS, READMES, require_seed
 from common.models import Ack, InboundText, OutboundText
@@ -38,7 +39,12 @@ async def from_bridge(ctx: Context, req: InboundText) -> Ack:
             span.set_data("group", req.is_group)
             span.set_data("has_file", bool(req.attachment_url))
             req.trace = carry()  # the Coordinator continues from this hop
-            await ctx.send(ADDR["coordinator"], req)
+            delivery = await ctx.send(ADDR["coordinator"], req)
+            if delivery.status != DeliveryStatus.DELIVERED:
+                span.set_status("internal_error")
+                sentry_sdk.set_tag("check", "workflow")
+                sentry_sdk.capture_message("gateway could not deliver inbound message to coordinator", level="error")
+                return Ack(ok=False, detail="Coordinator delivery failed")
     return Ack(ok=True)
 
 

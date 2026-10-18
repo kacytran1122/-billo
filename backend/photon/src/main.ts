@@ -18,12 +18,10 @@
 import { observedSpan, scrubText, Sentry, traceHeaders } from "./sentry.ts"; // first: Sentry must start before anything else
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
-import { Spectrum, type Message, type Space } from "spectrum-ts";
-import { imessage } from "spectrum-ts/providers/imessage";
-import { whatsappBusiness } from "spectrum-ts/providers/whatsapp-business";
+import type { Message, Space } from "spectrum-ts";
 import { config as loadEnv } from "dotenv";
 import { hasBilloMention, shouldRespond, stripBilloMention } from "./routing.ts";
-import { configuredChannels, destination, destinationKey } from "./channels.ts";
+import { configuredChannels, destination, destinationKey, type Channel } from "./channels.ts";
 import { presentMessage } from "./presentation.ts";
 import { BetaTransport } from "./beta.ts";
 
@@ -46,6 +44,7 @@ async function core(path: string, body?: unknown) {
     method: body ? "POST" : "GET",
     headers: { "content-type": "application/json", "x-internal-token": TOKEN },
     body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(15_000),
   });
   if (!r.ok) throw new Error(`Core request failed (${r.status})`);
   return r.json() as Promise<Record<string, string>>;
@@ -58,6 +57,7 @@ async function forward(payload: Record<string, unknown>) {
       headers: { "content-type": "application/json" },
       // the trace rides inside the body: the Gateway is a uAgents REST handler and cannot read headers
       body: JSON.stringify({ token: TOKEN, ...payload, trace: traceHeaders() }),
+      signal: AbortSignal.timeout(15_000),
     }),
   );
   if (!r.ok) {
@@ -181,23 +181,42 @@ async function handle(space: Space, message: Message) {
   seen.add(messageKey);
 }
 
+/** The legacy SDK is large. Do not load it in the Photon 2.0 process. */
+async function legacyTransport(channels: Channel[]) {
+  const [{ Spectrum }, { imessage }, { whatsappBusiness }] = await Promise.all([
+    import("spectrum-ts"), import("spectrum-ts/providers/imessage"), import("spectrum-ts/providers/whatsapp-business"),
+  ]);
+  const app = await Spectrum({
+    projectId: env("SPECTRUM_PROJECT_ID"), projectSecret: env("SPECTRUM_PROJECT_SECRET"),
+    providers: channels.map(channel => channel === "imessage" ? imessage.config() : whatsappBusiness.config()),
+    options: { flattenGroups: true },
+  });
+  return {
+    messages: app.messages,
+    getSpace: (channel: Channel, id: string) => channels.includes(channel)
+      ? (channel === "whatsapp_business" ? whatsappBusiness(app) : imessage(app)).space.get(id).catch(() => undefined)
+      : Promise.resolve(undefined),
+  };
+}
+
 async function main() {
   const channels = configuredChannels(env("PHOTON_CHANNELS", "imessage"));
   const beta = env("PHOTON_API_VERSION") === "beta" ? new BetaTransport(
     env("PHOTON_PROJECT_ID"), env("PHOTON_API_KEY"), env("PHOTON_STATE_FILE", "/data/photon-beta.json"),
   ) : undefined;
   if (beta && channels.some(channel => channel !== "imessage")) throw new Error("Photon Beta is configured for iMessage only");
-  const app = beta ? undefined : await Spectrum({
-    projectId: env("SPECTRUM_PROJECT_ID"),
-    projectSecret: env("SPECTRUM_PROJECT_SECRET"),
-    providers: channels.map((channel) => channel === "imessage" ? imessage.config() : whatsappBusiness.config()),
-    options: { flattenGroups: true },
-  });
+  const legacy = beta ? undefined : await legacyTransport(channels);
 
   // ---- outbound: Gateway -> /send -> iMessage ----
   createServer(async (req, res) => {
     try {
-    if (req.method === "GET" && req.url === "/health") return void res.end(JSON.stringify({ ok: true, ...beta?.health() }));
+    if (req.method === "GET" && req.url === "/health") {
+      const state = beta?.health();
+      const ready = !beta || Boolean(state?.connected && state?.subscribed);
+      res.statusCode = ready ? 200 : 503;
+      res.setHeader("content-type", "application/json");
+      return void res.end(JSON.stringify({ ok: ready, ...state }));
+    }
     if (req.method !== "POST" || req.url !== "/send") return void res.writeHead(404).end();
     if (req.headers["x-internal-token"] !== TOKEN) return void res.writeHead(401).end();
     let body = "";
@@ -209,9 +228,7 @@ async function main() {
     if (typeof space_id !== "string" || typeof text !== "string" || !text.trim()) return void res.writeHead(400).end();
     const target = destination(space_id);
     if (beta && target.channel !== "imessage") return void res.writeHead(404).end();
-    const space = spaces.get(space_id) ?? (beta ? await beta.getSpace(target.id) : app && channels.includes(target.channel)
-      ? await (target.channel === "whatsapp_business" ? whatsappBusiness(app) : imessage(app)).space.get(target.id).catch(() => undefined)
-      : undefined);
+    const space = spaces.get(space_id) ?? (beta ? await beta.getSpace(target.id) : await legacy?.getSpace(target.channel, target.id));
     if (!space) return void res.writeHead(404).end("unknown space");
     await typing(space, false);
     try {
@@ -237,7 +254,7 @@ async function main() {
       Sentry.startSpan({ op: "bridge.inbound", name: "imessage inbound", forceTransaction: true }, () => handle(space, message))));
     return;
   }
-  for await (const [space, message] of app!.messages) {
+  for await (const [space, message] of legacy!.messages) {
     // one isolation scope + one root span per inbound iMessage: the start of the case trace
     void Sentry.withIsolationScope(() =>
       Sentry.startSpan({ op: "bridge.inbound", name: "imessage inbound", forceTransaction: true }, () =>
