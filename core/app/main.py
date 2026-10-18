@@ -38,7 +38,6 @@ app = FastAPI(title="Billo Core API", version="0.1.0")
 TOKEN = os.getenv("INTERNAL_TOKEN", "dev-token")
 PUBLIC = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/")
 LINE = os.getenv("PHOTON_LINE_ADDRESS", "")
-TRUSTED = [d.strip() for d in os.getenv("TRUSTED_PAY_DOMAINS", "heybillo.tech").split(",") if d.strip()]
 DEMO = os.getenv("BILLO_MODE", "demo") == "demo"
 MAX_IMAGE_BYTES = int(os.getenv("OCR_MAX_IMAGE_BYTES", str(20 * 1024 * 1024)))
 
@@ -53,7 +52,8 @@ def auth(token: str | None) -> None:
 
 @app.get("/health")
 def health():
-    return {"ok": True, "db": store.use_db(), "mode": os.getenv("BILLO_MODE", "demo"), "visa": os.getenv("VISA_MODE", "mock")}
+    return {"ok": True, "db": store.use_db(), "mode": os.getenv("BILLO_MODE", "demo"),
+            "visa_qr": visa.QR_MODE, "visa_direct": visa.DIRECT_MODE}
 
 
 # ------------------------------------------------------------------ Care Finder
@@ -215,7 +215,7 @@ def organize_after_care(body: AfterCareIn, x_internal_token: str | None = Header
     if body.payment_status == "paid":
         next_steps.append("No payment is needed; check benefits only if you have a real coverage source.")
     elif body.payment_status == "unpaid":
-        next_steps.append("Verify the provider and final amount before approving Visa checkout.")
+        next_steps.append("Review the amount due and use the provider's official payment channel if you choose to pay.")
     else:
         next_steps.append("Confirm whether this document is paid or unpaid before any payment action.")
     next_steps.append("Track follow-up care, records, and future costs from this visit.")
@@ -267,6 +267,119 @@ def check_benefits(body: BenefitsIn, x_internal_token: str | None = Header(None)
     return result
 
 
+# ------------------------------------------------------------------ guarded Visa settlement routing
+class VisaQrInspectIn(BaseModel):
+    case_id: str
+    file_url: str = ""
+    qr_payload: str = ""
+    demo: bool = False
+    expected_invoice: str = ""
+
+
+@app.post("/visa/qr/inspect")
+def visa_qr_inspect(body: VisaQrInspectIn, x_internal_token: str | None = Header(None)):
+    """Inspect a clinic QR against the already-reviewed unpaid bill. No money moves."""
+    auth(x_internal_token)
+    record = store.get_after_care(body.case_id)
+    if not record or record.get("payment_status") != "unpaid":
+        raise HTTPException(409, "an organized unpaid bill is required before scanning a clinic payment QR")
+    est = store.get_estimate(body.case_id) or {}
+    provider = est.get("place", "")
+    if not provider or not record.get("provider_match"):
+        raise HTTPException(409, "the clinic must match the saved care provider before QR approval")
+    uploaded = UPLOADS / Path(body.file_url[5:]).name if body.file_url.startswith("file:") else None
+    try:
+        expected_invoice = body.expected_invoice
+        if body.demo and DEMO:
+            expected_invoice = expected_invoice or f"BILLO-{body.case_id}"
+            payload = visa.demo_qr(provider, record["total"], expected_invoice)
+        elif body.qr_payload:
+            payload = body.qr_payload
+        elif uploaded and uploaded.exists():
+            payload = visa.decode_qr_image(uploaded.read_bytes())
+        else:
+            raise HTTPException(422, "send a QR image or payload")
+        inspected = visa.inspect_qr(payload, provider, record["total"], expected_invoice=expected_invoice)
+        return visa.save_review(body.case_id, inspected, payload)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    finally:
+        if uploaded:
+            uploaded.unlink(missing_ok=True)
+
+
+class VisaQrApproveIn(BaseModel):
+    case_id: str
+    review_id: str
+    explicit_approval: bool = False
+
+
+@app.post("/visa/qr/approve")
+def visa_qr_approve(body: VisaQrApproveIn, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    if not body.explicit_approval:
+        raise HTTPException(409, "explicit patient approval is required")
+    try:
+        return visa.approve_qr(body.case_id, body.review_id)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except NotImplementedError as exc:
+        raise HTTPException(501, str(exc)) from exc
+
+
+class VisaReimburseIn(BaseModel):
+    case_id: str
+    benefit_name: str
+    amount: float
+    benefit_approved: bool = False
+    explicit_patient_approval: bool = False
+
+
+@app.post("/visa/reimbursement/payout")
+def visa_reimbursement(body: VisaReimburseIn, x_internal_token: str | None = Header(None)):
+    """Create an idempotent payout only after external benefit approval and patient consent."""
+    auth(x_internal_token)
+    record = store.get_after_care(body.case_id)
+    if not record or record.get("payment_status") != "paid":
+        raise HTTPException(409, "a paid receipt is required before reimbursement")
+    checked = store.get_benefit_check(body.case_id) or {"paths": []}
+    named = {path["name"] for path in checked["paths"]}
+    if body.benefit_name not in named:
+        raise HTTPException(409, "the reimbursement benefit must match a checked coverage source")
+    if not body.explicit_patient_approval:
+        raise HTTPException(409, "explicit patient approval is required")
+    if body.amount > float(record["total"]):
+        raise HTTPException(409, "reimbursement cannot exceed the paid receipt total")
+    try:
+        return visa.reimburse(body.case_id, body.benefit_name, body.amount, body.benefit_approved)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except NotImplementedError as exc:
+        raise HTTPException(501, str(exc)) from exc
+
+
+@app.get("/visa/settlements/{settlement_id}")
+def visa_settlement(settlement_id: str, x_internal_token: str | None = Header(None)):
+    auth(x_internal_token)
+    result = store.get_settlement(settlement_id)
+    if not result:
+        raise HTTPException(404, "settlement not found")
+    return result
+
+
+@app.get("/visa/qr/{review_id}", response_class=HTMLResponse)
+def visa_qr_handoff(review_id: str):
+    result = store.get_settlement(review_id)
+    if not result or result.get("status") != "handoff_ready":
+        raise HTTPException(404, "payment handoff not found")
+    return ("<html><body style='font-family:sans-serif;max-width:520px;margin:60px auto'>"
+            "<h2>Visa wallet handoff — simulation</h2>"
+            f"<p>Verified merchant: <b>{visa.safe_text(result.get('merchant_name', ''))}</b></p>"
+            f"<p>Amount: <b>${result.get('amount',0):,.2f}</b></p>"
+            "<p>No card data was collected and no money moved. Connect an approved Visa Pay wallet "
+            "before production.</p></body></html>")
+
+
 class LineIn(BaseModel):
     case_id: str
     line: dict
@@ -315,82 +428,6 @@ def letter(case_id: str):
             "item, the rule it breaks, and the public price data. Please send an itemized bill and correct the "
             "charges. Under the No Surprises Act I am starting the dispute process for the amount over my Good "
             "Faith Estimate.\n\nThank you.\n(Drafted by Billo. Not legal advice.)\n")
-
-
-# ------------------------------------------------------------------ Payment Guard tools
-class VerifyIn(BaseModel):
-    case_id: str
-    npi: str
-    amount: float
-    disputed_amount: float
-    mandate_max: float
-    pay_link: str = ""
-
-
-@app.post("/guard/verify")
-async def guard_verify(body: VerifyIn, x_internal_token: str | None = Header(None)):
-    auth(x_internal_token)
-    reasons, ok = [], True
-    if os.getenv("NPI_MODE", "demo") == "live":
-        async with httpx.AsyncClient(timeout=10) as c:
-            r = await c.get("https://npiregistry.cms.hhs.gov/api/", params={"version": "2.1", "number": body.npi})
-        found = r.status_code == 200 and r.json().get("result_count", 0) > 0
-    else:
-        found = body.npi.startswith("19999999")  # demo NPIs from data/synthetic/places.json
-    reasons.append("hospital NPI checks out" if found else "hospital NPI not found")
-    ok &= found
-    if body.pay_link:
-        host = httpx.URL(body.pay_link).host
-        trusted = any(host == d or host.endswith("." + d) for d in TRUSTED)
-        reasons.append(f"pay link domain {host} is trusted" if trusted else f"pay link domain {host} is NOT trusted")
-        ok &= trusted
-    within = body.amount <= body.mandate_max
-    reasons.append(f"amount within your limit of ${body.mandate_max:,.0f}" if within else "amount is over your limit")
-    ok &= within
-    if body.disputed_amount:
-        reasons.append(f"${body.disputed_amount:,.2f} disputed money held back")
-    else:
-        reasons.append("final amount requires your explicit approval")
-    return {"ok": ok, "reasons": reasons}
-
-
-@app.post("/visa/pay-link")
-def pay_link(body: dict, x_internal_token: str | None = Header(None)):
-    auth(x_internal_token)
-    return visa.create_pay_link(body["case_id"], float(body["amount"]))
-
-
-@app.get("/visa/status/{payment_id}")
-def pay_status(payment_id: str, x_internal_token: str | None = Header(None)):
-    auth(x_internal_token)
-    rec = store.get_payment(payment_id)
-    return {"paid": bool(rec and rec["paid"])}
-
-
-@app.get("/pay/{payment_id}", response_class=HTMLResponse)
-def mock_pay_page(payment_id: str):
-    rec = store.get_payment(payment_id)
-    if not rec:
-        raise HTTPException(404)
-    return (f"<html><body style='font-family:sans-serif;max-width:420px;margin:40px auto'>"
-            f"<h2>Visa sandbox (mock)</h2><p>Pay the verified final amount: <b>${rec['amount']:,.2f}</b>.</p>"
-            f"<form method='post' action='/pay/{payment_id}'><button>Pay with test card</button></form>"
-            f"<p style='color:#666'>Demo only. No real card is charged.</p></body></html>")
-
-
-@app.post("/pay/{payment_id}", response_class=HTMLResponse)
-def mock_pay(payment_id: str):
-    visa.mark_paid(payment_id)
-    return "<html><body style='font-family:sans-serif;text-align:center;margin-top:60px'><h2>Paid (mock)</h2>Go back to ASI:One and say 'paid'.</body></html>"
-
-
-@app.post("/visa/webhook")
-async def visa_webhook(request: Request):
-    # TODO(visa): verify the signature with VISA_WEBHOOK_SECRET, then mark_paid(payment id from payload).
-    payload = await request.json()
-    pid = payload.get("payment_id", "")
-    visa.mark_paid(pid)
-    return {"ok": True}
 
 
 # ------------------------------------------------------------------ QR join (News Next Door method)
@@ -478,7 +515,7 @@ async def sentry_webhook(request: Request):
     event = data.get("event", {}) or data.get("issue", {}) or {}
     tags = {t[0]: t[1] for t in event.get("tags", []) if isinstance(t, list) and len(t) == 2}
     title = (event.get("title") or payload.get("message") or "").lower()
-    check = "npi" if "npi" in title else "bill_reader" if ("reader" in title or "json" in title) else "visa" if "visa" in title else "npi"
+    check = "bill_reader" if ("reader" in title or "json" in title or "ocr" in title) else "workflow"
     trace_id = (event.get("contexts", {}).get("trace", {}) or {}).get("trace_id", "")
     alert = {"token": TOKEN, "check": check, "case_id": tags.get("case", ""), "trace_id": trace_id, "title": title[:120]}
     async with httpx.AsyncClient(timeout=10) as c:

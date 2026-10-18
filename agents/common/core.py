@@ -1,4 +1,4 @@
-"""Tiny async client for the Core API (rules, prices, Tiger Data, Visa, QR)."""
+"""Tiny async client for the Core API (rules, prices, Tiger Data, documents, QR)."""
 import httpx
 
 from .config import CORE_URL, INTERNAL_TOKEN

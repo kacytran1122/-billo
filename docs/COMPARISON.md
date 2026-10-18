@@ -20,7 +20,7 @@ The old two-check audit and dispute-letter workflow remains only as legacy inter
 |---|---|
 | Fetch.ai | One ASI:One conversation coordinates specialist agents with typed messages |
 | Photon | The same private workflow in iMessage, plus proactive visit follow-up |
-| Visa | Provider- and amount-verified checkout for unpaid final bills only |
+| Visa | Guarded simulations for a verified clinic QR and an approved reimbursement; no real funds move |
 | Tiger Data | Price context, estimate history, visit timeline and after-care records |
 | Sentry | Privacy-safe distributed trace, cron monitoring and agent-driven recovery |
 
@@ -29,13 +29,14 @@ The old two-check audit and dispute-letter workflow remains only as legacy inter
 1. Complete the full journey in ASI:One.
 2. Show a paid receipt being organized without creating a second charge.
 3. Name a real benefit and show the **possible, not confirmed** response.
-4. Show the unpaid branch reaching Payment Guard and mock/sandbox Visa checkout.
-5. Show Photon carrying the same private workflow.
-6. Trigger a Sentry failure and show Case Medic pause or recover safely.
+4. Show an unpaid bill reaching QR verification, explicit approval and a simulated Visa wallet handoff.
+5. Show a paid receipt plus named benefit reaching an externally approved simulated reimbursement.
+6. Show Photon carrying the same private workflow.
+7. Trigger a Sentry failure and show Case Medic recover safely.
 
 ## Honest claims
 
 - Receipt OCR and reconciliation are implemented.
 - Benefit routing is deterministic, but eligibility and submission are not automated.
-- Visa mock checkout is implemented; real sandbox checkout is still pending.
+- Visa QR and reimbursement controls are implemented as an explicit simulation; no sandbox/API or real money movement is claimed.
 - Real integrations require configured accounts, public endpoints and device testing.

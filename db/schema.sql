@@ -35,7 +35,7 @@ SELECT add_continuous_aggregate_policy('price_stats_monthly',
   start_offset => INTERVAL '2 years', end_offset => INTERVAL '1 day', schedule_interval => INTERVAL '1 hour',
   if_not_exists => TRUE);
 
--- 3. Cases, estimates, flags, payments -------------------------------------------------
+-- 3. Estimates and after-care records ---------------------------------------------------
 CREATE TABLE IF NOT EXISTS estimates (
   case_id TEXT NOT NULL, provider_npi TEXT, code TEXT, amount NUMERIC NOT NULL, place TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -44,10 +44,6 @@ CREATE TABLE IF NOT EXISTS flags (
   case_id TEXT NOT NULL, rule_id TEXT NOT NULL, kind TEXT NOT NULL, line_nos INT[],
   amount_at_stake NUMERIC, rules_check BOOLEAN, price_check BOOLEAN, created_at TIMESTAMPTZ DEFAULT now()
 );
-CREATE TABLE IF NOT EXISTS payments (
-  payment_id TEXT PRIMARY KEY, case_id TEXT NOT NULL, amount NUMERIC NOT NULL,
-  status TEXT NOT NULL DEFAULT 'created', url TEXT, created_at TIMESTAMPTZ DEFAULT now()
-);
 CREATE TABLE IF NOT EXISTS after_care_records (
   record_id BIGSERIAL PRIMARY KEY, case_id TEXT NOT NULL, provider_npi TEXT,
   total NUMERIC NOT NULL, already_paid BOOLEAN NOT NULL DEFAULT false,
@@ -55,6 +51,13 @@ CREATE TABLE IF NOT EXISTS after_care_records (
   estimate_amount NUMERIC, estimate_difference NUMERIC, visit_items_matched INT NOT NULL DEFAULT 0,
   payload JSONB NOT NULL, created_at TIMESTAMPTZ DEFAULT now()
 );
+CREATE TABLE IF NOT EXISTS settlements (
+  settlement_id TEXT PRIMARY KEY, case_id TEXT NOT NULL,
+  direction TEXT NOT NULL, rail TEXT NOT NULL, amount NUMERIC, currency TEXT NOT NULL DEFAULT 'USD',
+  status TEXT NOT NULL, external_ref TEXT, payload JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS settlements_case_idx ON settlements (case_id, created_at DESC);
 
 -- 4. Live visit log (real-time running estimate) ---------------------------------------
 CREATE TABLE IF NOT EXISTS visit_events (

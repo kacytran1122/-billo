@@ -88,22 +88,33 @@ class AfterCareResult(Traced):
     fallback_reason: str = ""
 
 
-# ---------- Payment Guard ----------
-class PayRequest(Traced):
+# ---------- Care Settlement Router ----------
+class SettlementRequest(Traced):
     case_id: str
-    hospital_npi: str
-    amount: float  # exact final amount explicitly approved by the patient
-    disputed_amount: float  # legacy compatibility; new after-care flow always sends 0
-    mandate_max: float
-    pay_link: str = ""  # link from the hospital, if any; checked by the Guard
+    action: str  # inspect_qr | approve_qr | reimburse
+    file_url: str = ""
+    demo: bool = False
+    review_id: str = ""
+    benefit_name: str = ""
+    amount: float = 0
+    benefit_approved: bool = False
+    explicit_approval: bool = False
+    reply_to: str = ""
 
 
-class PayDecision(Traced):
+class SettlementResult(Traced):
     case_id: str
-    approved: bool
-    reasons: List[str]
-    pay_link: str = ""
-    payment_id: str = ""
+    action: str
+    ok: bool
+    status: str = ""
+    settlement_id: str = ""
+    trusted: bool = False
+    reasons: List[str] = []
+    merchant_name: str = ""
+    amount: float = 0
+    handoff_url: str = ""
+    mode: str = ""
+    error: str = ""
 
 
 # ---------- iMessage Gateway <-> Coordinator ----------
@@ -135,7 +146,7 @@ class Ack(Model):
 class Alert(Model):
     """Core API -> Case Medic (REST), built from a Sentry alert webhook."""
     token: str = ""
-    check: str  # npi | bill_reader | visa
+    check: str  # bill_reader | workflow
     case_id: str = ""
     trace_id: str = ""
     title: str = ""
@@ -143,7 +154,7 @@ class Alert(Model):
 
 class MedicAction(Traced):
     case_id: str
-    action: str  # retry_reader | npi_unverified | pause_guard
+    action: str  # retry_reader | review_record
     patient_text: str
 
 

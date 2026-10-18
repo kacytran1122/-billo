@@ -1,9 +1,15 @@
 """Run: cd just && pytest -q tests   (no database, no keys needed)"""
+import os
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "core"))
+# Unit tests must be deterministic even when the developer's local .env points
+# at production-like services. load_dotenv() will not override these values.
+os.environ["BILLO_MODE"] = "demo"
+os.environ["DATABASE_URL"] = ""
+os.environ["SENTRY_DSN"] = ""
 
 from fastapi.testclient import TestClient  # noqa: E402
 
@@ -41,14 +47,6 @@ def test_red_flag_never_shops():
     import yaml
     rules = yaml.safe_load((ROOT / "rules" / "red_flags.yaml").read_text())["rules"]
     assert any("chest pain" in r["any"] for r in rules)
-
-
-def test_guard_blocks_untrusted_link_and_over_limit():
-    r = c.post("/guard/verify", json={"case_id": "t2", "npi": "1999999901", "amount": 900, "disputed_amount": 0,
-                                      "mandate_max": 500, "pay_link": "https://evil-pay.example.com/x"}, headers=H).json()
-    assert r["ok"] is False
-    assert any("NOT trusted" in x for x in r["reasons"])
-    assert any("over your limit" in x for x in r["reasons"])
 
 
 def test_qr_link_flow():
@@ -106,6 +104,61 @@ def test_after_care_requires_a_provider_for_a_match():
         "case_id": "no-provider", "lines": bill["lines"], "hospital_npi": "", "payment_status": "unpaid",
     }, headers=H).json()
     assert r["provider_match"] is False
+
+
+def _unpaid_case(case_id="visa-unpaid"):
+    c.post("/estimates", json={"case_id": case_id, "npi": "1999999901", "place": "Westwood Urgent Care", "amount": 240}, headers=H)
+    bill = c.post("/reader/extract", json={"case_id": case_id, "demo": True}, headers=H).json()
+    c.post("/after-care/organize", json={
+        "case_id": case_id, "lines": bill["lines"], "hospital_npi": "1999999901", "payment_status": "unpaid",
+    }, headers=H)
+
+
+def test_visa_qr_requires_review_then_explicit_approval():
+    case_id = "visa-qr-good"
+    _unpaid_case(case_id)
+    review = c.post("/visa/qr/inspect", json={"case_id": case_id, "demo": True}, headers=H).json()
+    assert review["trusted"] is True
+    denied = c.post("/visa/qr/approve", json={"case_id": case_id, "review_id": review["settlement_id"]}, headers=H)
+    assert denied.status_code == 409
+    approved = c.post("/visa/qr/approve", json={
+        "case_id": case_id, "review_id": review["settlement_id"], "explicit_approval": True,
+    }, headers=H).json()
+    assert approved["status"] == "handoff_ready"
+    assert "/visa/qr/" in approved["handoff_url"]
+
+
+def test_visa_qr_rejects_tampering_and_wrong_provider():
+    from app import visa
+    payload = visa.demo_qr("Other Clinic", 2140, "BILLO-X")
+    result = visa.inspect_qr(payload, "Westwood Urgent Care", 2140, expected_invoice="BILLO-X")
+    assert result["trusted"] is False
+    assert any("merchant name" in reason for reason in result["reasons"])
+    tampered = payload.replace("2140.00", "2141.00")
+    result = visa.inspect_qr(tampered, "Other Clinic", 2141, expected_invoice="BILLO-X")
+    assert result["trusted"] is False
+    assert any("checksum" in reason for reason in result["reasons"])
+
+
+def test_reimbursement_requires_paid_receipt_checked_benefit_and_approvals():
+    case_id = "visa-reimburse"
+    c.post("/estimates", json={"case_id": case_id, "npi": "1999999901", "place": "Westwood", "amount": 240}, headers=H)
+    bill = c.post("/reader/extract", json={"case_id": case_id, "demo": True}, headers=H).json()
+    c.post("/after-care/organize", json={
+        "case_id": case_id, "lines": bill["lines"], "hospital_npi": "1999999901", "payment_status": "paid",
+    }, headers=H)
+    c.post("/benefits/check", json={"case_id": case_id, "text": "I have an HSA"}, headers=H)
+    denied = c.post("/visa/reimbursement/payout", json={
+        "case_id": case_id, "benefit_name": "HSA self-reimbursement", "amount": 120,
+        "benefit_approved": True,
+    }, headers=H)
+    assert denied.status_code == 409
+    paid = c.post("/visa/reimbursement/payout", json={
+        "case_id": case_id, "benefit_name": "HSA self-reimbursement", "amount": 120,
+        "benefit_approved": True, "explicit_patient_approval": True,
+    }, headers=H).json()
+    assert paid["status"] == "simulated_paid"
+    assert paid["amount"] == 120
 
 
 def test_uploaded_bill_is_deleted_after_extraction(tmp_path, monkeypatch):

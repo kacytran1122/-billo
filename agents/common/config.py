@@ -28,7 +28,7 @@ PORTS = {
     "red_flag": 8002,
     "care_finder": 8003,
     "bill_auditor": 8004,
-    "payment_guard": 8005,
+    "payment_guard": 8005,  # retained seed/address key; runtime name is Care Settlement Router
     "gateway": 8006,
     "case_medic": 8007,
 }

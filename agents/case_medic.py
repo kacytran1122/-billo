@@ -2,10 +2,9 @@
 
 Sentry alert webhook -> Core API /sentry/webhook -> POST /alert here.
 1. Read the trace through the Sentry API (if a token is set).
-2. Pick ONE of three fixed actions (plain rules, no LLM):
+2. Pick one fixed action (plain rules, no LLM):
    bill_reader -> retry_reader   (stricter schema / backup model)
-   npi         -> npi_unverified (continue with cached data, mark unverified)
-   visa        -> pause_guard    (hold payments on this case)
+   workflow    -> review_record  (keep the record open for human review)
 3. Tell the Coordinator, which applies it and texts the patient.
 4. Record the action as a span on the same trace.
 """
@@ -21,8 +20,7 @@ init_sentry("case_medic")
 
 ACTIONS = {
     "bill_reader": ("retry_reader", "I am reading your bill again more carefully. One moment."),
-    "npi": ("npi_unverified", "One check is slow. I am re-checking, and your case keeps going."),
-    "visa": ("pause_guard", "I paused payments on this case for safety. Nothing was charged."),
+    "workflow": ("review_record", "One check needs review. I kept your record open and did not infer a result."),
 }
 
 agent = Agent(
@@ -50,7 +48,7 @@ async def read_trace(trace_id: str) -> int:
 async def on_alert(ctx: Context, alert: Alert) -> Ack:
     if alert.token != INTERNAL_TOKEN:
         return Ack(ok=False, detail="bad token")
-    action, patient_text = ACTIONS.get(alert.check, ACTIONS["npi"])
+    action, patient_text = ACTIONS.get(alert.check, ACTIONS["workflow"])
     headers = {"sentry-trace": f"{alert.trace_id}-0000000000000000"} if alert.trace_id else {}
     tx = sentry_sdk.continue_trace(headers, op="case_medic.action", name=action)
     with sentry_sdk.start_transaction(tx):

@@ -16,7 +16,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
 _mem: dict[str, dict] = {
     "estimates": {}, "visit_events": {}, "after_care": {}, "benefit_checks": {},
-    "links": {}, "payments": {}, "stopped": set(), "reminders": {},
+    "settlements": {}, "links": {}, "stopped": set(), "reminders": {},
 }
 
 
@@ -140,8 +140,42 @@ def save_after_care(case_id: str, record: dict) -> None:
             )
 
 
+def get_after_care(case_id: str) -> dict | None:
+    return _mem["after_care"].get(case_id)
+
+
 def save_benefit_check(case_id: str, result: dict) -> None:
     _mem["benefit_checks"][case_id] = result
+
+
+def get_benefit_check(case_id: str) -> dict | None:
+    return _mem["benefit_checks"].get(case_id)
+
+
+def save_settlement(settlement_id: str, record: dict) -> None:
+    _mem["settlements"][settlement_id] = record
+    if use_db():
+        with _conn() as c:
+            c.execute(
+                """INSERT INTO settlements
+                   (settlement_id, case_id, direction, rail, amount, currency, status, external_ref, payload)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                   ON CONFLICT (settlement_id) DO UPDATE SET status=EXCLUDED.status, payload=EXCLUDED.payload""",
+                (settlement_id, record["case_id"], record["direction"], record.get("rail", "visa_qr"),
+                 record.get("amount"), record.get("currency", "USD"), record["status"],
+                 record.get("external_ref", ""), json.dumps(record)),
+            )
+
+
+def get_settlement(settlement_id: str) -> dict | None:
+    if settlement_id in _mem["settlements"]:
+        return _mem["settlements"][settlement_id]
+    if use_db():
+        with _conn() as c:
+            row = c.execute("SELECT payload FROM settlements WHERE settlement_id=%s", (settlement_id,)).fetchone()
+        if row:
+            return row[0]
+    return None
 
 
 # ---------------------------------------------------------------- iMessage link codes (QR join)
@@ -196,12 +230,3 @@ def reminders_allowed(case_id: str) -> bool:
         return False
     _mem["reminders"][case_id] = time.time()
     return True
-
-
-# ---------------------------------------------------------------- payments
-def save_payment(payment_id: str, rec: dict) -> None:
-    _mem["payments"][payment_id] = rec
-
-
-def get_payment(payment_id: str) -> dict | None:
-    return _mem["payments"].get(payment_id)
