@@ -14,6 +14,10 @@ const homeSource = readFileSync(
   new URL("../../../frontend/src/app/page.tsx", import.meta.url),
   "utf8",
 );
+const connectStyles = readFileSync(
+  new URL("../../../frontend/src/features/connect/ChannelConnect.module.css", import.meta.url),
+  "utf8",
+);
 
 test("the first hero shows only the iMessage phone", () => {
   assert.match(homeSource, /heroPhones="iMessage only"/);
@@ -75,4 +79,12 @@ test("navigation section state is synchronized efficiently while scrolling", () 
 test("motion remains optional for users who request reduced motion", () => {
   assert.match(landingSource, /prefers-reduced-motion: reduce/);
   assert.match(landingStyles, /@media \(prefers-reduced-motion: reduce\)/);
+});
+
+test("secure channel preview stays side by side without overlapping on small screens", () => {
+  assert.match(connectStyles, /\.body > \* \{ min-width: 0; \}/);
+  assert.match(connectStyles, /@media \(max-width: 470px\)[\s\S]*overflow-x: hidden/);
+  assert.match(connectStyles, /grid-template-columns: minmax\(96px, \.7fr\) minmax\(0, 1fr\)/);
+  assert.match(connectStyles, /\.phone \{[\s\S]*width: 100%;[\s\S]*overflow: hidden/);
+  assert.match(connectStyles, /@media \(max-width: 340px\)[\s\S]*grid-template-columns: 92px minmax\(0, 1fr\)/);
 });

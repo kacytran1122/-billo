@@ -60,6 +60,8 @@
   margin-top: 32px;
 }
 
+.body > * { min-width: 0; }
+
 .phone {
   width: min(100%, 310px);
   min-height: 430px;
@@ -124,13 +126,55 @@
 }
 
 @media (max-width: 470px) {
-  .body { grid-template-columns: minmax(112px, .75fr) minmax(150px, 1fr); }
-  .phone { min-height: 280px; }
+  .backdrop { padding: 6px; }
+  .dialog {
+    width: 100%;
+    max-height: calc(100svh - 12px);
+    padding: 18px 12px;
+    border-radius: 22px;
+    overflow-x: hidden;
+  }
+  .close { top: 10px; right: 10px; width: 36px; height: 36px; font-size: 24px; }
+  .heading { padding-inline: 30px; }
+  .heading h2 { font-size: clamp(30px, 10vw, 40px); }
+  .heading p { font-size: 12px; line-height: 1.35; }
+  .body {
+    grid-template-columns: minmax(96px, .7fr) minmax(0, 1fr);
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .phone {
+    width: 100%;
+    min-height: 250px;
+    padding: 8px 6px;
+    border-width: 5px;
+    border-radius: 24px;
+    gap: 6px;
+    font-size: 9px;
+    overflow: hidden;
+  }
+  .phoneTop { gap: 4px; padding: 0 1px 7px; }
+  .phoneTop > span { width: 30px; height: 10px; }
+  .bubble { max-width: 88%; padding: 6px 7px; border-radius: 12px; }
+  .miniResult { gap: 4px; padding: 7px; border-radius: 10px; }
+  .miniResult strong { font-size: 16px; }
+  .receipt { width: 90%; padding: 8px; }
+  .channelLine { flex-direction: column; gap: 6px; margin-bottom: 10px; font-size: 20px; }
+  .channelLine b { padding: 5px 7px; font-size: 8px; }
+  .qr,
+  .qrLoading { width: min(100%, 150px); border-radius: 14px; }
   .miniResult:last-child,
   .receipt span { display: none; }
-  .help { font-size: 12px; }
+  .help { margin-top: 10px; font-size: 11px; overflow-wrap: anywhere; }
   .openButton { min-height: 46px; padding-inline: 14px; font-size: 13px; }
-  .privacy { font-size: 10px; }
+  .privacy { margin-top: 10px; font-size: 9px; overflow-wrap: anywhere; }
+}
+
+@media (max-width: 340px) {
+  .dialog { padding-inline: 9px; }
+  .heading { padding-inline: 26px; }
+  .body { grid-template-columns: 92px minmax(0, 1fr); gap: 6px; }
+  .phone { min-height: 232px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
