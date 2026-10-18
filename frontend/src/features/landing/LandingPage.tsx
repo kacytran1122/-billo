@@ -12,6 +12,7 @@ import { BilloWord } from "@/components/BilloWord";
 import { LandingIntro } from "@/components/loading/LandingIntro";
 import { QRCells } from "@/components/QRCells";
 import { makeQR } from "@/lib/qr";
+import { BilloSimulation } from "@/features/simulation/BilloSimulation";
 import hv from "./LandingPage.module.css";
 
 export type HeroPhones = "Both" | "ASI:One only" | "iMessage only";
@@ -491,6 +492,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
           <BilloWord />
           .
         </h2>
+        <BilloSimulation />
         <div className={hv.featureGrid} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,max(calc((100% - 60px) / 4),min(calc((100% - 20px) / 2),calc((270px - (100% - 60px) / 4) * 9999)))),1fr))", gridAutoRows: "1fr", gap: "20px", marginTop: "64px" }}>
           <div style={{ background: "oklch(0.92 0.06 165)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
             <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>Safety first</div>
