@@ -38,8 +38,8 @@
   <rect x="755" y="405" width="290" height="90" rx="20" fill="#eef2f7" stroke="#526075" stroke-width="3"/>
   <text x="900" y="442" text-anchor="middle" class="h ink">Patient</text><text x="900" y="470" text-anchor="middle" class="small muted">starts one Billo case</text>
 
-  <path d="M900 495 V520 H430" class="bus"/><path d="M430 520 V545" class="flow"/>
-  <path d="M900 495 V520 H1370" class="bus"/><path d="M1370 520 V545" class="flow"/>
+  <path d="M860 495 L430 545" class="flow"/>
+  <path d="M940 495 L1370 545" class="flow"/>
 
   <rect x="235" y="550" width="390" height="105" rx="21" fill="#f3f0ff" stroke="#7547f3" stroke-width="3"/>
   <text x="430" y="590" text-anchor="middle" class="h ink">ASI:One · Fetch.ai</text><text x="430" y="620" text-anchor="middle" class="body muted">complete conversational workflow</text>
@@ -47,9 +47,9 @@
   <text x="1370" y="590" text-anchor="middle" class="h ink">iMessage · Photon</text><text x="1370" y="620" text-anchor="middle" class="body muted">@Billo activates the bridge</text>
 
   <!-- Routing -->
-  <text x="60" y="708" class="section" fill="#5144d9">2 · BOTH DOORS ENTER THE SAME TYPED CASE WORKFLOW</text>
-  <path d="M430 655 V685 H760 V725" class="flow"/>
-  <path d="M1370 655 V685 H1040 V725" class="flow"/>
+  <text x="60" y="708" class="section" fill="#5144d9">2 · SHARED CASE ROUTING</text>
+  <path d="M430 655 L760 725" class="flow"/>
+  <path d="M1370 655 L1040 725" class="flow"/>
 
   <rect x="650" y="730" width="500" height="115" rx="22" fill="#5747e8"/>
   <text x="900" y="774" text-anchor="middle" class="h" fill="#fff">Billo Coordinator</text>
@@ -61,11 +61,11 @@
 
   <!-- Specialist agents -->
   <rect x="50" y="895" width="1500" height="205" rx="24" fill="#f1f2ff" stroke="#6658e8" stroke-width="3" stroke-dasharray="12 8"/>
-  <path d="M900 845 V870 H240" class="bus"/>
-  <path d="M900 870 H1380" class="bus"/>
-  <path d="M240 870 V955" class="flow"/><path d="M620 870 V955" class="flow"/><path d="M1000 870 V955" class="flow"/><path d="M1380 870 V955" class="flow"/>
-  <rect x="68" y="907" width="660" height="38" rx="8" fill="#f1f2ff"/>
-  <text x="78" y="932" class="section" fill="#5144d9">3 · COORDINATOR DELEGATES TO ONE SPECIALIST</text>
+  <path d="M720 845 L240 955" class="flow"/>
+  <path d="M840 845 L620 955" class="flow"/>
+  <path d="M960 845 L1000 955" class="flow"/>
+  <path d="M1080 845 L1380 955" class="flow"/>
+  <text x="78" y="928" class="section" fill="#5144d9">3 · SPECIALISTS</text>
 
   <rect x="90" y="960" width="300" height="105" rx="18" fill="#fff" stroke="#ef6a6a" stroke-width="2"/>
   <text x="240" y="1000" text-anchor="middle" class="boxh ink">Red-Flag Screener</text><text x="240" y="1031" text-anchor="middle" class="body muted">fixed emergency rules</text>
@@ -79,8 +79,7 @@
   <!-- Core tools -->
   <rect x="50" y="1150" width="1500" height="225" rx="24" fill="#edfbf1" stroke="#16a34a" stroke-width="3" stroke-dasharray="12 8"/>
   <path d="M240 1065 V1210" class="flow"/><path d="M620 1065 V1210" class="flow"/><path d="M1000 1065 V1210" class="flow"/><path d="M1380 1065 V1210" class="flow"/>
-  <rect x="68" y="1162" width="780" height="42" rx="8" fill="#edfbf1"/>
-  <text x="78" y="1188" class="section" fill="#12823d">4 · DETERMINISTIC FASTAPI TOOLS · ORACLE AMPERE A1</text>
+  <text x="78" y="1188" class="section" fill="#12823d">4 · CORE TOOLS</text>
 
   <rect x="90" y="1215" width="300" height="120" rx="18" fill="#fff" stroke="#16a34a" stroke-width="2"/>
   <text x="240" y="1257" text-anchor="middle" class="boxh ink">Rules engine</text><text x="240" y="1288" text-anchor="middle" class="body muted">safety · consent · routing</text><text x="240" y="1316" text-anchor="middle" class="small muted">AI cannot override decisions</text>
@@ -93,9 +92,9 @@
 
   <!-- Data and integrations -->
   <text x="60" y="1423" class="section" fill="#526075">5 · DATA + INTEGRATIONS</text>
-  <path d="M620 1335 V1400 H430 V1460" class="flow"/>
-  <path d="M900 1375 V1460" class="flow"/>
-  <path d="M1380 1335 V1460" class="flow"/>
+  <path d="M620 1335 L285 1460" class="flow"/>
+  <path d="M1000 1335 L900 1460" class="flow"/>
+  <path d="M1380 1335 L1415 1460" class="flow"/>
 
   <rect x="70" y="1465" width="430" height="235" rx="22" fill="#f4f7fb" stroke="#64748b" stroke-width="3"/>
   <text x="98" y="1504" class="section" fill="#526075">EXTERNAL SOURCES · READ</text>
