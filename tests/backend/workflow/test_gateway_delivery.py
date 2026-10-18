@@ -106,6 +106,19 @@ def test_gateway_rejects_missing_coordinator_without_sending():
     ctx.send.assert_not_awaited()
 
 
+def test_gateway_rejects_an_unknown_channel_without_sending():
+    env, _, _ = gateway_handler()
+    ctx = SimpleNamespace(send=AsyncMock())
+    req = request()
+    req.channel = "unknown-provider"
+
+    result = asyncio.run(env["from_bridge"](ctx, req))
+
+    assert result.ok is False
+    assert result.detail == "bad channel"
+    ctx.send.assert_not_awaited()
+
+
 def test_gateway_does_not_acknowledge_transport_exceptions():
     env, _, _ = gateway_handler()
     ctx = SimpleNamespace(send=AsyncMock(side_effect=TimeoutError("coordinator unavailable")))

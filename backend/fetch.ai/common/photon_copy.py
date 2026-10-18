@@ -5,7 +5,7 @@ compact form: one headline, the essential numbers, and one clear next action.
 """
 from __future__ import annotations
 
-from .screen_links import screen_url
+from .screen_links import screen_url, visit_url_for_stage
 
 
 def care_matches(places: list[dict], location: str = "") -> str:
@@ -27,28 +27,43 @@ def care_matches(places: list[dict], location: str = "") -> str:
     return "\n".join(lines)
 
 
-def booking_saved(place: dict, amount: float, calendar_url: str) -> str:
-    return "\n".join([
+def booking_saved(place: dict, amount: float, calendar_url: str = "", visit_url: str = "") -> str:
+    lines = [
         "Care plan saved",
         "",
         str(place["name"]),
+    ]
+    if place.get("address"):
+        lines.append(str(place["address"]))
+    if place.get("hours"):
+        lines.append(str(place["hours"]))
+    lines.extend([
         f"Estimated price · ${amount:,.0f}",
         "Appointment not confirmed",
-        f"📅 {calendar_url}",
-        "",
-        "At the visit: send @Billo and the service received",
-        f"Review the saved estimate (demo): {screen_url('estimate')}",
     ])
+    if calendar_url:
+        lines.append(f"📅 {calendar_url}")
+    else:
+        lines.append("No appointment time saved")
+    lines.extend(["", "At the visit: send @Billo and the service received"])
+    if visit_url:
+        lines.append(f"Open your private visit page: {visit_url_for_stage(visit_url, 'booked')}")
+    else:
+        lines.append(f"Review the saved estimate (demo): {screen_url('estimate')}")
+    return "\n".join(lines)
 
 
-def benefits(paths: list[dict]) -> str:
+def benefits(paths: list[dict], visit_url: str = "") -> str:
     if not paths:
         return "No matching benefit path found. Tell @Billo which plan or benefit you actually have."
     lines = ["💸 Explore money-back options", ""]
     lines.extend(f"• {path['name']}\n  Needs: {path['needed']}\n" for path in paths)
     lines.append("Eligibility is not confirmed. Check your plan deadline.")
     lines.append("Next: @Billo check my benefits")
-    lines.append(f"Review benefit paths (demo): {screen_url('benefits')}")
+    if visit_url:
+        lines.append(f"Open your bill summary: {visit_url_for_stage(visit_url, 'organized')}")
+    else:
+        lines.append(f"Review benefit paths (demo): {screen_url('benefits')}")
     return "\n".join(lines)
 
 
@@ -63,6 +78,7 @@ def organized_bill(
     unreviewed_lines: int,
     needs_review: list[int],
     payment_status: str,
+    visit_url: str = "",
 ) -> str:
     lines = [f"🧾 {kind.title()} organized", "", f"Total · ${total:,.2f}"]
     reader_line = {
@@ -89,5 +105,8 @@ def organized_bill(
         lines.append("Next · @Billo check my HSA or insurance")
     else:
         lines.append("Next · @Billo this is paid / unpaid")
-    lines.append(f"Review the organized charges (demo): {screen_url('match')}")
+    if visit_url:
+        lines.append(f"Open your bill summary: {visit_url_for_stage(visit_url, 'organized')}")
+    else:
+        lines.append(f"Review the organized charges (demo): {screen_url('match')}")
     return "\n".join(lines)

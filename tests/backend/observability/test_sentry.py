@@ -144,6 +144,30 @@ def test_scrubber_masks_text_and_drops_sensitive_keys():
     assert "vars" not in out and "user" not in event
 
 
+@pytest.mark.parametrize(("url", "safe"), [
+    ("https://core/public/cases/secret-case-token/calendar.ics?download=1",
+     "https://core/public/cases/[Filtered]/calendar.ics"),
+    ("https://core/public/wallet/secret-wallet-token", "https://core/public/wallet/[Filtered]"),
+    ("https://core/api/link/BILLO-ABCD-EFGH", "https://core/api/link/[Filtered]"),
+    ("https://core/qr/BILLO-ABCD-EFGH.png", "https://core/qr/[Filtered]"),
+    ("https://core/c/BILLO-ABCD-EFGH", "https://core/c/[Filtered]"),
+    ("https://core/letters/secret-letter-token.txt", "https://core/letters/[Filtered]"),
+])
+def test_private_link_credentials_are_removed_from_urls(url, safe):
+    event = {
+        "transaction": f"GET {url}",
+        "request": {"method": "GET", "url": url},
+        "spans": [{"description": f"GET {url}", "data": {"http.url": url}}],
+        "breadcrumbs": [{"category": "http", "data": {"url": url}}],
+        "exception": {"values": [{"value": f"request failed for {url}"}]},
+    }
+    encoded = json.dumps(obs.scrub_event(event))
+    assert "secret-" not in encoded and "BILLO-ABCD-EFGH" not in encoded
+    assert safe in encoded
+    encoded_log = json.dumps(obs.scrub_log({"body": f"request failed for {url}"}))
+    assert "secret-" not in encoded_log and "BILLO-ABCD-EFGH" not in encoded_log
+
+
 def test_metrics_keep_only_allowlisted_attributes():
     m = obs.scrub_metric({"name": "x", "attributes": {"reader": "ocr", "text": "knee", "sentry.release": "r"}})
     assert m["attributes"] == {"reader": "ocr", "sentry.release": "r"}
@@ -232,6 +256,13 @@ def test_webhook_requires_valid_signature(monkeypatch):
                   headers={"sentry-hook-signature": sig, "sentry-hook-resource": "event_alert"})
     assert good.status_code == 200 and good.json() == {"forwarded": "bill_reader"}
     assert sent[0][0].endswith("/alert") and sent[0][1]["case_id"] == "abcd1234"
+
+
+def test_webhook_fails_closed_when_signing_is_not_configured(monkeypatch):
+    monkeypatch.setattr(main, "SENTRY_WEBHOOK_SECRET", "")
+    c = TestClient(main.app)
+    response = c.post("/sentry/webhook", content=json.dumps(_webhook_payload()).encode())
+    assert response.status_code == 503
 
 
 # ------------------------------------------------------------------ agents helpers

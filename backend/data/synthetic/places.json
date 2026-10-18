@@ -10,7 +10,8 @@
     "hours": "open until 9 pm",
     "pay_domain": "heybillo.tech",
     "price_typical": 240,
-    "price_low": 180
+    "price_low": 180,
+    "price_high": 360
   },
   {
     "region": "los-angeles",
@@ -23,7 +24,8 @@
     "hours": "open until 6 pm",
     "pay_domain": "heybillo.tech",
     "price_typical": 180,
-    "price_low": 120
+    "price_low": 120,
+    "price_high": 280
   },
   {
     "region": "los-angeles",
@@ -36,7 +38,8 @@
     "hours": "open 24 hours",
     "pay_domain": "heybillo.tech",
     "price_typical": 1800,
-    "price_low": 1200
+    "price_low": 1200,
+    "price_high": 2600
   },
   {
     "region": "chicago",
@@ -49,7 +52,8 @@
     "hours": "demo hours: open until 9 pm",
     "pay_domain": "heybillo.tech",
     "price_typical": 260,
-    "price_low": 190
+    "price_low": 190,
+    "price_high": 390
   },
   {
     "region": "chicago",
@@ -62,7 +66,8 @@
     "hours": "demo hours: open until 6 pm",
     "pay_domain": "heybillo.tech",
     "price_typical": 195,
-    "price_low": 135
+    "price_low": 135,
+    "price_high": 300
   },
   {
     "region": "chicago",
@@ -75,6 +80,7 @@
     "hours": "demo hours: open 24 hours",
     "pay_domain": "heybillo.tech",
     "price_typical": 1950,
-    "price_low": 1300
+    "price_low": 1300,
+    "price_high": 2900
   }
 ]

@@ -1,0 +1,9 @@
+# Compatibility override for an existing host-managed Caddy installation.
+# New installations must use the Docker Caddy service in compose.yml instead.
+services:
+  core:
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  caddy:
+    profiles: ["docker-gateway"]

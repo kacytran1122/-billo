@@ -65,6 +65,7 @@ class BillLine(Model):
 
 class AfterCareRequest(Traced):
     case_id: str
+    request_id: str = ""  # correlates an asynchronous result with the latest user request
     file_url: str = ""  # receipt/final bill photo; empty + demo=True uses the synthetic document
     demo: bool = False
     hospital_npi: str = ""
@@ -74,6 +75,7 @@ class AfterCareRequest(Traced):
 
 class AfterCareResult(Traced):
     case_id: str
+    request_id: str = ""
     ok: bool = True
     error: str = ""  # safe category only, never raw OCR text or a private URL
     lines: List[BillLine]
@@ -94,6 +96,7 @@ class AfterCareResult(Traced):
 # ---------- Care Settlement Router ----------
 class SettlementRequest(Traced):
     case_id: str
+    request_id: str = ""  # prevents a late result from replacing newer conversation work
     action: str  # inspect_qr | approve_qr | reimburse
     file_url: str = ""
     demo: bool = False
@@ -107,6 +110,7 @@ class SettlementRequest(Traced):
 
 class SettlementResult(Traced):
     case_id: str
+    request_id: str = ""
     action: str
     ok: bool
     status: str = ""
@@ -120,23 +124,25 @@ class SettlementResult(Traced):
     error: str = ""
 
 
-# ---------- iMessage Gateway <-> Coordinator ----------
+# ---------- Photon messaging Gateway <-> Coordinator ----------
 class InboundText(Model):
     """Bridge -> Gateway (REST) and Gateway -> Coordinator."""
     token: str = ""
     handle_hash: str  # hashed phone number, never the raw number
     space_id: str
+    channel: str = "imessage"  # imessage | sms | whatsapp_business
     text: str
     is_group: bool = False
     case_id: str = ""
+    handoff_claimed: bool = False
     attachment_url: str = ""
-    attachment_error: str = ""  # multiple | invalid; screen caption before rejecting upload
+    attachment_error: str = ""  # multiple | invalid | safety_deferred; screen caption before rejecting upload
     message_id: str = ""
     trace: Dict[str, str] = {}  # sentry-trace + baggage from the Photon bridge
 
 
 class OutboundText(Traced):
-    """Coordinator -> Gateway -> Bridge."""
+    """Coordinator -> Gateway -> Photon bridge."""
     space_id: str
     text: str
     case_id: str = ""

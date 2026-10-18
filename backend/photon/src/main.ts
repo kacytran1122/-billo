@@ -18,6 +18,8 @@
 import { observedSpan, scrubText, Sentry, traceHeaders } from "./sentry.ts"; // first: Sentry must start before anything else
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import type { Message, Space } from "spectrum-ts";
 import { config as loadEnv } from "dotenv";
 import { hasBilloMention, shouldRespond, stripBilloMention } from "./routing.ts";
@@ -34,11 +36,48 @@ const GATEWAY = env("GATEWAY_URL", "http://localhost:8006"); // the iMessage Gat
 const TOKEN = env("INTERNAL_TOKEN", "dev-token");
 const PORT = Number(env("BRIDGE_PORT", "3000"));
 const hashHandle = (h: string) => createHash("sha256").update(`${TOKEN}:${h}`).digest("hex").slice(0, 16);
-const mask = (h: string) => (h.length > 4 ? `***${h.slice(-4)}` : "***");
 
 const spaces = new Map<string, Space>();
 const seen = new Set<string>(); // idempotency: provider message ids we already handled
 const typingTimers = new Map<string, NodeJS.Timeout>();
+const HANDOFF_CODE = /^BILLO-[A-Z0-9]{4}-[A-Z0-9]{4}$/i;
+
+// Keep these triggers aligned with backend/rules/red_flags.yaml. The bridge
+// only uses them to defer a document download; the Coordinator remains the
+// authority that selects and sends emergency guidance.
+export const EMERGENCY_CAPTION_PHRASES = [
+  "chest pain", "chest pressure", "pain in my chest", "crushing",
+  "can't breathe", "cannot breathe", "short of breath", "trouble breathing", "choking",
+  "face drooping", "slurred", "can't move my arm", "sudden numbness", "worst headache",
+  "won't stop bleeding", "bleeding a lot", "heavy bleeding", "bone sticking out",
+  "passed out", "fainted", "hit my head and", "confused after",
+  "kill myself", "suicide", "end my life",
+] as const;
+const NEGATION_PREFIXES = [
+  "no", "without", "deny", "denies", "denied", "do not have", "does not have", "did not have",
+  "don't have", "doesn't have", "didn't have", "not having",
+] as const;
+
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const flexiblePhrase = (value: string) => escapeRegex(value).replace(/\s+/g, "\\s+");
+
+/** Mirror the Coordinator's explicit-negation behavior without diagnosing locally. */
+export function hasEmergencyCaption(text: string): boolean {
+  const normalized = text.toLowerCase().replaceAll("’", "'").replace(/\b(?:but|however|yet)\b/g, ".");
+  const negations = NEGATION_PREFIXES.map(flexiblePhrase).join("|");
+  return EMERGENCY_CAPTION_PHRASES.some((phrase) => {
+    const trigger = flexiblePhrase(phrase);
+    const negated = new RegExp(`\\b(?:${negations})\\s+(?:any\\s+)?[^.!?;,:]{0,80}?\\b${trigger}\\b`, "gi");
+    return new RegExp(`\\b${trigger}\\b`, "i").test(normalized.replace(negated, " "));
+  });
+}
+
+export type HandleDependencies = {
+  core: (path: string, body?: unknown) => Promise<Record<string, string>>;
+  forward: (payload: Record<string, unknown>) => Promise<void>;
+  typing: (space: Space, on: boolean) => Promise<void>;
+  upload: (attachment: DocumentAttachment) => Promise<string>;
+};
 
 async function core(path: string, body?: unknown) {
   const r = await fetch(`${CORE}${path}`, {
@@ -98,7 +137,12 @@ async function upload(att: DocumentAttachment): Promise<string> {
   });
 }
 
-async function handle(space: Space, message: Message) {
+export async function handle(
+  space: Space,
+  message: Message,
+  overrides: Partial<HandleDependencies> = {},
+) {
+  const actions: HandleDependencies = { core, forward, typing, upload, ...overrides };
   const messageKey = `${space.__platform}:${space.id}:${message.id}`;
   if (seen.has(messageKey)) return; // provider IDs need not be unique across channels
   if (seen.size > 5000) seen.clear();
@@ -117,16 +161,56 @@ async function handle(space: Space, message: Message) {
   const hasAttachments = ev.attachments.length > 0;
   Sentry.getActiveSpan()?.setAttributes({ "chat.group": isGroup, "chat.has_file": hasAttachments });
 
-  // Transport-level receipt without logging message content or a full sender identifier.
+  // Transport-level receipt without logging message content or any phone-derived fragment.
   console.log(
-    `[bridge] inbound ${chatKind} from ${mask(ev.sender)} (${rawText.length} chars${hasAttachments ? ", attachment" : ""}, tagged=${tagged})`,
+    `[bridge] inbound ${chatKind} (${rawText.length} chars${hasAttachments ? ", attachment" : ""}, tagged=${tagged})`,
   );
 
   // STOP is always available as a universal opt-out, with or without a mention.
   if (["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"].includes(rawUpper)) {
-    await core("/link/stop", { handle_hash: handleHash });
+    await actions.core("/link/stop", { handle_hash: handleHash });
     // Cancel the coordinator's direct-chat reminders too, even without an ASI link code.
-    await forward({ handle_hash: handleHash, space_id: spaceKey, text: "STOP", is_group: isGroup, message_id: message.id });
+    await actions.forward({
+      handle_hash: handleHash, space_id: spaceKey, channel: space.__platform,
+      text: "STOP", is_group: isGroup, message_id: message.id,
+    });
+    seen.add(messageKey);
+    return;
+  }
+
+  // The first direct WhatsApp message can be the exact one-time handoff code.
+  // Claim it in Core, then forward only the opaque case id and a boolean; the
+  // code itself never reaches the Coordinator or an outbound user message.
+  if (!isGroup && space.__platform === "whatsapp_business" && HANDOFF_CODE.test(text)) {
+    await actions.typing(space, true);
+    let claim: Record<string, string>;
+    try {
+      claim = await actions.core("/link/claim", {
+        code: text.toUpperCase(), handle_hash: handleHash, space_id: spaceKey, channel: space.__platform,
+      });
+    } catch {
+      await actions.typing(space, false);
+      Sentry.captureMessage("handoff claim temporarily unavailable", "warning");
+      await space.send(presentMessage(
+        "That handoff could not be verified. Return to ASI:One and ask Billo for a new WhatsApp handoff.",
+        space.__platform,
+      ));
+      seen.add(messageKey);
+      return;
+    }
+    if (claim.case_id && ["linked", "claimed"].includes(claim.status)) {
+      await actions.forward({
+        handle_hash: handleHash, space_id: spaceKey, channel: space.__platform,
+        text: "", is_group: false, case_id: claim.case_id, handoff_claimed: true,
+        message_id: message.id,
+      });
+    } else {
+      await actions.typing(space, false);
+      const reason = claim.status === "expired"
+        ? "That handoff has expired. Return to ASI:One and ask Billo for a new WhatsApp handoff."
+        : "That handoff is unavailable. Return to ASI:One and ask Billo for a new WhatsApp handoff.";
+      await space.send(presentMessage(reason, space.__platform));
+    }
     seen.add(messageKey);
     return;
   }
@@ -140,14 +224,27 @@ async function handle(space: Space, message: Message) {
     seen.add(messageKey);
     return;
   }
-  await typing(space, true);
-  const attachmentUrl = ev.attachments.length === 1 ? await upload(ev.attachments[0]) : "";
-  const attachmentError = ev.attachments.length > 1 ? "multiple" : hasAttachments && !attachmentUrl ? "invalid" : "";
-  // Keep the caption so the coordinator can emergency-screen it first. An explicit
-  // attachment error prevents care/payment actions from using a missing document.
-  await forward({
+  await actions.typing(space, true);
+  let attachmentUrl = "";
+  let attachmentError = "";
+  if (isGroup && hasAttachments) {
+    // A tagged group message still reaches the Coordinator so it can send the
+    // explicit privacy reply, but group documents never leave Photon.
+    attachmentError = "invalid";
+  } else if (hasAttachments && hasEmergencyCaption(text)) {
+    // The caption reaches the authoritative safety screen immediately. Never
+    // let a stalled provider download delay emergency guidance.
+    attachmentError = "safety_deferred";
+  } else if (ev.attachments.length > 1) {
+    attachmentError = "multiple";
+  } else if (hasAttachments) {
+    attachmentUrl = await actions.upload(ev.attachments[0]);
+    if (!attachmentUrl) attachmentError = "invalid";
+  }
+  await actions.forward({
     handle_hash: handleHash,
     space_id: spaceKey,
+    channel: space.__platform,
     text,
     is_group: isGroup,
     attachment_url: attachmentUrl,
@@ -246,9 +343,13 @@ async function main() {
   }
 }
 
-main().catch(async (e) => {
+async function fatal(e: unknown) {
   console.error("[bridge] fatal", e instanceof Error ? `${e.name}: ${scrubText(e.message)}` : "unknown");
   Sentry.captureException(e);
   await Sentry.flush(2000);
   process.exit(1);
-});
+}
+
+// Importing the handler in tests must not start a server or provider session.
+const entryUrl = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : "";
+if (import.meta.url === entryUrl) void main().catch(fatal);

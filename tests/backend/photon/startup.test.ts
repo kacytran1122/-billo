@@ -16,6 +16,12 @@ test("bridge readiness requires the live Photon event subscription", () => {
 test("gateway and core requests have bounded timeouts", () => {
   assert.equal(source.match(/signal: AbortSignal\.timeout\(15_000\)/g)?.length, 2);
 });
+test("persistent logs never include a sender or phone suffix", () => {
+  assert.doesNotMatch(source, /slice\(-4\)/);
+  assert.doesNotMatch(source, /from \$\{[^}]*sender/);
+  assert.doesNotMatch(source, /from \$\{mask/);
+  assert.match(source, /\[bridge\] inbound \$\{chatKind\} \(\$\{rawText\.length\} chars/);
+});
 test("SMS configuration fails before the legacy SDK can choose a provider", () => {
   const legacy = source.slice(source.indexOf("async function legacyTransport"), source.indexOf("async function main"));
   assert.match(legacy, /if \(channels\.includes\("sms"\)\) throw new Error\("Photon SMS requires PHOTON_API_VERSION=beta"\)/);
@@ -28,11 +34,28 @@ test("Beta receives the explicit channel selection and outbound caches cannot cr
   assert.match(source, /beta\.getSpace\(target\.id, target\.channel\)/);
   assert.match(source, /if \(!space \|\| space\.__platform !== target\.channel\)/);
 });
-test("attachment failures preserve the caption and explicit error for emergency-first coordinator routing", () => {
-  assert.match(source, /const attachmentError = ev\.attachments\.length > 1 \? "multiple"/);
-  assert.match(source, /const attachmentUrl = ev\.attachments\.length === 1 \? await upload\(ev\.attachments\[0\]\) : ""/);
+test("attachment privacy and emergency gates run before document upload", () => {
+  assert.match(source, /if \(isGroup && hasAttachments\)/);
+  assert.match(source, /else if \(hasAttachments && hasEmergencyCaption\(text\)\)/);
+  assert.match(source, /attachmentUrl = await actions\.upload\(ev\.attachments\[0\]\)/);
   assert.match(source, /attachment_error: attachmentError/);
   assert.match(source, /attachment_url: attachmentUrl/);
-  assert.ok(source.indexOf("if (!shouldRespond(rawText, isGroup)) return") < source.indexOf("const attachmentUrl ="));
-  assert.ok(source.indexOf('"STOP", "UNSUBSCRIBE"') < source.indexOf("const attachmentUrl ="));
+  assert.ok(source.indexOf("if (isGroup && hasAttachments)") < source.indexOf("await actions.upload"));
+  assert.ok(source.indexOf("hasEmergencyCaption(text)") < source.indexOf("await actions.upload"));
+  assert.ok(source.indexOf("if (!shouldRespond(rawText, isGroup)) return") < source.indexOf("await actions.upload"));
+  assert.ok(source.indexOf('"STOP", "UNSUBSCRIBE"') < source.indexOf("await actions.upload"));
+});
+
+test("WhatsApp handoff claims only an exact direct-chat code and never forwards the code text", () => {
+  assert.match(source, /\^BILLO-\[A-Z0-9\]\{4\}-\[A-Z0-9\]\{4\}\$\/i/);
+  assert.match(source, /!isGroup && space\.__platform === "whatsapp_business" && HANDOFF_CODE\.test\(text\)/);
+  assert.match(source, /core\("\/link\/claim", \{[\s\S]*?code: text\.toUpperCase\(\)[\s\S]*?channel: space\.__platform/);
+  assert.match(source, /text: "", is_group: false, case_id: claim\.case_id, handoff_claimed: true/);
+  assert.ok(source.indexOf("HANDOFF_CODE.test(text)") < source.indexOf("if (!shouldRespond(rawText, isGroup)) return"));
+  assert.match(source, /Return to ASI:One and ask Billo for a new WhatsApp handoff/);
+  assert.doesNotMatch(source.slice(source.indexOf("const reason ="), source.indexOf("await space.send", source.indexOf("const reason ="))), /visit page/);
+  const claimBlock = source.slice(source.indexOf('core("/link/claim"'), source.indexOf("if (claim.case_id"));
+  assert.match(claimBlock, /catch \{/);
+  assert.match(claimBlock, /handoff could not be verified/);
+  assert.match(claimBlock, /typing\(space, false\)/);
 });

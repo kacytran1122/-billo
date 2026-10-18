@@ -10,7 +10,7 @@ WELCOME = (
     "• organize a bill or receipt\n"
     "• review possible benefit and reimbursement paths\n\n"
     "To begin, describe what happened and include your city or ZIP code. You can also attach a bill or receipt and label it paid or unpaid.\n\n"
-    "In one-to-one chats, no tag is needed. The current shared Photon line supports direct iMessage chats only.\n\n"
+    "In one-to-one chats, no tag is needed. Messaging availability depends on the connected Billo channel.\n\n"
     "Billo is not an emergency service or a substitute for medical, legal, insurance, or financial advice. Payment features are simulations.\n\n"
     "Open the relevant demo screen:\n"
     "• Compare care: https://www.getbillo.us/tools/prices\n"
@@ -35,8 +35,7 @@ _OUT_OF_SCOPE_RE = re.compile(
 SCOPE_REPLY = (
     "I can help with care options and estimated costs, visit preparation, medical bills and receipts, "
     "and possible reimbursement paths. I can’t help with unrelated tasks or diagnose a condition.\n\n"
-    "Tell me what care you need and your city or ZIP code, or attach a bill or receipt.\n"
-    "Care comparison screen (demo): https://www.getbillo.us/tools/prices"
+    "Tell me what care you need and your city or ZIP code, or attach a bill or receipt."
 )
 
 
@@ -126,7 +125,7 @@ def quick_reply(text: str, *, has_files: bool = False, stage: str = "new", asked
     if re.search(r"\b(?:financial assistance|charity care|payment plan|can't afford|cannot afford)\b", clean):
         return "Ask the provider for its financial-assistance policy, application, income rules, and an interest-free payment-plan option before using credit. I can help organize the bill, but the provider decides assistance."
     if re.search(r"\b(?:schedule|reschedule|cancel|confirm) (?:an |my |the )?(?:appointment|visit)\b", clean):
-        return "Billo can save a care option and calendar reminder, but it cannot confirm, reschedule, or cancel an appointment. Contact the provider directly and verify the time, location, availability, and price."
+        return "Billo can save a care option and estimate, but it cannot confirm, reschedule, or cancel an appointment. Contact the provider directly and verify the time, location, availability, and price; only add a confirmed time to your calendar."
     if re.fullmatch(r"(?:can you |do you |please )?(?:help|explain|check|review)?\s*(?:with\s+)?(?:my\s+)?(?:insurance|benefits?|coverage|claim)", clean):
         return "I can review possible benefit paths after you attach the bill or paid receipt and name the plan you actually have. I can’t confirm coverage, eligibility, or claim approval; verify those decisions with the plan administrator."
     if clean in {"status", "my status", "what next", "what's next"}:
@@ -134,6 +133,7 @@ def quick_reply(text: str, *, has_files: bool = False, stage: str = "new", asked
             "new": "Next step: describe the care you need and include your city or ZIP code, or attach a bill or receipt.",
             "choosing": "Next step: review the options, then reply ‘book 1’ using the number you prefer. This saves a care plan; it does not confirm an appointment.",
             "booked": "Your selected care option and estimate are saved. The provider has not confirmed an appointment. You can log services during the visit or send the final bill afterward.",
+            "during": "Your visit log is active. Send each service you receive to update the running estimate, or attach the final bill afterward.",
             "organizing": "I’m organizing your document now. Please wait for the result before approving a payment or reimbursement step.",
             "organized": "Your document is organized. Review any flagged items, then check a benefit you actually have or request QR review for an unpaid bill.",
             "settled": "Review the settlement result above. Any payment or reimbursement shown is a simulation; no real funds moved.",

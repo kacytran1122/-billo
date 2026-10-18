@@ -23,37 +23,66 @@ agent = Agent(
 )
 
 
+def _settlement_result(req: SettlementRequest, data: dict) -> SettlementResult:
+    """Convert either a fresh or replayed Core payload into the worker result."""
+    return SettlementResult(
+        case_id=req.case_id, request_id=getattr(req, "request_id", ""),
+        action=req.action, ok=True, status=data.get("status", ""),
+        settlement_id=data.get("settlement_id", ""), trusted=data.get("trusted", False),
+        reasons=data.get("reasons", []), merchant_name=data.get("merchant_name", ""),
+        amount=data.get("amount", 0), handoff_url=data.get("handoff_url", ""),
+        mode=data.get("mode", ""), trace=carry(),
+    )
+
+
+def _inactive_settlement_result(req: SettlementRequest) -> SettlementResult:
+    return SettlementResult(
+        case_id=req.case_id, request_id=getattr(req, "request_id", ""),
+        action=req.action, ok=False, error="operation_inactive", trace=carry(),
+    )
+
+
 @agent.on_message(model=SettlementRequest)
 async def route(ctx: Context, sender: str, req: SettlementRequest):
     reply_to = req.reply_to or sender
-    result = SettlementResult(case_id=req.case_id, action=req.action, ok=False, trace=carry())
+    result = _inactive_settlement_result(req)
     try:
         with case_span(req, op="agent.settlement", name=req.action), check("settlement"), task_span(
                 "settlement-guard", "settlement.guard", 3000, action=req.action, route="settlement"):
-            if req.action == "inspect_qr":
+            operation = await core_post("/operations/status", {
+                "case_id": req.case_id, "kind": "settlement", "request_id": req.request_id,
+            })
+            replay = operation.get("result")
+            if (
+                operation.get("status") == "completed"
+                and operation.get("action") == req.action
+                and isinstance(replay, dict)
+            ):
+                data = replay
+            elif operation.get("status") != "active":
+                data = None
+            elif req.action == "inspect_qr":
                 data = await core_post("/visa/qr/inspect", {
-                    "case_id": req.case_id, "file_url": req.file_url, "demo": req.demo,
+                    "case_id": req.case_id, "request_id": req.request_id,
+                    "file_url": req.file_url, "demo": req.demo,
                 })
             elif req.action == "approve_qr":
                 data = await core_post("/visa/qr/approve", {
-                    "case_id": req.case_id, "review_id": req.review_id,
+                    "case_id": req.case_id, "request_id": req.request_id,
+                    "review_id": req.review_id,
                     "explicit_approval": req.explicit_approval,
                 })
             elif req.action == "reimburse":
                 data = await core_post("/visa/reimbursement/payout", {
-                    "case_id": req.case_id, "benefit_name": req.benefit_name, "amount": req.amount,
+                    "case_id": req.case_id, "request_id": req.request_id,
+                    "benefit_name": req.benefit_name, "amount": req.amount,
                     "benefit_approved": req.benefit_approved,
                     "explicit_patient_approval": req.explicit_approval,
                 })
             else:
                 raise ValueError("unknown settlement action")
-        result = SettlementResult(
-            case_id=req.case_id, action=req.action, ok=True, status=data.get("status", ""),
-            settlement_id=data.get("settlement_id", ""), trusted=data.get("trusted", False),
-            reasons=data.get("reasons", []), merchant_name=data.get("merchant_name", ""),
-            amount=data.get("amount", 0), handoff_url=data.get("handoff_url", ""),
-            mode=data.get("mode", ""), trace=carry(),
-        )
+        if data is not None:
+            result = _settlement_result(req, data)
     except (httpx.HTTPError, ValueError) as exc:
         detail = str(exc)
         if isinstance(exc, httpx.HTTPStatusError):

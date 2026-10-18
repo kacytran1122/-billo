@@ -20,3 +20,6 @@ runcmd:
   - ufw allow 443/tcp
   - ufw allow 443/udp
   - ufw --force enable
+
+# The application and its HTTPS gateway are started together by install.sh.
+# No host reverse-proxy package is installed on a fresh VM.

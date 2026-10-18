@@ -1,18 +1,21 @@
 import ast
 import asyncio
+from copy import deepcopy
 import re
 import sys
+import time
 from pathlib import Path
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "backend" / "fetch.ai"))
-from common.conversation import SCOPE_REPLY, care_request, clinical_advice_request, normalize_request, payment_status, quick_reply
-from common.screen_links import with_screen_link
+from common.conversation import SCOPE_REPLY, WELCOME, care_request, clinical_advice_request, normalize_request, payment_status, quick_reply
+from common.screen_links import screen_for, with_screen_link
 from common.safety import first_matching_rule
 
 
@@ -22,6 +25,11 @@ def test_greetings_and_help_have_immediate_informative_responses(text):
     assert "Billo" in result and "https://www.getbillo.us" in result
     assert "simulations" in result
     assert "no tag is needed" in result
+
+
+def test_welcome_is_channel_neutral():
+    assert "direct iMessage chats only" not in WELCOME
+    assert "connected Billo channel" in WELCOME
 
 
 @pytest.mark.parametrize("text", ["hi, I have chest pain", "hey I can't breathe", "thanks but I need an ER", "find care near UCLA", "approve clinic payment"])
@@ -75,27 +83,38 @@ def test_payment_status_uses_boundaries_and_unpaid_wins(text, expected):
 def coordinator_functions(actual=()):
     """Exercise the actual route without starting a networked uAgent."""
     tree = ast.parse((ROOT / "backend/fetch.ai/coordinator.py").read_text())
-    names = {"route_text", "step_approve_clinic_payment", "step_reimburse", *actual}
+    names = {
+        "route_text", "step_approve_clinic_payment", "step_reimburse",
+        "_group_target_key", "_is_group_target", "_general_group_explanation",
+        "_group_private_action", "_supersede_pending_operations",
+        "_cancel_superseded_operations", "new_case",
+        "step_group_guidance", *actual,
+    }
     nodes = [ast.ImportFrom(module="__future__", names=[ast.alias(name="annotations")], level=0)]
     nodes += [
         node for node in tree.body
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
         and node.name in names.union({"location_hint"})
     ]
-    env = dict(re=re, normalize_request=normalize_request, quick_reply=quick_reply,
-               with_screen_link=with_screen_link,
+    env = dict(asyncio=asyncio, re=re, normalize_request=normalize_request, quick_reply=quick_reply,
+               screen_for=screen_for, with_screen_link=with_screen_link,
                first_matching_rule=first_matching_rule,
                SAFETY_RULES=yaml.safe_load((ROOT / "backend/rules/red_flags.yaml").read_text())["rules"],
                SCOPE_REPLY=SCOPE_REPLY, care_request=care_request, clinical_advice_request=clinical_advice_request,
                document_payment_status=payment_status, BILL_WORDS=("bill", "receipt"),
                QR_WORDS=("clinic qr", "scan qr"), DONE_WORDS=("they did", "x-ray"), save=lambda *args: None,
+               GROUP_PRIVATE_REPLY="PRIVATE GROUP REDIRECT https://asi1.ai/ai/billo",
+               GROUP_WELCOME="GROUP-SAFE WELCOME https://asi1.ai/ai/billo",
+               BILLO_ASI_ONE_URL="https://asi1.ai/ai/billo",
+               core_post=AsyncMock(), time=time, uuid4=uuid4,
+               _current_turn_arrival=lambda case_id: 1,
                say=AsyncMock(), ADDR={"gateway": "test-gateway", "payment_guard": "test-settlement",
                                       "red_flag": "test-red-flag", "care_finder": "test-care-finder"},
                OutboundText=lambda **kwargs: SimpleNamespace(**kwargs), carry=lambda: {},
                ScreenRequest=lambda **kwargs: SimpleNamespace(**kwargs), ScreenResult=SimpleNamespace,
                FindCareRequest=lambda **kwargs: SimpleNamespace(**kwargs), CareOptions=SimpleNamespace,
                dump=lambda value: vars(value), photon_care_matches=lambda *args: "care matches")
-    for name in ["reply", "step_book", "step_symptoms", "step_after_care", "step_benefits", "step_visit_log", "step_scan_clinic_qr"]:
+    for name in ["reply", "step_book", "step_symptoms", "step_after_care", "step_benefits", "step_visit_log", "step_scan_clinic_qr", "step_whatsapp_handoff"]:
         env[name] = AsyncMock()
     exec(compile(ast.fix_missing_locations(ast.Module(body=nodes, type_ignores=[])), "coordinator.py", "exec"), env)
     return env
@@ -278,6 +297,22 @@ def test_stop_cancels_reminders_on_both_coordinator_paths(channel):
     assert "Stopped" in delivered_reply(env, ctx, channel)
 
 
+def test_stop_restores_interrupted_document_stage_and_revokes_core_operation():
+    env = coordinator_functions()
+    case = {
+        "id": "synthetic", "stage": "organizing", "stage_before_organizing": "booked",
+        "places": [], "followup_due": 100, "pending_after_care_id": "request-1",
+    }
+
+    asyncio.run(env["route_text"](None, case, "STOP", []))
+
+    assert case["stage"] == "booked" and "stage_before_organizing" not in case
+    assert case["stopped"] is True and "pending_after_care_id" not in case
+    env["core_post"].assert_awaited_once_with("/operations/cancel", {
+        "case_id": "synthetic", "kind": "after_care", "request_id": "request-1",
+    })
+
+
 def test_display_name_changes_without_changing_the_seed_configuration():
     source = (ROOT / "backend/fetch.ai/coordinator.py").read_text()
     assert 'name="Billo"' in source
@@ -297,6 +332,133 @@ def test_natural_selection_variants_use_the_current_option(text):
     env = coordinator_functions()
     asyncio.run(env["route_text"](None, {"stage": "choosing", "places": [1]}, text, []))
     assert env["step_book"].await_args.args[-1] == 1
+
+
+@pytest.mark.parametrize("available,deep_link,has_cta", [
+    (False, "", False),
+    (True, "", False),
+    (False, "https://wa.me/15551234567?text=BILLO-ABCD-2345", False),
+    (True, "https://wa.me/15551234567?text=BILLO-ABCD-2345", True),
+])
+def test_booking_saves_stable_case_link_and_fails_closed_when_whatsapp_is_unavailable(
+        available, deep_link, has_cta):
+    env = coordinator_functions(actual=("step_book",))
+    env["time"] = time
+    env["FOLLOWUP_MINUTES"] = 30
+    env["photon_booking_saved"] = lambda *args: "compact booking"
+    visit_url = "https://www.getbillo.us/visit/opaque-case-token"
+    case_page = "https://www.getbillo.us/continue/BILLO-ABCD-2345"
+    env["core_post"] = AsyncMock(side_effect=[
+        {"amount": 240, "ics_url": "legacy-ics", "gcal_url": "legacy-gcal"},
+        {"visit_url": visit_url, "ics_url": "private-ics", "gcal_url": "private-gcal"},
+        {
+            "code": "BILLO-ABCD-2345", "case_page": case_page,
+            "deep_link": deep_link, "available": available,
+        },
+    ])
+    case = {
+        "id": "case-1", "stage": "choosing", "code": "73560", "data_mode": "demo",
+        "places": [{
+            "name": "Westwood Urgent", "npi": "123", "price_typical": 240,
+            "address": "123 Westwood Blvd", "hours": "Open until 9", "price_source": "demo",
+        }],
+    }
+
+    asyncio.run(env["step_book"](None, case, 1))
+
+    assert [call.args[0] for call in env["core_post"].await_args_list] == [
+        "/estimates", "/case-links", "/link-codes",
+    ]
+    assert env["core_post"].await_args_list[2].args[1]["channel"] == "whatsapp_business"
+    assert case["case_link_ready"] is True and "visit_url" not in case
+    assert "handoff_code" not in case and "handoff_page" not in case
+    detailed = env["reply"].await_args.args[2]
+    assert (case_page in detailed) is has_cta
+    assert ("continue this same case in WhatsApp" in detailed) is has_cta
+    assert env["reply"].await_args.kwargs["private_visit_url"] == visit_url
+
+
+def test_booking_without_a_conversation_time_does_not_invent_calendar_links():
+    env = coordinator_functions(actual=("step_book",))
+    env["time"] = time
+    env["FOLLOWUP_MINUTES"] = 30
+    compact_args = []
+    env["photon_booking_saved"] = lambda *args: compact_args.append(args) or "compact booking"
+    env["core_post"] = AsyncMock(side_effect=[
+        {"amount": 240},
+        {"visit_url": "https://www.getbillo.us/visit/opaque-case-token"},
+        {"case_page": "", "deep_link": "", "available": False},
+    ])
+    case = {
+        "id": "no-time", "stage": "choosing", "code": "73560", "data_mode": "demo",
+        "places": [{
+            "name": "Westwood Urgent", "npi": "123", "price_typical": 240,
+            "address": "123 Westwood Blvd", "hours": "Open until 9", "price_source": "demo",
+        }],
+    }
+
+    asyncio.run(env["step_book"](None, case, 1))
+
+    detailed = env["reply"].await_args.args[2]
+    assert "No appointment time was added" in detailed
+    assert "Calendar:" not in detailed and "Google Calendar:" not in detailed
+    assert compact_args[0][2] == ""
+
+
+def test_visit_event_advances_case_and_link_to_during():
+    env = coordinator_functions(actual=("step_visit_log",))
+    env["core_post"] = AsyncMock(return_value={"say": "Visit log updated"})
+    case = {"id": "case-1", "stage": "booked"}
+    asyncio.run(env["step_visit_log"](None, case, "they did an X-ray"))
+    assert case["stage"] == "during"
+    env["reply"].assert_awaited_once_with(None, case, "Visit log updated")
+
+
+@pytest.mark.parametrize("stage", ["booked", "during", "organized", "settled"])
+@pytest.mark.parametrize("text", [
+    "new WhatsApp link", "continue in WhatsApp", "New WhatsApp link, please!",
+    "can I get a new WhatsApp link?", "send me a new WhatsApp link",
+    "I want to continue in WhatsApp", "could you make a WhatsApp handoff",
+])
+def test_saved_case_can_request_a_fresh_whatsapp_handoff(stage, text):
+    env = coordinator_functions()
+    case = {"id": "case-1", "stage": stage, "places": []}
+    asyncio.run(env["route_text"](None, case, text, []))
+    env["step_whatsapp_handoff"].assert_awaited_once_with(None, case)
+    env["step_symptoms"].assert_not_awaited()
+
+
+def test_whatsapp_handoff_requires_a_saved_case():
+    env = coordinator_functions()
+    case = {"id": "case-1", "stage": "new", "places": []}
+    asyncio.run(env["route_text"](None, case, "continue in WhatsApp", []))
+    env["step_whatsapp_handoff"].assert_not_awaited()
+    assert "Save a care plan or organize a bill first" in env["reply"].await_args.args[2]
+
+
+@pytest.mark.parametrize("available,deep_link,has_cta", [
+    (True, "https://wa.me/15551234567?text=BILLO-ABCD-2345", True),
+    (True, "", False),
+    (False, "https://wa.me/15551234567?text=BILLO-ABCD-2345", False),
+    (False, "", False),
+])
+def test_fresh_whatsapp_handoff_returns_only_an_available_continue_page(
+        available, deep_link, has_cta):
+    env = coordinator_functions(actual=("step_whatsapp_handoff",))
+    case_page = "https://www.getbillo.us/continue/BILLO-ABCD-2345"
+    env["core_post"] = AsyncMock(return_value={
+        "available": available, "deep_link": deep_link, "case_page": case_page,
+    })
+    case = {"id": "case-1", "stage": "booked"}
+    asyncio.run(env["step_whatsapp_handoff"](None, case))
+    env["core_post"].assert_awaited_once_with(
+        "/link-codes", {"case_id": "case-1", "channel": "whatsapp_business"},
+    )
+    response = env["reply"].await_args.args[2]
+    assert ("/continue/BILLO-ABCD-2345" in response) is has_cta
+    assert ("WhatsApp is not configured" in response) is (not has_cta)
+    assert (case_page in response) is has_cta
+    assert "wa.me" not in response
 
 
 def test_location_without_a_care_request_is_saved_then_clarified():
@@ -368,6 +530,33 @@ def test_missing_location_is_requested_instead_of_assuming_ucla():
     assert case["care_query"] == "I hurt my ankle"
 
 
+def test_new_care_search_after_document_work_starts_a_separate_case():
+    env = coordinator_functions()
+    old = {
+        "id": "old-case", "channel": "asi1", "who": "patient", "stage": "organizing",
+        "places": [], "after_care": None, "pending_after_care_id": "old-request",
+        "pending_after_care_target": ["asi1", "patient"],
+    }
+    fresh = {
+        "id": "new-case", "channel": "asi1", "who": "patient", "stage": "new",
+        "places": [], "after_care": None,
+    }
+    env["new_case"] = Mock(return_value=fresh)
+    ctx = SimpleNamespace()
+
+    asyncio.run(env["route_text"](ctx, old, "I twisted my ankle in Chicago", []))
+
+    assert "pending_after_care_id" not in old
+    assert old["stage"] == "new"
+    env["new_case"].assert_called_once_with(ctx, "asi1", "patient")
+    env["core_post"].assert_awaited_once_with("/operations/cancel", {
+        "case_id": "old-case", "kind": "after_care", "request_id": "old-request",
+    })
+    env["step_symptoms"].assert_awaited_once_with(
+        ctx, fresh, "I twisted my ankle in Chicago", group_safe=False,
+    )
+
+
 def test_emergency_precedes_diagnosis_boundary_and_location_prompt():
     env = coordinator_functions(actual=("step_symptoms",))
     ctx = SimpleNamespace(send_and_receive=AsyncMock(return_value=(SimpleNamespace(emergency=True, message="Call 911 now."), None)))
@@ -375,6 +564,22 @@ def test_emergency_precedes_diagnosis_boundary_and_location_prompt():
     asyncio.run(env["route_text"](ctx, case, "diagnose my chest pain", []))
     assert case["stage"] == "emergency"
     assert "Call 911 now." in env["reply"].await_args.args[-1]
+
+
+def test_emergency_revokes_pending_core_mutation_after_sending_safety_guidance():
+    env = coordinator_functions()
+    case = {
+        "id": "case-1", "stage": "organized", "places": [],
+        "pending_settlement_id": "request-1", "pending_settlement_started_at": time.time(),
+    }
+
+    asyncio.run(env["route_text"](None, case, "I have chest pain", []))
+
+    assert case["stage"] == "emergency" and "pending_settlement_id" not in case
+    assert "911" in env["reply"].await_args.args[2]
+    env["core_post"].assert_awaited_once_with("/operations/cancel", {
+        "case_id": "case-1", "kind": "settlement", "request_id": "request-1",
+    })
 
 
 @pytest.mark.parametrize("text,files", [
@@ -389,3 +594,156 @@ def test_emergencies_override_business_commands_uploads_and_off_topic_captions(t
     assert "911" in env["reply"].await_args.args[-1]
     env["step_after_care"].assert_not_awaited()
     env["step_benefits"].assert_not_awaited()
+
+
+@pytest.mark.parametrize("text,files", [
+    ("book 1", []),
+    ("yes", []),
+    ("status", []),
+    ("STOP", []),
+    ("they did an X-ray", []),
+    ("demo unpaid bill", []),
+    ("check my HSA", []),
+    ("scan clinic QR", []),
+    ("approve clinic payment", []),
+    ("approve reimbursement $120 demo", []),
+    ("continue this case in WhatsApp", []),
+    ("paid receipt", ["file:private-receipt.png"]),
+])
+def test_group_chat_private_and_stateful_actions_fail_closed_without_advancing_existing_case(text, files):
+    env = coordinator_functions()
+    case = {
+        "id": "private-case", "stage": "booked", "places": [{"name": "private provider"}],
+        "asked": True, "followup_due": 123, "visit_url": "https://www.getbillo.us/visit/private-bearer",
+        "after_care": {"total": 987.65}, "benefits": [{"name": "private benefit"}],
+        "settlement": {"status": "verified"},
+    }
+    before = deepcopy(case)
+
+    asyncio.run(env["route_text"](None, case, text, files, is_group=True))
+
+    assert case == before
+    response = env["reply"].await_args.args[2]
+    assert response == env["GROUP_PRIVATE_REPLY"]
+    assert env["reply"].await_args.kwargs == {"group_safe": True}
+    assert "private-bearer" not in response and "987.65" not in response
+    for name in (
+        "step_book", "step_after_care", "step_benefits", "step_visit_log",
+        "step_scan_clinic_qr", "step_whatsapp_handoff", "step_symptoms",
+    ):
+        env[name].assert_not_awaited()
+
+
+def test_group_attachment_error_uses_privacy_gate_not_public_upload_instructions():
+    env = coordinator_functions()
+    case = {"id": "private-case", "stage": "organized", "places": [], "visit_url": "https://www.getbillo.us/visit/private"}
+    asyncio.run(env["route_text"](
+        None, case, "bill attached", [], is_group=True, attachment_error="invalid",
+    ))
+    response = env["reply"].await_args.args[2]
+    assert response == env["GROUP_PRIVATE_REPLY"]
+    assert "/tools/scan" not in response and "/visit/private" not in response
+
+
+@pytest.mark.parametrize("text", [
+    "What is a deductible?", "what is an EOB", "what is an itemized bill",
+    "what is prior authorization", "is my information private",
+])
+def test_group_chat_allows_known_case_independent_healthcare_explanations(text):
+    env = coordinator_functions()
+    case = {"id": "group", "stage": "new", "places": [], "visit_url": "https://www.getbillo.us/visit/private"}
+    asyncio.run(env["route_text"](None, case, text, [], is_group=True))
+    response = env["reply"].await_args.args[2]
+    assert response != env["GROUP_PRIVATE_REPLY"]
+    assert "private" not in response
+    assert env["reply"].await_args.kwargs == {"group_safe": True}
+
+
+def test_group_emergency_guidance_wins_without_mutating_or_exposing_private_case():
+    env = coordinator_functions()
+    case = {
+        "id": "private-case", "stage": "booked", "places": [{"name": "private provider"}],
+        "visit_url": "https://www.getbillo.us/visit/private-bearer", "after_care": {"total": 987.65},
+    }
+    before = deepcopy(case)
+    asyncio.run(env["route_text"](
+        None, case, "I have chest pain and attached my bill", ["file:private"], is_group=True,
+    ))
+    assert case == before
+    response = env["reply"].await_args.args[2]
+    assert "911" in response
+    assert "private-bearer" not in response and "987.65" not in response
+    assert env["reply"].await_args.kwargs == {"group_safe": True}
+    env["step_after_care"].assert_not_awaited()
+
+
+def test_group_public_care_search_is_stateless_and_never_reuses_a_private_case_link():
+    env = coordinator_functions(actual=("step_group_guidance",))
+    screen = SimpleNamespace(emergency=False)
+    care = SimpleNamespace(
+        location="Chicago, IL",
+        places=[SimpleNamespace(
+            name="Chicago Demo Clinic", kind="urgent_care", price_typical=210,
+            price_low=150, address="100 Demo Ave", hours="Open until 8 PM",
+            price_source="synthetic demo",
+        )],
+    )
+    ctx = SimpleNamespace(send_and_receive=AsyncMock(side_effect=[(screen, None), (care, None)]))
+    case = {
+        "id": "private-case", "stage": "organized", "places": [{"name": "private provider"}],
+        "visit_url": "https://www.getbillo.us/visit/private-bearer", "after_care": {"total": 987.65},
+    }
+    before = deepcopy(case)
+
+    asyncio.run(env["route_text"](ctx, case, "knee X-ray in Chicago", [], is_group=True))
+
+    assert case == before
+    assert ctx.send_and_receive.await_count == 2
+    request = ctx.send_and_receive.await_args_list[1].args[1]
+    assert request.group_safe is True and request.near == "Chicago, IL"
+    response = env["reply"].await_args.args[2]
+    assert "Chicago Demo Clinic" in response and "public demo" in response.lower()
+    assert "private-bearer" not in response and "987.65" not in response
+    assert "save a care plan" in response.lower()
+    assert env["reply"].await_args.kwargs == {"group_safe": True}
+
+
+def test_group_location_only_does_not_invent_a_service_or_save_context():
+    env = coordinator_functions(actual=("step_group_guidance",))
+    ctx = SimpleNamespace(send_and_receive=AsyncMock(return_value=(SimpleNamespace(emergency=False), None)))
+    case = {"id": "group", "stage": "new", "places": []}
+    asyncio.run(env["route_text"](ctx, case, "I'm in Chicago", [], is_group=True))
+    assert ctx.send_and_receive.await_count == 1
+    response = env["reply"].await_args.args[2]
+    assert "include both the service and city or ZIP code" in response
+    assert "not saved" in response
+
+
+def test_group_safe_reply_never_appends_bearer_link_or_outbound_case_id():
+    env = coordinator_functions(actual=("reply",))
+    ctx = SimpleNamespace(send=AsyncMock())
+    case = {
+        "id": "private-case", "stage": "organized", "channel": "whatsapp_business",
+        "who": "whatsapp_business:group-1", "is_group": True,
+        "visit_url": "https://www.getbillo.us/visit/private-bearer",
+    }
+    asyncio.run(env["reply"](ctx, case, "General guidance only", group_safe=True))
+    outgoing = ctx.send.await_args.args[1]
+    assert outgoing.text == "General guidance only"
+    assert "private-bearer" not in outgoing.text
+    assert outgoing.case_id == ""
+
+
+def test_delayed_unsafe_reply_to_known_group_is_replaced_before_delivery():
+    env = coordinator_functions(actual=("reply",))
+    storage = SimpleNamespace(get=lambda key: key == "group-target:whatsapp_business:group-1")
+    ctx = SimpleNamespace(send=AsyncMock(), storage=storage)
+    case = {
+        "id": "private-case", "stage": "organized", "channel": "whatsapp_business",
+        "who": "group-1", "visit_url": "https://www.getbillo.us/visit/private-bearer",
+    }
+    asyncio.run(env["reply"](ctx, case, "Bill total: $987.65"))
+    outgoing = ctx.send.await_args.args[1]
+    assert outgoing.text == env["GROUP_PRIVATE_REPLY"]
+    assert "$987.65" not in outgoing.text and "private-bearer" not in outgoing.text
+    assert outgoing.case_id == ""

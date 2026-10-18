@@ -99,8 +99,25 @@ def scrub_text(value: str) -> str:
     return value
 
 
-def _strip_query(url: str) -> str:
-    return url.split("?", 1)[0] if isinstance(url, str) else url
+_PRIVATE_PATH_SEGMENT = re.compile(
+    r"(/(?:public/cases|public/wallet|api/link|qr|c|letters|visit|continue|wallet)/)"
+    r"[^/?#\s]+",
+    re.IGNORECASE,
+)
+
+
+def _safe_url(value: str) -> str:
+    """Remove queries and bearer credentials embedded in private-link paths.
+
+    Query filtering alone is not enough for Billo: case, wallet, handoff, QR and
+    letter credentials intentionally live in the URL path. Preserve the route
+    shape (and a case calendar suffix) for diagnostics without retaining the
+    credential itself.
+    """
+    if not isinstance(value, str):
+        return value
+    without_query = value.split("?", 1)[0]
+    return _PRIVATE_PATH_SEGMENT.sub(r"\1[Filtered]", without_query)
 
 
 _SENSITIVE_RE = re.compile(
@@ -121,7 +138,7 @@ def scrub(value: Any, depth: int = 0) -> Any:
     if depth > 12:
         return FILTERED
     if isinstance(value, str):
-        return scrub_text(value)
+        return scrub_text(_safe_url(value))
     if isinstance(value, dict):
         return {k: (v if str(k) in SAFE_KEYS and isinstance(v, (str, int, float, bool))
                     else FILTERED if _sensitive(k) else scrub(v, depth + 1)) for k, v in value.items()}
@@ -133,7 +150,7 @@ def scrub(value: Any, depth: int = 0) -> Any:
 def _scrub_request(request: dict) -> dict:
     out = {k: v for k, v in request.items() if k in ("method", "url", "headers")}
     if "url" in out:
-        out["url"] = _strip_query(out["url"])
+        out["url"] = _safe_url(out["url"])
     if isinstance(out.get("headers"), dict):
         out["headers"] = {k: v for k, v in out["headers"].items()
                           if k.lower() in ("content-type", "user-agent", "sentry-trace", "baggage")}
@@ -143,12 +160,12 @@ def _scrub_request(request: dict) -> dict:
 def _scrub_spans(spans: list) -> list:
     for span in spans or []:
         if isinstance(span.get("description"), str):
-            span["description"] = scrub_text(_strip_query(span["description"]))
+            span["description"] = scrub_text(_safe_url(span["description"]))
         if isinstance(span.get("data"), dict):
             data = scrub(span["data"])
             for k in ("url", "http.url", "url.full"):
                 if k in data:
-                    data[k] = _strip_query(data[k])
+                    data[k] = _safe_url(data[k])
             data.pop("http.query", None)
             data.pop("url.query", None)
             span["data"] = data
@@ -160,11 +177,13 @@ def scrub_event(event: dict, _hint: Any = None) -> dict:
     for key in ("message", "extra", "breadcrumbs"):
         if key in event:
             event[key] = scrub(event[key])
+    if isinstance(event.get("transaction"), str):
+        event["transaction"] = _safe_url(event["transaction"])
     if isinstance(event.get("logentry"), dict):
         event["logentry"] = scrub(event["logentry"])
     for exc in (event.get("exception") or {}).get("values", []) or []:
         if isinstance(exc.get("value"), str):
-            exc["value"] = scrub_text(exc["value"])
+            exc["value"] = scrub_text(_safe_url(exc["value"]))
         for frame in (exc.get("stacktrace") or {}).get("frames", []) or []:
             frame.pop("vars", None)  # belt and braces on top of stack_frame_variables=False
             for key in ("pre_context", "context_line", "post_context"):
@@ -189,14 +208,14 @@ def scrub_event(event: dict, _hint: Any = None) -> dict:
 
 def scrub_breadcrumb(crumb: dict, _hint: Any = None) -> dict | None:
     if crumb.get("category") in ("httplib", "http") and isinstance(crumb.get("data"), dict):
-        crumb["data"]["url"] = _strip_query(crumb["data"].get("url", ""))
+        crumb["data"]["url"] = _safe_url(crumb["data"].get("url", ""))
         crumb["data"].pop("http.query", None)
     return scrub(crumb)
 
 
 def scrub_log(log: dict, _hint: Any = None) -> dict | None:
     if isinstance(log.get("body"), str):
-        log["body"] = scrub_text(log["body"])
+        log["body"] = scrub_text(_safe_url(log["body"]))
     if isinstance(log.get("attributes"), dict):
         log["attributes"] = scrub(log["attributes"])
     return log

@@ -29,6 +29,33 @@ def test_booking_copy_keeps_amount_calendar_and_tagged_next_action():
     assert text.endswith("https://www.getbillo.us/tools/estimate")
 
 
+def test_booking_copy_does_not_invent_a_calendar_link_without_a_confirmed_time():
+    text = booking_saved(
+        {"name": "Westwood Urgent", "address": "123 Westwood Blvd"},
+        240,
+        "",
+        "https://www.getbillo.us/visit/opaque-case-token",
+    )
+    assert "No appointment time saved" in text
+    assert "📅" not in text
+    assert "calendar" not in text.lower()
+
+
+def test_booking_copy_uses_the_private_case_url_instead_of_a_static_demo():
+    visit_url = "https://www.getbillo.us/visit/opaque-case-token"
+    text = booking_saved(
+        {
+            "name": "Westwood Urgent", "address": "123 Westwood Blvd, Los Angeles, CA",
+            "hours": "Open until 9 pm",
+        }, 240,
+        "https://api.getbillo.us/public/cases/opaque/calendar.ics", visit_url,
+    )
+    assert "123 Westwood Blvd, Los Angeles, CA" in text
+    assert "Open until 9 pm" in text
+    assert text.count(visit_url) == 1
+    assert "/tools/" not in text
+
+
 def test_organized_ocr_bill_shows_confidence_and_next_action():
     text = organized_bill(
         kind="unpaid final bill",
@@ -46,6 +73,18 @@ def test_organized_ocr_bill_shows_confidence_and_next_action():
     assert "⚠️ 1 uncoded charge(s) need review" in text
     assert "Next · @Billo scan clinic QR" in text
     assert text.endswith("https://www.getbillo.us/tools/match")
+
+
+def test_organized_copy_advances_the_same_private_case_url_to_after():
+    visit_url = "https://www.getbillo.us/visit/opaque-case-token"
+    text = organized_bill(
+        kind="unpaid final bill", total=360, reader="ocr", provider_match=True,
+        estimate_amount=240, estimate_difference=120, unreviewed_lines=0,
+        needs_review=[], payment_status="unpaid", visit_url=visit_url,
+    )
+    assert text.count(visit_url) == 1
+    assert f"{visit_url}#after" in text
+    assert "/tools/" not in text
 
 
 def test_vision_review_and_paid_benefit_action_are_clear():

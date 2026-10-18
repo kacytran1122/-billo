@@ -26,10 +26,10 @@ services:
       CASE_MEDIC_URL: http://case-medic:8007
       BILLO_UPLOADS_DIR: /tmp/billo-uploads
     restart: unless-stopped
-    # The Lightsail host runs Caddy as a system service. Keep the upstream
-    # reachable only from that host, never from the public network.
-    ports:
-      - "127.0.0.1:8000:8000"
+    # Core is reachable only on the private Compose network. The Caddy service
+    # below is the sole public ingress in the canonical deployment.
+    expose:
+      - "8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
       interval: 15s
@@ -42,30 +42,81 @@ services:
   coordinator:
     <<: *agent
     command: python coordinator.py
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8001),3); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      core: {condition: service_healthy}
+      red-flag: {condition: service_healthy}
+      care-finder: {condition: service_healthy}
+      bill-auditor: {condition: service_healthy}
+      settlement-router: {condition: service_healthy}
 
   red-flag:
     <<: *agent
     command: python red_flag.py
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8002),3); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   care-finder:
     <<: *agent
     command: python care_finder.py
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8003),3); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   bill-auditor:
     <<: *agent
     command: python bill_auditor.py
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8004),3); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   settlement-router:
     <<: *agent
     command: python settlement_router.py
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8005),3); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   imessage-gateway:
     <<: *agent
     command: python imessage_gateway.py
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8006),3); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      core: {condition: service_healthy}
+      coordinator: {condition: service_healthy}
 
   case-medic:
     <<: *agent
     command: python case_medic.py
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8007),3); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   photon:
     build:
@@ -87,13 +138,18 @@ services:
       core:
         condition: service_healthy
       imessage-gateway:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks: [billo]
     security_opt: [no-new-privileges:true]
 
   caddy:
     image: caddy:2-alpine
-    profiles: ["docker-gateway"]
     env_file: ../../.env
     restart: unless-stopped
     depends_on:

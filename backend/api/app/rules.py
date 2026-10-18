@@ -6,6 +6,7 @@ vote        : dispute ONLY when both agree; one alone -> "ask the hospital"
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
@@ -69,13 +70,16 @@ def say_for(line: dict, flag: dict | None) -> str:
     if not flag:
         return f"{line['description']} looks fine."
     if flag["kind"] == "dispute":
-        return f"{line['description']}: both checks agree this is wrong. It goes in the dispute letter."
+        return (
+            f"{line['description']}: both checks found a potential billing problem. "
+            "Review the evidence before deciding whether to dispute it."
+        )
     which = "the price check" if flag["price_check"] else "the rules check"
     return f"{line['description']}: only {which} found a problem, so I will ask the hospital instead of disputing."
 
 
 def gfe_check(lines: list[dict], gfe: float | None, sum_p90: float) -> dict | None:
-    """Case level: No Surprises Act. Dispute if billed >= GFE + $400 AND the total is above normal prices."""
+    """Flag a large estimate difference only when the total also exceeds local prices."""
     if gfe is None:
         return None
     total = sum(l["charge"] for l in lines)
@@ -91,8 +95,10 @@ def gfe_check(lines: list[dict], gfe: float | None, sum_p90: float) -> dict | No
         "price_check": price_hit,
         "line_nos": [l["line_no"] for l in lines],
         "amount_at_stake": round(over, 2),
-        "explanation": (f"the total ${total:,.0f} is ${over:,.0f} over your Good Faith Estimate of ${gfe:,.0f} "
-                        f"(you can dispute within {RULES['gfe']['dispute_window_days']} days)"),
+        "explanation": (
+            f"the total ${total:,.0f} is ${over:,.0f} over the saved estimate of ${gfe:,.0f}; "
+            "review the itemized bill and ask the provider which review or dispute options apply"
+        ),
         "source_ids": ["GFE-400", "gfe:saved"],
     }
 
@@ -107,10 +113,59 @@ def disputed_amount(lines: list[dict], flags: list[dict], gfe: float | None) -> 
     return round(line_disputes, 2)
 
 
-def visit_codes_from_text(text: str) -> set[str]:
+def _visit_term_label(term: str) -> str:
+    if term.replace("-", "") == "xray":
+        return "X-ray"
+    return term.capitalize()
+
+
+def visit_service_candidates_from_text(text: str) -> list[tuple[str, tuple[str, ...]]]:
+    """Return one entry per mentioned service without guessing its exact code.
+
+    A literal known CPT/HCPCS code wins over natural-language matching. This
+    lets a patient refine an earlier ambiguous description (for example,
+    ``x-ray``) by later sending ``73560``. Natural-language synonyms that map
+    to the same candidate set are recorded only once.
+    """
+    words = RULES["visit_log"]["words"]
+    known_codes = {
+        str(code)
+        for codes in words.values()
+        for code in codes
+    } | {str(code) for code in RULES["visit_log"]["always_ok"]}
+    canonical = {code.lower(): code for code in known_codes}
+    literal_codes = [
+        canonical[key]
+        for key in sorted(canonical)
+        if re.search(
+            rf"(?<![a-z0-9]){re.escape(key)}(?![a-z0-9])",
+            text.lower(),
+        )
+    ]
+    if literal_codes:
+        return [(code, (code,)) for code in literal_codes]
+
+    groups: list[tuple[str, tuple[str, ...]]] = []
+    seen: set[tuple[str, ...]] = set()
     low = text.lower()
-    out: set[str] = set()
-    for word, codes in RULES["visit_log"]["words"].items():
-        if word in low:
-            out.update(codes)
-    return out
+    for term, raw_codes in words.items():
+        if not re.search(
+            rf"(?<![a-z0-9]){re.escape(term.lower())}(?![a-z0-9])",
+            low,
+        ):
+            continue
+        candidates = tuple(dict.fromkeys(str(code) for code in raw_codes))
+        if candidates in seen:
+            continue
+        seen.add(candidates)
+        groups.append((_visit_term_label(term), candidates))
+    return groups
+
+
+def visit_codes_from_text(text: str) -> set[str]:
+    """Compatibility helper returning every code that could explain the text."""
+    return {
+        code
+        for _label, candidates in visit_service_candidates_from_text(text)
+        for code in candidates
+    }

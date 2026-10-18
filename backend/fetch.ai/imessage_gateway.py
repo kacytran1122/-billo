@@ -1,7 +1,7 @@
-"""iMessage Gateway (helper): a thin adapter, no thinking.
+"""Photon Gateway (helper): a thin adapter, no thinking.
 
 Bridge (Photon Spectrum, TypeScript)  --POST /imessage-->  this agent  --> Coordinator
-Coordinator --OutboundText--> this agent --POST {BRIDGE_URL}/send--> Bridge --> iMessage
+Coordinator --OutboundText--> this agent --POST {BRIDGE_URL}/send--> Bridge --> channel
 """
 from uagents import Agent, Context
 from uagents_core.types import DeliveryStatus
@@ -22,7 +22,7 @@ agent = Agent(
     mailbox=True,
     publish_agent_details=True,
     readme_path=str(READMES / "gateway.md"),
-    description="Helper that connects Billo's iMessage line (Photon) to the Billo Coordinator.",
+    description="Helper that connects Billo's Photon messaging channels to the Billo Coordinator.",
 )
 
 
@@ -32,9 +32,12 @@ async def from_bridge(ctx: Context, req: InboundText) -> Ack:
         return Ack(ok=False, detail="bad token")
     if not ADDR["coordinator"]:
         return Ack(ok=False, detail="ADDR_COORDINATOR not set")
+    channel = getattr(req, "channel", "imessage") or "imessage"
+    if channel not in {"imessage", "sms", "whatsapp_business"}:
+        return Ack(ok=False, detail="bad channel")
     req.token = ""  # never forward secrets
-    with case_scope(channel="imessage"):
-        tx = sentry_sdk.continue_trace(req.trace or {}, op="gateway.inbound", name="imessage -> coordinator")
+    with case_scope(channel=channel):
+        tx = sentry_sdk.continue_trace(req.trace or {}, op="gateway.inbound", name=f"{channel} -> coordinator")
         with sentry_sdk.start_transaction(tx) as span:
             span.set_data("group", req.is_group)
             span.set_data("has_file", bool(req.attachment_url))

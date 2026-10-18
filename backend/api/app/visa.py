@@ -13,12 +13,21 @@ import os
 import re
 from decimal import Decimal, InvalidOperation
 
-from . import store
+from . import public_links, store
 
 
 QR_MODE = os.getenv("VISA_QR_MODE", "simulate").strip().lower()
 DIRECT_MODE = os.getenv("VISA_DIRECT_MODE", "simulate").strip().lower()
 PUBLIC = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/")
+PUBLIC_WEB = os.getenv("PUBLIC_WEB_URL", "http://localhost:3001").rstrip("/")
+WALLET_LINK_TTL_SECONDS = int(os.getenv("WALLET_LINK_TTL_SECONDS", "900"))
+
+# These words describe a type of healthcare business, not a specific merchant.
+# A containment match must share something more identifying than these terms.
+_GENERIC_MERCHANT_WORDS = frozenset({
+    "AND", "CARE", "CENTER", "CENTRE", "CLINIC", "DEMO", "HEALTH", "HOSPITAL",
+    "INC", "LLC", "MEDICAL", "OF", "THE", "URGENT",
+})
 
 
 def tlv(tag: str, value: str) -> str:
@@ -72,6 +81,24 @@ def _money(value: str | float) -> Decimal:
     return Decimal(str(value)).quantize(Decimal("0.01"))
 
 
+def _merchant_name_matches(expected_provider: str, merchant: str) -> bool:
+    """Match a specific provider name while rejecting empty or generic substrings."""
+    expected_words = re.findall(r"[A-Z0-9]+", expected_provider.upper())
+    merchant_words = re.findall(r"[A-Z0-9]+", merchant.upper())
+    want, got = "".join(expected_words), "".join(merchant_words)
+    if len(want) < 4 or len(got) < 4:
+        return False
+    expected_specific = {word for word in expected_words if len(word) >= 3 and word not in _GENERIC_MERCHANT_WORDS}
+    merchant_specific = {word for word in merchant_words if len(word) >= 3 and word not in _GENERIC_MERCHANT_WORDS}
+    if not expected_specific or not merchant_specific:
+        return False
+    if want == got:
+        return True
+    if want not in got and got not in want:
+        return False
+    return bool(expected_specific & merchant_specific)
+
+
 def inspect_qr(payload: str, expected_provider: str, expected_amount: float,
                expected_currency: str = "840", expected_invoice: str = "") -> dict:
     reasons: list[str] = []
@@ -94,9 +121,7 @@ def inspect_qr(payload: str, expected_provider: str, expected_amount: float,
     if not any(value.upper() == "VISA" for value in payment_networks):
         reasons.append("QR does not identify a Visa payment network")
     merchant = fields.get("59", "").strip()
-    want = re.sub(r"[^A-Z0-9]", "", expected_provider.upper())
-    got = re.sub(r"[^A-Z0-9]", "", merchant.upper())
-    if want and want not in got and got not in want:
+    if not _merchant_name_matches(expected_provider, merchant):
         reasons.append("merchant name does not match the care provider")
     try:
         amount = _money(fields.get("54", ""))
@@ -118,7 +143,7 @@ def inspect_qr(payload: str, expected_provider: str, expected_amount: float,
     return {
         "trusted": not reasons, "reasons": reasons, "merchant_name": merchant,
         "amount": float(amount), "currency": fields.get("53", ""), "invoice": invoice,
-        "mode": QR_MODE,
+        "invoice_checked": bool(expected_invoice), "mode": QR_MODE,
     }
 
 
@@ -153,9 +178,21 @@ def approve_qr(case_id: str, review_id: str) -> dict:
         raise ValueError("an untrusted QR cannot be approved")
     if QR_MODE not in {"mock", "simulate"}:
         raise NotImplementedError("live Visa wallet handoff requires approved Visa Pay wallet integration")
-    record.update(status="handoff_ready", handoff_url=f"{PUBLIC}/visa/qr/{review_id}")
+    record.update(status="handoff_ready")
     store.save_settlement(review_id, record)
-    return record
+    token = public_links.derive(public_links.WALLET_SCOPE, review_id)
+    expires_at = public_links.expires_in(WALLET_LINK_TTL_SECONDS)
+    store.save_public_link(
+        public_links.token_hash(token), public_links.WALLET_SCOPE, case_id, review_id, expires_at
+    )
+    # The bearer token is returned to the approved conversation but is never
+    # copied into the durable settlement payload.
+    return {
+        **record,
+        "handoff_url": f"{PUBLIC_WEB}/wallet/{token}",
+        "wallet_api_url": f"{PUBLIC}/public/wallet/{token}",
+        "handoff_expires_at": public_links.iso_timestamp(expires_at),
+    }
 
 
 def reimburse(case_id: str, benefit_name: str, amount: float, benefit_approved: bool) -> dict:

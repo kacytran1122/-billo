@@ -41,7 +41,8 @@ async def on_screen(ctx: Context, sender: str, req: ScreenRequest):
         res = screen(req.text)
         res.case_id = req.case_id
         res.trace = carry()
-        ctx.logger.info(f"screen case={req.case_id[:6]} emergency={res.emergency} rule={res.rule_id}")
+        # Keep logs operational only: the case identifier and screening result are health data.
+        ctx.logger.info("red-flag screen completed")
         await ctx.send(sender, res)
 
 

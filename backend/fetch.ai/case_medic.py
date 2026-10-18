@@ -88,12 +88,16 @@ async def on_alert(ctx: Context, alert: Alert) -> Ack:
             span.set_data("issue_id", alert.issue_id)
             ctx.logger.info(f"alert check={alert.check} trace_transactions={transactions} -> {action}")
             metric("count", "billo.medic.alert", check=alert.check, action=action)
-            if ADDR["coordinator"]:  # empty case_id -> Coordinator heals the latest open case
+            if ADDR["coordinator"] and alert.case_id:
                 await ctx.send(ADDR["coordinator"], MedicAction(
                     case_id=alert.case_id, action=action, patient_text=patient_text, trace=carry()))
+            elif not alert.case_id:
+                # Operational alerts without a keyed case remain diagnostic.
+                # Guessing a patient by recency could mutate an unrelated case.
+                metric("count", "billo.medic.untagged", check=alert.check, action="ignored")
             if dedupe_key:
                 ctx.storage.set(dedupe_key, True)
-    return Ack(ok=True, detail=action)
+    return Ack(ok=True, detail=action if alert.case_id else "ignored_missing_case")
 
 
 if __name__ == "__main__":

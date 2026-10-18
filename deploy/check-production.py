@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,6 +37,8 @@ def audit(values: dict[str, str]) -> tuple[list[str], list[str]]:
         "CASE_HASH_KEY",
         "BILLO_DOMAIN",
         "PUBLIC_BASE_URL",
+        "PUBLIC_WEB_URL",
+        "PUBLIC_LINK_SECRET",
         "SEED_COORDINATOR",
         "SEED_RED_FLAG",
         "SEED_CARE_FINDER",
@@ -51,17 +55,58 @@ def audit(values: dict[str, str]) -> tuple[list[str], list[str]]:
         "ADDR_CASE_MEDIC",
     )
     blockers = [key for key in required if not values.get(key) or "CHANGE-ME" in values[key]]
-    if values.get("INTERNAL_TOKEN") == "dev-token":
-        blockers.append("INTERNAL_TOKEN (still dev-token)")
+    internal_token = values.get("INTERNAL_TOKEN", "")
+    if internal_token == "dev-token" or len(internal_token) < 32:
+        blockers.append("INTERNAL_TOKEN (must be a non-default secret of at least 32 characters)")
+    # Production intentionally still uses demo *data*. Bearer-link security is
+    # independent of data mode, so a weak key is always a deployment blocker.
+    if len(values.get("PUBLIC_LINK_SECRET", "")) < 32:
+        blockers.append("PUBLIC_LINK_SECRET (must be at least 32 characters)")
+    parsed_urls = {}
+    for key in ("PUBLIC_BASE_URL", "PUBLIC_WEB_URL"):
+        parsed = urlparse(values.get(key, ""))
+        parsed_urls[key] = parsed
+        if parsed.scheme != "https" or not parsed.hostname:
+            blockers.append(f"{key} (must be an absolute HTTPS URL)")
+
+    domain = values.get("BILLO_DOMAIN", "").strip().rstrip(".").lower()
+    parsed_domain = urlparse(f"//{domain}")
+    valid_domain = (
+        bool(domain)
+        and "." in domain
+        and parsed_domain.hostname == domain
+        and not parsed_domain.path
+    )
+    if not valid_domain:
+        blockers.append("BILLO_DOMAIN (must be a bare DNS hostname)")
+    elif parsed_urls["PUBLIC_BASE_URL"].hostname != domain:
+        blockers.append("PUBLIC_BASE_URL (hostname must match BILLO_DOMAIN)")
+
+    whatsapp_address = values.get("PHOTON_WHATSAPP_ADDRESS", "").strip()
+    photon_channels = {
+        channel.strip() for channel in values.get("PHOTON_CHANNELS", "").split(",") if channel.strip()
+    }
+    photon_beta = values.get("PHOTON_API_VERSION", "").strip().lower() == "beta"
+    whatsapp_enabled = "whatsapp_business" in photon_channels
+    whatsapp_digits = re.sub(r"\D", "", whatsapp_address)
+    if whatsapp_address:
+        if not re.fullmatch(r"[1-9]\d{7,14}", whatsapp_digits):
+            blockers.append("PHOTON_WHATSAPP_ADDRESS (must be a valid international number)")
+        if not whatsapp_enabled:
+            blockers.append("PHOTON_CHANNELS (must include whatsapp_business when its number is configured)")
+        if photon_beta:
+            blockers.append("PHOTON_API_VERSION (beta transport does not support whatsapp_business)")
 
     warnings: list[str] = []
     live = values.get("BILLO_MODE", "demo") == "live"
-    if live and not values.get("SENTRY_WEBHOOK_SECRET"):
-        blockers.append("SENTRY_WEBHOOK_SECRET")
-    elif not values.get("SENTRY_WEBHOOK_SECRET"):
-        warnings.append("SENTRY_WEBHOOK_SECRET (required before switching to live mode)")
+    if len(values.get("SENTRY_WEBHOOK_SECRET", "")) < 32:
+        blockers.append("SENTRY_WEBHOOK_SECRET (must be at least 32 characters)")
     if not values.get("VISION_API_KEY"):
         warnings.append("VISION_API_KEY (optional fallback; local OCR remains enabled)")
+    if whatsapp_enabled and not whatsapp_address:
+        warnings.append("PHOTON_WHATSAPP_ADDRESS (required to make WhatsApp handoff links available)")
+    if whatsapp_enabled and photon_beta and not whatsapp_address:
+        warnings.append("PHOTON_API_VERSION (beta transport does not support whatsapp_business)")
     if not live:
         warnings.append("BILLO_MODE (keep demo until the production smoke test passes)")
     return sorted(set(blockers)), warnings

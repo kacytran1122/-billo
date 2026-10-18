@@ -1,8 +1,7 @@
 # Bill audit rules. Code decides; every flag cites a rule_id.
 gfe:
   rule_id: GFE-400
-  threshold: 400          # No Surprises Act: dispute if the bill is $400+ over the Good Faith Estimate
-  dispute_window_days: 120
+  threshold: 400          # Product review threshold; never presented as a legal eligibility decision.
 price:
   rule_id: PRICE-P90
   high_percentile: 0.9    # price check says "too high" above p90 for the code in the area
