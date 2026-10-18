@@ -50,6 +50,9 @@ test("phone previews become smaller beside the headline on compact screens", () 
   assert.match(landingStyles, /\.phoneAsi,[\s\S]*inline-size: 250px/);
   assert.match(landingStyles, /@media \(min-width: 700px\) and \(max-width: 1099px\)[\s\S]*transform: scale\(\.5\)/);
   assert.match(landingStyles, /grid-template-columns: minmax\(280px, 1fr\) 306px/);
+  assert.match(landingStyles, /@media \(max-width: 699px\)[\s\S]*grid-template-columns: minmax\(0, 1fr\) clamp\(124px, 36vw, 180px\)/);
+  assert.match(landingStyles, /@media \(max-width: 699px\)[\s\S]*\.heroPhones[\s\S]*grid-column: 2/);
+  assert.match(landingStyles, /@media \(max-width: 390px\)[\s\S]*grid-template-columns: minmax\(0, 1fr\) 112px/);
 });
 
 test("navigation section state is synchronized efficiently while scrolling", () => {
