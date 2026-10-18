@@ -11,6 +11,7 @@ from uagents_core.contrib.protocols.chat import ChatAcknowledgement, ChatMessage
 from common.chat import ack, say, text_of
 from common.config import BACKEND_ROOT, PORTS, READMES, require_seed
 from common.models import ScreenRequest, ScreenResult
+from common.safety import first_matching_rule
 from common.tracing import carry, case_span, init_sentry
 
 init_sentry("red_flag")
@@ -28,10 +29,9 @@ agent = Agent(
 
 
 def screen(text: str) -> ScreenResult:
-    low = text.lower()
-    for rule in RULES:
-        if any(word in low for word in rule["any"]):
-            return ScreenResult(case_id="", emergency=True, rule_id=rule["id"], message=rule["say"])
+    rule = first_matching_rule(text, RULES)
+    if rule:
+        return ScreenResult(case_id="", emergency=True, rule_id=rule["id"], message=rule["say"])
     return ScreenResult(case_id="", emergency=False, message="No emergency signs found.")
 
 
