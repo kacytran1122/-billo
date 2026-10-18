@@ -6,36 +6,40 @@ compact form: one headline, the essential numbers, and one clear next action.
 from __future__ import annotations
 
 
-def care_matches(places: list[dict]) -> str:
+def care_matches(places: list[dict], location: str = "") -> str:
     if not places:
-        return "🔎 No care matches yet\n\nTry a nearby city or ZIP code.\nReply @Billo find care near [ZIP]"
-    lines = ["📍 Your care shortlist", ""]
+        return "No verified care options found for that location.\n\nTry another city or ZIP code:\n@Billo find care near [ZIP]"
+    heading = "📍 Your care shortlist" + (f" — {location}" if location else "")
+    lines = [heading, "", "Demo estimates · confirm price and availability with the provider", ""]
     for index, place in enumerate(places, 1):
         kind = str(place.get("kind", "care")).replace("_", " ")
         lines.append(
             f"{index}. {place['name']}\n"
             f"   ~${float(place['price_typical']):,.0f} estimated · {kind}\n"
             f"   {place['hours']}\n"
+            f"   {place.get('address', '')}\n"
         )
-    lines.append("Reply @Billo book 1" if len(places) == 1 else "Reply @Billo book 1 (or another option number)")
+    lines.append("Next: @Billo book 1" if len(places) == 1 else "Next: @Billo book 1 (or another option number)")
+    lines.append("Saving an option does not confirm an appointment.")
     return "\n".join(lines)
 
 
 def booking_saved(place: dict, amount: float, calendar_url: str) -> str:
     return "\n".join([
-        "✅ Care plan saved",
+        "Care plan saved",
         "",
         str(place["name"]),
-        f"Estimate · ${amount:,.0f}",
+        f"Estimated price · ${amount:,.0f}",
+        "Appointment not confirmed",
         f"📅 {calendar_url}",
         "",
-        "At the visit: @Billo + what they did",
+        "At the visit: send @Billo and the service received",
     ])
 
 
 def benefits(paths: list[dict]) -> str:
     if not paths:
-        return "No matching benefit path yet. Tell @Billo which plan you have."
+        return "No matching benefit path found. Tell @Billo which plan or benefit you actually have."
     lines = ["💸 Explore money-back options", ""]
     lines.extend(f"• {path['name']}\n  Needs: {path['needed']}\n" for path in paths)
     lines.append("Eligibility is not confirmed. Check your plan deadline.")

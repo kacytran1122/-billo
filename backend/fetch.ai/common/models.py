@@ -49,6 +49,8 @@ class CareOptions(Traced):
     case_id: str
     places: List[Place]
     code: str  # main billing code we priced, e.g. 73560
+    location: str = ""
+    data_mode: str = "demo"
 
 
 # ---------- After-Care Organizer ----------

@@ -43,6 +43,31 @@ def test_care_search_maps_injury_words_to_knee_imaging_code():
     assert len(payload["places"]) == 3
     assert all(place["price_typical"] >= place["price_low"] for place in payload["places"])
     assert all("picture_url" not in place for place in payload["places"])
+    assert payload["location"] == "Los Angeles, CA"
+    assert all("Chicago" not in place["address"] for place in payload["places"])
+
+
+def test_care_search_honors_chicago_instead_of_reusing_los_angeles_results():
+    response = client.get(
+        "/care/search", params={"q": "broken leg", "near": "Chicago, IL"}, headers=headers
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["location"] == "Chicago, IL"
+    assert len(payload["places"]) == 3
+    assert all("Chicago" in place["address"] for place in payload["places"])
+    assert all("Westwood" not in place["name"] for place in payload["places"])
+    assert all("demo" in place["price_source"] for place in payload["places"])
+
+
+def test_care_search_does_not_fall_back_to_la_for_an_unsupported_location():
+    response = client.get(
+        "/care/search", params={"q": "broken leg", "near": "Seattle, WA"}, headers=headers
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["location"] == "Seattle, WA"
+    assert payload["places"] == []
 
 
 def test_care_search_uses_office_visit_code_for_other_requests():

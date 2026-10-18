@@ -78,16 +78,17 @@ def care_search(q: str = "", near: str = "UCLA", x_internal_token: str | None = 
     auth(x_internal_token)
     with task_span("care-search", "workflow.care_search", 1000, route="care"):
         code = "73560" if any(w in q.lower() for w in ("knee", "ankle", "leg", "fall", "soccer")) else "99213"
+        region, location = store.resolve_location(q, near)
         out = []
-        for p in store.places():
-            stats = store.price_stats(code, include_er=p["kind"] == "er")
+        for p in store.places(region):
+            stats = store.price_stats(code, region=region, include_er=p["kind"] == "er")
             out.append({
                 "name": p["name"], "kind": p["kind"], "npi": p["npi"], "address": p["address"], "hours": p["hours"],
                 "price_low": p["price_low"], "price_typical": p["price_typical"],
-                "price_source": f"{stats['source']} p50 ${stats['p50']:,.0f} for {code}" if stats else "posted price",
+                "price_source": f"{stats['source']} p50 ${stats['p50']:,.0f} for {code}" if stats else "synthetic demo estimate",
                 "pay_domain": p.get("pay_domain", ""),
             })
-        return {"code": code, "places": out}
+        return {"code": code, "location": location, "data_mode": "demo", "places": out}
 
 
 # ------------------------------------------------------------------ Good Faith Estimate + calendar
@@ -106,7 +107,7 @@ def save_estimate(body: EstimateIn, x_internal_token: str | None = Header(None))
     start = time.strftime("%Y%m%dT%H%M%S", time.localtime(time.time() + 3600))
     end = time.strftime("%Y%m%dT%H%M%S", time.localtime(time.time() + 7200))
     gcal = ("https://calendar.google.com/calendar/render?action=TEMPLATE"
-            f"&text={quote('Visit: ' + body.place)}&dates={start}/{end}&details={quote('Booked with Billo')}")
+            f"&text={quote('Care plan: ' + body.place)}&dates={start}/{end}&details={quote('Care option saved with Billo; appointment not confirmed')}")
     return {"amount": body.amount, "ics_url": f"{PUBLIC}/ics/{body.case_id}", "gcal_url": gcal}
 
 
@@ -118,8 +119,8 @@ def ics(case_id: str):
     t0 = time.strftime("%Y%m%dT%H%M%S", time.localtime(time.time() + 3600))
     t1 = time.strftime("%Y%m%dT%H%M%S", time.localtime(time.time() + 7200))
     body = ("BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Billo//EN\r\nBEGIN:VEVENT\r\n"
-            f"UID:{case_id}@heybillo.tech\r\nDTSTART:{t0}\r\nDTEND:{t1}\r\nSUMMARY:Visit: {est['place']}\r\n"
-            "DESCRIPTION:Booked with Billo. Your Good Faith Estimate is saved.\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")
+            f"UID:{case_id}@heybillo.tech\r\nDTSTART:{t0}\r\nDTEND:{t1}\r\nSUMMARY:Care plan: {est['place']}\r\n"
+            "DESCRIPTION:Care option and estimate saved with Billo. Appointment not confirmed.\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")
     return Response(body, media_type="text/calendar", headers={"Content-Disposition": "attachment; filename=billo-visit.ics"})
 
 
@@ -143,11 +144,12 @@ def visit_event(body: VisitIn, x_internal_token: str | None = Header(None)):
     gfe = store.get_estimate(body.case_id)
     base = gfe["amount"] if gfe else 0
     if not added:
-        return {"say": "Got it. I did not find a price for that yet, but I saved it in your visit log.", "total": total}
+        return {"say": "Visit log updated. I could not match that service to an estimate, so no amount was added. You can send the service name or billing code for another check.", "total": total}
     return {
         "say": (
-            f"Saved. Your visit so far: about ${base + total:,.0f} "
-            f"(estimate ${base:,.0f} + {n} possible billing-code item(s))."
+            f"Visit log updated. Current estimated total: ${base + total:,.0f} "
+            f"(${base:,.0f} saved care estimate plus {n} matched service item(s)). "
+            "This is an estimate, not a final provider quote."
         ),
         "total": base + total,
     }

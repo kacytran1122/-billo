@@ -38,7 +38,7 @@ test("landing actions open the channel connection experience", () => {
   assert.match(landing, /<ChannelConnect open=\{chooserOpen\}/);
   assert.match(landing, /openChooser\("asi"\)/);
   assert.match(landing, /openChooser\("whatsapp"\)/);
-  for (const feature of ["Emergency rules first", "Real care prices", "Bill &amp; receipt OCR", "Benefit paths"]) {
+  for (const feature of ["Emergency rules first", "Transparent care estimates", "Bill &amp; receipt OCR", "Benefit paths"]) {
     assert.match(landing, new RegExp(feature));
   }
 });

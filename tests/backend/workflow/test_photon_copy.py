@@ -13,17 +13,18 @@ def test_care_matches_is_short_and_has_one_tagged_action():
         {"name": "Campus Health", "kind": "clinic", "price_typical": 180, "hours": "open until 6 pm"},
         {"name": "Westwood Urgent", "kind": "urgent_care", "price_typical": 240, "hours": "open until 9 pm"},
     ])
-    assert text.startswith("📍 Your care shortlist\n\n")
+    assert text.startswith("📍 Your care shortlist\n\nDemo estimates")
     assert "1. Campus Health\n   ~$180 estimated" in text
-    assert text.endswith("Reply @Billo book 1 (or another option number)")
+    assert "Next: @Billo book 1 (or another option number)" in text
+    assert text.endswith("Saving an option does not confirm an appointment.")
     assert len(text) < 500
 
 
 def test_booking_copy_keeps_amount_calendar_and_tagged_next_action():
     text = booking_saved({"name": "Westwood Urgent"}, 240, "https://api.getbillo.us/calendar/demo.ics")
-    assert "Estimate · $240" in text
+    assert "Estimated price · $240" in text
     assert "https://api.getbillo.us/calendar/demo.ics" in text
-    assert text.endswith("At the visit: @Billo + what they did")
+    assert text.endswith("At the visit: send @Billo and the service received")
 
 
 def test_organized_ocr_bill_shows_confidence_and_next_action():
@@ -69,9 +70,10 @@ def test_benefit_copy_is_explicitly_not_a_promise():
 
 
 def test_care_match_actions_never_reference_missing_options():
-    assert "No care matches yet" in care_matches([])
+    assert "No verified care options found" in care_matches([])
     text = care_matches([{"name": "Clinic", "kind": "clinic", "price_typical": 120, "hours": "9–5"}])
-    assert text.endswith("Reply @Billo book 1")
+    assert "Next: @Billo book 1" in text
+    assert text.endswith("Saving an option does not confirm an appointment.")
 
 
 def test_demo_results_are_not_presented_as_verified_ocr():

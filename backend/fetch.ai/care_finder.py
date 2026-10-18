@@ -17,24 +17,32 @@ agent = Agent(
     mailbox=True,
     publish_agent_details=True,
     readme_path=str(READMES / "care_finder.md"),
-    description="Finds urgent care, clinics and ERs near you with real hospital price context.",
+    description="Finds urgent care, clinics and ERs for the requested location with transparent price context.",
 )
 
 
 async def find(text: str, near: str) -> CareOptions:
     data = await core_get("/care/search", q=text, near=near)
-    return CareOptions(case_id="", code=data["code"], places=[Place(**p) for p in data["places"]])
+    return CareOptions(
+        case_id="",
+        code=data["code"],
+        location=data.get("location", near),
+        data_mode=data.get("data_mode", "demo"),
+        places=[Place(**p) for p in data["places"]],
+    )
 
 
 def as_text(opts: CareOptions, group_safe: bool) -> str:
-    head = "Here are 3 places nearby, with real prices:" if group_safe else \
-        f"Here are {len(opts.places)} places near you for this (billing code {opts.code}):"
+    if not opts.places:
+        return f"I could not find demo care options for {opts.location}. Try a supported city or ZIP code."
+    head = f"Here are {len(opts.places)} demo options in {opts.location}:" if group_safe else \
+        f"Here are {len(opts.places)} demo options in {opts.location} for this (billing code {opts.code}):"
     rows = [
         f"{i}. {p.name} · about ${p.price_typical:,.0f} (low ${p.price_low:,.0f}) · {p.hours}\n   {p.address}"
         for i, p in enumerate(opts.places, 1)
     ]
     tail = "" if group_safe else "\nReply with the number to book, for example: book 1"
-    return "\n".join([head, *rows]) + tail + "\nPrices come from public hospital price files."
+    return "\n".join([head, *rows]) + tail + "\nDemo estimates are not live quotes; confirm price and availability with the provider."
 
 
 @agent.on_message(model=FindCareRequest, replies=CareOptions)

@@ -64,7 +64,8 @@ def test_live_visit_log_running_total():
     c.post("/estimates", json={"case_id": "t4", "npi": "1999999901", "place": "Westwood", "amount": 240}, headers=H)
     r = c.post("/visit-events", json={"case_id": "t4", "text": "They did an X-ray and gave me a splint"}, headers=H).json()
     assert r["total"] > 240
-    assert "possible billing-code item(s)" in r["say"]
+    assert "matched service item(s)" in r["say"]
+    assert "not a final provider quote" in r["say"]
 
 
 def test_coordinator_handles_stop_and_repeats_valid_booking_choices():
@@ -72,7 +73,7 @@ def test_coordinator_handles_stop_and_repeats_valid_booking_choices():
     assert 'if low == "stop"' in source
     assert 'case["followup_due"] = 0' in source
     assert 'case.get("stopped")' in source
-    assert "Please choose a valid option" in source
+    assert "That option number isn’t available" in source
 
 
 def test_after_care_paid_receipt_organizes_without_payment():

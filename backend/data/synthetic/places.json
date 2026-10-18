@@ -1,5 +1,6 @@
 [
   {
+    "region": "los-angeles",
     "name": "Westwood Urgent Care (demo)",
     "kind": "urgent_care",
     "npi": "1999999901",
@@ -12,6 +13,7 @@
     "price_low": 180
   },
   {
+    "region": "los-angeles",
     "name": "Campus Health Clinic (demo)",
     "kind": "clinic",
     "npi": "1999999902",
@@ -24,6 +26,7 @@
     "price_low": 120
   },
   {
+    "region": "los-angeles",
     "name": "Santa Monica Emergency Room (demo)",
     "kind": "er",
     "npi": "1999999903",
@@ -34,5 +37,44 @@
     "pay_domain": "heybillo.tech",
     "price_typical": 1800,
     "price_low": 1200
+  },
+  {
+    "region": "chicago",
+    "name": "Chicago Urgent Care (demo)",
+    "kind": "urgent_care",
+    "npi": "1999999911",
+    "address": "River North area, Chicago, IL 60654 (demo location)",
+    "lat": 41.8924,
+    "lng": -87.6341,
+    "hours": "demo hours: open until 9 pm",
+    "pay_domain": "heybillo.tech",
+    "price_typical": 260,
+    "price_low": 190
+  },
+  {
+    "region": "chicago",
+    "name": "Loop Community Clinic (demo)",
+    "kind": "clinic",
+    "npi": "1999999912",
+    "address": "The Loop, Chicago, IL 60602 (demo location)",
+    "lat": 41.8837,
+    "lng": -87.6289,
+    "hours": "demo hours: open until 6 pm",
+    "pay_domain": "heybillo.tech",
+    "price_typical": 195,
+    "price_low": 135
+  },
+  {
+    "region": "chicago",
+    "name": "Chicago Emergency Room (demo)",
+    "kind": "er",
+    "npi": "1999999913",
+    "address": "Near West Side, Chicago, IL 60612 (demo location)",
+    "lat": 41.8698,
+    "lng": -87.6640,
+    "hours": "demo hours: open 24 hours",
+    "pay_domain": "heybillo.tech",
+    "price_typical": 1950,
+    "price_low": 1300
   }
 ]

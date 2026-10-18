@@ -4,11 +4,15 @@ from __future__ import annotations
 import re
 
 WELCOME = (
-    "👋 Hi, I'm Billo\n\nMake every care dollar count.\n\n"
-    "I can compare care prices, organize bills and receipts, and explore possible benefits.\n"
-    "Try: find care near UCLA, or attach a receipt and say whether it is paid.\n\n"
-    "No tag is needed in one-to-one chats. In groups, mention @Billo. Payments are simulated.\n"
-    "More about Billo\nhttps://www.getbillo.us"
+    "Hi — I’m Billo, your care-cost assistant.\n\n"
+    "I can help you:\n"
+    "• compare care options and estimated prices by location\n"
+    "• organize a bill or receipt\n"
+    "• review possible benefit and reimbursement paths\n\n"
+    "To begin, describe what happened and include your city or ZIP code. You can also attach a bill or receipt and label it paid or unpaid.\n\n"
+    "In one-to-one chats, no tag is needed. In group chats, mention @Billo.\n\n"
+    "Billo is not an emergency service or a substitute for medical, legal, insurance, or financial advice. Payment features are simulations.\n"
+    "Learn more: https://www.getbillo.us"
 )
 
 
@@ -36,30 +40,30 @@ def quick_reply(text: str, *, has_files: bool = False, stage: str = "new", asked
     if clean in {"help", "start", "menu", "features", "?", "what can you do", "what can you help me with", "how does this work", "how do you work", "what is billo", "who are you", "how are you", "how can you help"} or re.fullmatch(r"(?:hi|hey|hello)(?: billo)?[,!.\s]+(?:what can you do|who are you|how can you help|how are you)", clean):
         return WELCOME
     if clean in {"thanks", "thank you", "thank you billo", "ty", "awesome", "great", "ok", "okay"}:
-        return "You're welcome. Send your next care question, or attach a bill or receipt when you're ready."
+        return "You’re welcome. When you’re ready, ask another care-cost question or attach a bill or receipt."
     if clean in {"bye", "goodbye", "see you"}:
-        return "Take care. Send STOP if you want to stop reminders."
+        return "Take care. You can return at any time. Send STOP to turn off reminders for this case."
     if clean in {"tell me a joke", "write me a poem", "what is the weather", "what's the weather"}:
-        return "I'm focused on healthcare costs: comparing care prices, organizing receipts, and exploring possible benefits. What would you like help with?"
+        return "I’m designed for care-cost questions, bill and receipt organization, and possible benefit paths. What would you like help with?"
     if clean in {"yes", "no", "y", "n"} and not (stage == "booked" and asked):
-        return "What would you like to do next? You can find care, attach a receipt, or ask about a benefit."
+        return "What would you like to do next? You can compare care options, attach a bill or receipt, or ask about a benefit."
     if clean in {"bill", "receipt", "unpaid bill", "paid receipt", "i have a bill", "i have a receipt", "upload bill", "upload receipt", "check my bill", "read my bill", "check this bill", "here is my bill", "check my receipt", "read my receipt", "check this receipt", "here is my receipt", "can you check my bill", "can you read my receipt"}:
-        return "Attach a clear bill or receipt photo or PDF. In the caption, say 'paid receipt' or 'unpaid bill'. No tag is needed in one-to-one chats."
+        return "Attach a clear photo or PDF, then label it ‘paid receipt’ or ‘unpaid bill.’ In a one-to-one chat, you do not need to tag Billo."
     if clean in {"pay", "pay bill", "pay my bill", "payment"}:
-        return "Start by attaching the unpaid final bill. After it is organized, ask 'scan clinic QR'. Billo checks the clinic and amount before asking for explicit approval. Payments are simulated; no real money moves."
+        return "First, attach the unpaid final bill. After I organize it, send ‘scan clinic QR.’ I’ll verify the clinic and amount before requesting explicit approval. This is a simulation: no card data is collected and no money moves."
     if clean in {"reimburse", "reimbursement", "refund", "money back"}:
-        return "Attach your paid receipt first, then name your actual plan, such as HSA or FSA. A possible benefit is not an approval. Reimbursement requires administrator approval and your explicit consent; payouts are simulated."
+        return "First, attach the paid receipt and name the benefit you actually have, such as an HSA or FSA. A possible path is not confirmation of eligibility. Reimbursement requires administrator approval and your explicit consent; payouts are simulated."
     if clean in {"status", "my status", "what next", "what's next"}:
         steps = {
-            "new": "Tell me what care you need and your city or ZIP code, or attach a bill or receipt.",
-            "choosing": "Review the care options, then reply 'book 1' with your chosen option number.",
-            "booked": "Your care plan and estimate are saved. This is not a clinic-confirmed appointment. Log services during your visit or send the final bill afterward.",
-            "organizing": "Your document is being organized. Wait for its result before approving any next step.",
-            "organized": "Your document record is organized. Review any flagged items, then check your named benefit or request a clinic QR review for an unpaid bill.",
-            "settled": "Review the settlement result above. A simulated payment or reimbursement does not mean real money moved.",
+            "new": "Next step: describe the care you need and include your city or ZIP code, or attach a bill or receipt.",
+            "choosing": "Next step: review the options, then reply ‘book 1’ using the number you prefer. This saves a care plan; it does not confirm an appointment.",
+            "booked": "Your selected care option and estimate are saved. The provider has not confirmed an appointment. You can log services during the visit or send the final bill afterward.",
+            "organizing": "I’m organizing your document now. Please wait for the result before approving a payment or reimbursement step.",
+            "organized": "Your document is organized. Review any flagged items, then check a benefit you actually have or request QR review for an unpaid bill.",
+            "settled": "Review the settlement result above. Any payment or reimbursement shown is a simulation; no real funds moved.",
             "emergency": "Your earlier message triggered the emergency safety check. If this is an emergency, call 911. Billo is not an emergency service.",
         }
         return steps.get(stage, "Send 'help' to see what Billo can do. No payment is approved by asking for status.")
     if clean in {"this is paid", "this is unpaid", "it is paid", "it is unpaid"}:
-        return "Please resend the document with 'paid receipt' or 'unpaid bill' in its caption so I can update the correct record."
+        return "Please resend the document and label it ‘paid receipt’ or ‘unpaid bill’ so I can create the correct record."
     return None

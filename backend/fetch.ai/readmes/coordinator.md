@@ -12,7 +12,7 @@ Patients are often asked to choose care before they know the price, then decode 
 
 1. Tell Billo what happened and where you are.
 2. Billo checks fixed emergency rules first.
-3. It compares nearby care options and real price context.
+3. It compares nearby care options with clearly labeled estimated-price context.
 4. Choose a place and save the expected price.
 5. During the visit, tell Billo what services were added to keep a running total.
 

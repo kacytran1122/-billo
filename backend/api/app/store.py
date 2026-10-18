@@ -8,6 +8,7 @@ import json
 import os
 import statistics
 import time
+import re
 from pathlib import Path
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
@@ -60,8 +61,30 @@ def price_stats(code: str, region: str = "los-angeles", include_er: bool = False
 
 
 # ---------------------------------------------------------------- places
-def places() -> list[dict]:
-    return json.loads((SYN / "places.json").read_text())
+_LOCATION_PATTERNS = (
+    ("chicago", "Chicago, IL", (r"\bchicago\b", r"\b606\d{2}\b")),
+    ("los-angeles", "Los Angeles, CA", (r"\blos angeles\b", r"\bucla\b", r"\bwestwood\b", r"\b900\d{2}\b")),
+)
+
+
+def resolve_location(q: str, near: str) -> tuple[str, str]:
+    """Resolve supported demo regions without silently falling back to Los Angeles."""
+    for value in (q, near):
+        normalized = value.lower().strip()
+        for region, label, patterns in _LOCATION_PATTERNS:
+            if any(re.search(pattern, normalized) for pattern in patterns):
+                return region, label
+    requested = near.strip()
+    if requested and requested.lower() not in {"ucla", "ucla, los angeles, ca"}:
+        return "unsupported", requested
+    return "los-angeles", "Los Angeles, CA"
+
+
+def places(region: str | None = None) -> list[dict]:
+    items = json.loads((SYN / "places.json").read_text())
+    if region is None:
+        return items
+    return [place for place in items if place.get("region", "los-angeles") == region]
 
 
 # ---------------------------------------------------------------- estimates (Good Faith Estimate)

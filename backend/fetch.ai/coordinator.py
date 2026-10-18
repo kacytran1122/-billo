@@ -67,6 +67,25 @@ QR_WORDS = ("visa qr", "clinic qr", "scan qr", "scan to pay", "payment qr")
 DONE_WORDS = ("they did", "gave me", "x-ray", "xray", "splint", "brace", "shot", "stitches")
 
 
+def location_hint(text: str) -> str | None:
+    """Extract a location update that the demo catalog can resolve."""
+    low = text.lower()
+    if re.search(r"\b(chicago|606\d{2})\b", low):
+        return "Chicago, IL"
+    if re.search(r"\b(los angeles|ucla|westwood|900\d{2})\b", low):
+        return "Los Angeles, CA"
+    match = re.search(
+        r"\b(?:i(?:'m| am)\s+(?:now\s+|currently\s+)?in|(?:now|currently)\s+in|"
+        r"near|around|location(?: is)?|zip(?: code)?(?: is)?)\s+([^,.;!?]+)",
+        text,
+        re.I,
+    )
+    if not match:
+        return None
+    candidate = match.group(1).strip()
+    return None if candidate.lower() in {"me", "here", "my area"} else candidate
+
+
 # ------------------------------------------------------------------ case state
 def _key(channel: str, who: str) -> str:
     return f"door:{channel}:{who}"
@@ -129,11 +148,19 @@ async def reply(ctx: Context, case: dict, text: str, *, photon_text: str | None 
 
 # ------------------------------------------------------------------ steps
 async def step_symptoms(ctx: Context, case: dict, text: str, group_safe: bool = False) -> None:
+    requested_location = location_hint(text)
+    if requested_location:
+        case["near"] = requested_location
+    near = case.get("near", "UCLA, Los Angeles, CA")
+    prior_query = case.get("care_query", "")
+    care_query = f"{prior_query}. Current location: {near}" if requested_location and prior_query else text
+    if not (requested_location and prior_query):
+        case["care_query"] = text
     res, _ = await ctx.send_and_receive(
         ADDR["red_flag"], ScreenRequest(case_id=case["id"], text=text, trace=carry()),
         response_type=ScreenResult, timeout=20)
     if res is None:
-        await reply(ctx, case, "My safety check did not answer. If this could be an emergency, call 911 now.")
+        await reply(ctx, case, "I couldn’t complete the safety check. I won’t recommend care options without it. If this may be an emergency, call 911 now; otherwise, please try again in a moment.")
         return
     if res.emergency:
         case["stage"] = "emergency"
@@ -141,27 +168,54 @@ async def step_symptoms(ctx: Context, case: dict, text: str, group_safe: bool = 
         await reply(ctx, case, res.message)
         return
     opts, _ = await ctx.send_and_receive(
-        ADDR["care_finder"], FindCareRequest(case_id=case["id"], text=text, group_safe=group_safe, trace=carry()),
+        ADDR["care_finder"], FindCareRequest(
+            case_id=case["id"], text=care_query, near=near, group_safe=group_safe, trace=carry()),
         response_type=CareOptions, timeout=30)
     if opts is None:
-        await reply(ctx, case, "I could not load places right now. Please try again in a minute.")
+        await reply(ctx, case, "I couldn’t load care options right now. Your previous options were not changed. Please try again in a moment.")
         return
     case["places"] = [dump(p) for p in opts.places]
     case["code"] = opts.code
+    case["location"] = opts.location or near
+    if not opts.places:
+        case["stage"] = "new"
+        save(ctx, case)
+        await reply(ctx, case, (
+            f"Location updated: {case['location']}. I don’t have verified demo options for that area yet, so I cleared the previous location’s results. "
+            "Try another city or ZIP code."
+        ), photon_text=photon_care_matches([], case["location"]))
+        return
     case["stage"] = "choosing"
     save(ctx, case)
     # TODO(cards): send this as an ASI1 Interactive Card carousel (see AGENTS.md)
-    lines = [f"No emergency signs found. Here are {len(opts.places)} places near you, with real prices:"]
+    lines = [
+        "Safety check: no emergency indicators were found in your message.",
+        f"Location: {case['location']}",
+        f"Care options ({len(opts.places)}):",
+    ]
     for i, p in enumerate(opts.places, 1):
-        lines.append(f"{i}. {p.name} ({p.kind.replace('_', ' ')}) · about ${p.price_typical:,.0f} · {p.hours}")
-    lines.append("Reply 'book 1', 'book 2' or 'book 3'.")
-    await reply(ctx, case, "\n".join(lines), photon_text=photon_care_matches(case["places"]))
+        lines.append(
+            f"{i}. {p.name}\n"
+            f"   Type: {p.kind.replace('_', ' ').title()}\n"
+            f"   Estimated price: ${p.price_typical:,.0f} (from ${p.price_low:,.0f})\n"
+            f"   Location: {p.address}\n"
+            f"   Availability: {p.hours}\n"
+            f"   Data source: {p.price_source}"
+        )
+    lines.append("Next step: reply ‘book 1,’ ‘book 2,’ or ‘book 3’ to save an option and estimate.")
+    lines.append("Important: these are demo estimates, not live quotes. Saving an option does not confirm an appointment; verify price and availability directly with the provider.")
+    await reply(
+        ctx,
+        case,
+        "\n".join(lines),
+        photon_text=photon_care_matches(case["places"], case["location"]),
+    )
 
 
 async def step_book(ctx: Context, case: dict, n: int) -> None:
     if not (1 <= n <= len(case["places"])):
         choices = ", ".join(f"{i}. {place['name']}" for i, place in enumerate(case["places"], 1))
-        await reply(ctx, case, f"Please choose a valid option: {choices}.")
+        await reply(ctx, case, f"That option number isn’t available. Choose one of these options: {choices}.")
         return
     place = case["places"][n - 1]
     est = await core_post("/estimates", {"case_id": case["id"], "npi": place["npi"], "place": place["name"],
@@ -170,11 +224,15 @@ async def step_book(ctx: Context, case: dict, n: int) -> None:
     save(ctx, case)
     link = await core_post("/link-codes", {"case_id": case["id"]})
     await reply(ctx, case, (
-        f"Booked: {place['name']}, {place['address']}.\n"
-        f"Good Faith Estimate saved: ${est['amount']:,.0f}. I will use it to organize your final record after care.\n"
-        f"Add to calendar: {est['ics_url']}  (or Google Calendar: {est['gcal_url']})\n"
-        f"At the clinic you can tell me what they do (for example 'they did an X-ray') and I keep a running total.\n"
-        f"Want this on your iPhone? Scan {link['qr_url']} or text {link['code']} to {link['line'] or 'Billo'} within 15 minutes."
+        f"Care plan saved\n"
+        f"Provider: {place['name']}\n"
+        f"Location: {place['address']}\n"
+        f"Estimated price: ${est['amount']:,.0f}\n\n"
+        "This is not a confirmed appointment. Contact the provider to verify availability and the final price.\n\n"
+        f"Calendar: {est['ics_url']}\n"
+        f"Google Calendar: {est['gcal_url']}\n\n"
+        "During the visit, tell me which services you receive—for example, ‘they did an X-ray’—and I’ll update the running estimate.\n"
+        f"To continue on your phone, scan {link['qr_url']} or text {link['code']} to {link['line'] or 'Billo'} within 15 minutes."
     ), photon_text=photon_booking_saved(place, est["amount"], est["ics_url"]))
 
 
@@ -189,7 +247,7 @@ async def step_after_care(ctx: Context, case: dict, file_url: str, payment_statu
     await reply(
         ctx,
         case,
-        "Reading the document now. I will organize the payment record and match it to your saved care plan.",
+        "Document received. I’m extracting the provider, charges, and payment status, then comparing them with your saved care plan. I’ll flag anything that needs review.",
         photon_text="📸 Got it — reading your bill.\nChecking provider, charges + saved estimate.",
     )
     await ctx.send(ADDR["bill_auditor"], AfterCareRequest(
@@ -200,7 +258,7 @@ async def step_after_care(ctx: Context, case: dict, file_url: str, payment_statu
 
 async def step_benefits(ctx: Context, case: dict, text: str) -> None:
     if not case.get("after_care"):
-        await reply(ctx, case, "Send a receipt or final bill first so I can attach any benefit path to the right visit.")
+        await reply(ctx, case, "Please attach a paid receipt or final bill first. I need the organized document before I can evaluate a benefit path for the correct visit.")
         return
     result = await core_post("/benefits/check", {"case_id": case["id"], "text": text})
     case["benefits"] = result["paths"]
@@ -215,12 +273,12 @@ async def step_benefits(ctx: Context, case: dict, text: str) -> None:
 
 async def step_scan_clinic_qr(ctx: Context, case: dict, file_url: str, demo: bool = False) -> None:
     if not case.get("after_care") or case["after_care"].get("payment_status") != "unpaid":
-        await reply(ctx, case, "First send and organize the unpaid final bill. I need its verified provider and amount before I can trust a clinic QR.")
+        await reply(ctx, case, "Please attach and organize the unpaid final bill first. I must verify the provider and exact amount before reviewing a clinic QR.")
         return
     await reply(
         ctx,
         case,
-        "Checking the QR checksum, Visa network marker, clinic identity, currency and exact bill amount. No money moves during this check.",
+        "QR received. I’m verifying the checksum, network marker, clinic identity, currency, and exact bill amount. This review does not move money.",
         photon_text="🔎 Checking this clinic QR…\nMerchant · amount · currency\nNo money moves yet.",
     )
     await ctx.send(ADDR["payment_guard"], SettlementRequest(
@@ -230,11 +288,11 @@ async def step_scan_clinic_qr(ctx: Context, case: dict, file_url: str, demo: boo
 
 async def step_approve_clinic_payment(ctx: Context, case: dict) -> None:
     if case.get("settlement_paused"):
-        await reply(ctx, case, "This settlement is paused for review. I cannot approve it while a safety check is unresolved. No money moved.")
+        await reply(ctx, case, "Payment review is paused because a safety check is unresolved. Approval is unavailable, and no money moved.")
         return
     settlement = case.get("settlement") or {}
     if settlement.get("status") != "verified" or not settlement.get("settlement_id"):
-        await reply(ctx, case, "Scan and verify the clinic Visa QR first.")
+        await reply(ctx, case, "Please scan and verify the clinic Visa QR before requesting approval.")
         return
     await ctx.send(ADDR["payment_guard"], SettlementRequest(
         case_id=case["id"], action="approve_qr", review_id=settlement["settlement_id"],
@@ -243,21 +301,21 @@ async def step_approve_clinic_payment(ctx: Context, case: dict) -> None:
 
 async def step_reimburse(ctx: Context, case: dict, text: str) -> None:
     if case.get("settlement_paused"):
-        await reply(ctx, case, "This settlement is paused for review. I cannot start reimbursement while a safety check is unresolved.")
+        await reply(ctx, case, "Reimbursement review is paused because a safety check is unresolved. No reimbursement was started.")
         return
     if not case.get("after_care") or case["after_care"].get("payment_status") != "paid":
-        await reply(ctx, case, "A paid receipt must be organized before reimbursement.")
+        await reply(ctx, case, "Please attach and organize a paid receipt before requesting reimbursement.")
         return
     if not case.get("benefits"):
-        await reply(ctx, case, "Name your real benefit first (for example HSA, FSA, HRA, or out-of-network PPO), so I can check that path.")
+        await reply(ctx, case, "Name the benefit you actually have—for example, an HSA, FSA, HRA, or out-of-network PPO—so I can review that specific path.")
         return
     amount_match = re.search(r"\$?([0-9]+(?:\.[0-9]{1,2})?)", text.replace(",", ""))
     if not amount_match:
-        await reply(ctx, case, "Include the externally approved amount, for example: approve reimbursement $120 demo.")
+        await reply(ctx, case, "Include the externally approved amount. Example: ‘approve reimbursement $120 demo.’")
         return
     demo_approval = MODE == "demo" and "demo" in text.lower()
     if not demo_approval:
-        await reply(ctx, case, "I still need verified approval from the benefit administrator. For the stage demo, say: approve reimbursement $120 demo.")
+        await reply(ctx, case, "Verified administrator approval is still required. For the demo, send: ‘approve reimbursement $120 demo.’")
         return
     benefit = case["benefits"][0]["name"]
     await ctx.send(ADDR["payment_guard"], SettlementRequest(
@@ -284,7 +342,7 @@ async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_g
     elif immediate is not None:
         await reply(ctx, case, immediate)
     elif m and not case["places"]:
-        await reply(ctx, case, "Find care first so I can show valid choices. Tell me what care you need and your city or ZIP code.")
+        await reply(ctx, case, "There are no current care options to select. Describe the care you need and include your city or ZIP code first.")
     elif m and case["places"]:
         if case.pop("stopped", False):
             save(ctx, case)
@@ -301,9 +359,9 @@ async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_g
     elif any(w in low for w in ("hsa", "fsa", "hra", "out of network", "out-of-network", "employer benefit", "student benefit", "travel insurance", "accident insurance", "check benefits")):
         await step_benefits(ctx, case, text)
     elif case["stage"] == "booked" and case.get("asked") and low in ("yes", "y", "i went", "yes i went"):
-        await reply(ctx, case, "Great. After care, send the final bill or paid receipt. I will organize it and show the next steps.")
+        await reply(ctx, case, "Thanks for confirming. After the visit, send the final bill or paid receipt. I’ll organize it and explain any items that need review.")
     elif case["stage"] == "booked" and case.get("asked") and low in ("no", "n", "not yet"):
-        await reply(ctx, case, "No problem. Do you want me to find another time or place? Tell me what happened.")
+        await reply(ctx, case, "Understood. If you’d like another option, tell me the preferred city or ZIP code and any timing constraints.")
     elif case["stage"] == "booked" and any(w in low for w in DONE_WORDS):
         await step_visit_log(ctx, case, text)
     else:
@@ -327,7 +385,7 @@ async def on_chat(ctx: Context, sender: str, msg: ChatMessage):
         except Exception as exc:  # never leave the patient without an answer
             sentry_sdk.capture_exception(exc)
             tx.set_status("internal_error")
-            await say(ctx, sender, "Something went wrong on my side. I am fixing it. Please try again in a minute.")
+            await say(ctx, sender, "I couldn’t complete that request. No care option, document, or payment record was changed. Please try again in a moment.")
 
 
 @chat.on_message(ChatAcknowledgement)
@@ -364,7 +422,7 @@ async def on_imessage(ctx: Context, sender: str, msg: InboundText):
             except Exception as exc:
                 sentry_sdk.capture_exception(exc)
                 tx.set_status("internal_error")
-                await reply(ctx, case, "Something went wrong on my side. I am fixing it. Please try again in a minute.")
+                await reply(ctx, case, "I couldn’t complete that request. No care option, document, or payment record was changed. Please try again in a moment.")
 
 
 # ------------------------------------------------------------------ after-care result
@@ -380,29 +438,29 @@ async def on_result(ctx: Context, sender: str, res: AfterCareResult):
     case["stage"] = "organized"
     save(ctx, case)
     kind = "paid receipt" if res.payment_status == "paid" else "unpaid final bill" if res.payment_status == "unpaid" else "document with unconfirmed payment status"
-    text = [f"Done. I organized this {kind} for ${res.total:,.2f}."]
+    text = ["Document review complete", f"Type: {kind.title()}", f"Total: ${res.total:,.2f}"]
     if res.reader == "ocr":
-        text.append("I read it locally with OCR, and the parsed charges matched the printed total.")
+        text.append("Reader: local OCR; extracted charges matched the printed total.")
     elif res.reader == "vision":
-        text.append("Local OCR was not confident enough, so I used the vision fallback and checked its numbers against the image.")
+        text.append("Reader: vision fallback; extracted values were checked against the image because local OCR confidence was low.")
     elif res.reader == "demo_fallback":
-        text.append("I could not read that image safely, so this result uses the demo document. Please send a clearer photo.")
+        text.append("Reader: demo fallback. I could not read the uploaded image reliably; send a clearer photo before relying on this result.")
     if res.unreviewed_lines:
-        text.append(f"Ask the hospital about {res.unreviewed_lines} charge(s) that had no readable billing code.")
+        text.append(f"Review required: {res.unreviewed_lines} charge(s) did not include a readable billing code. Ask the provider for an itemized bill.")
     if res.needs_review:
         nums = ", ".join(str(n) for n in res.needs_review)
-        text.append(f"Please verify line(s) {nums}; OCR could not confirm both the code and charge.")
-    text.append("Provider matches the saved care plan." if res.provider_match else "Provider does not match the saved care plan; I marked it for your review.")
+        text.append(f"Review required: verify line(s) {nums}; the code and charge could not both be confirmed.")
+    text.append("Provider match: confirmed against the saved care plan." if res.provider_match else "Provider match: not confirmed. Review the provider before taking another action.")
     if res.estimate_amount is not None:
-        text.append(f"Saved estimate: ${res.estimate_amount:,.2f}; difference: ${res.estimate_difference:,.2f}.")
+        text.append(f"Saved estimate: ${res.estimate_amount:,.2f}\nDifference from document total: ${res.estimate_difference:,.2f}")
     if res.visit_items_matched:
-        text.append(f"Matched {res.visit_items_matched} documented visit item(s).")
+        text.append(f"Visit-log match: {res.visit_items_matched} documented item(s).")
     text.extend(f"- {step}" for step in res.next_steps)
     if res.payment_status == "unpaid":
-        text.append("I saved this as an amount due. Send the clinic's Visa QR with 'scan clinic QR' and I will verify the merchant and exact amount before any wallet handoff.")
+        text.append("Next step: this record is marked unpaid. Send the clinic’s Visa QR with ‘scan clinic QR’ to verify the merchant and exact amount before any wallet handoff.")
     elif res.payment_status == "unknown":
-        text.append("Tell me whether this is a paid receipt or an unpaid bill so the record is labeled correctly.")
-    text.append("If you have an HSA, FSA, HRA, out-of-network plan, employer, school, travel, or accident benefit, tell me which one. I will check possible paths without promising eligibility.")
+        text.append("Next step: tell me whether this is a paid receipt or an unpaid bill so I can label the record correctly.")
+    text.append("Benefit review: name a benefit you actually have—such as an HSA, FSA, HRA, out-of-network plan, employer, school, travel, or accident benefit. Results are possible paths, not eligibility decisions.")
     await reply(
         ctx,
         case,
@@ -429,33 +487,41 @@ async def on_settlement(ctx: Context, sender: str, res: SettlementResult):
     if not case:
         return
     if not res.ok:
-        await reply(ctx, case, f"I stopped the settlement: {res.error}")
+        await reply(ctx, case, f"Settlement stopped. Reason: {res.error}. No money moved.")
         return
     case["settlement"] = dump(res)
     save(ctx, case)
     if res.action == "inspect_qr":
         if not res.trusted:
-            await reply(ctx, case, "I rejected this QR. " + "; ".join(res.reasons))
+            await reply(ctx, case, "QR verification failed. " + "; ".join(res.reasons) + ". No money moved.")
         else:
             await reply(ctx, case, (
-                f"Verified: {res.merchant_name}, ${res.amount:,.2f}. No money has moved. "
-                "Reply 'approve clinic payment' to open the Visa wallet handoff."
+                "QR verification complete\n"
+                f"Merchant: {res.merchant_name}\n"
+                f"Amount: ${res.amount:,.2f}\n"
+                "Status: verified; no money moved.\n"
+                "Next step: reply ‘approve clinic payment’ to open the simulated Visa wallet handoff."
             ), photon_text=(
                 f"✅ QR verified\n{res.merchant_name} · ${res.amount:,.2f}\n"
                 "No money moved.\nNext · @Billo approve clinic payment"
             ))
     elif res.action == "approve_qr":
         await reply(ctx, case, (
-            f"Your verified Visa wallet handoff simulation is ready: {res.handoff_url} "
-            f"({res.mode} mode). No card data was collected and no money moved."
+            "Visa wallet simulation ready\n"
+            f"Handoff: {res.handoff_url}\n"
+            f"Mode: {res.mode}\n"
+            "No card data was collected and no money moved."
         ), photon_text=(
             f"💳 Visa demo ready\n{res.handoff_url}\n"
             "No card data collected. No money moved."
         ))
     elif res.action == "reimburse":
         await reply(ctx, case, (
-            f"Reimbursement routed: ${res.amount:,.2f}, status {res.status}, reference {res.settlement_id}. "
-            f"This is {res.mode} mode; no real funds moved in the demo."
+            "Reimbursement simulation recorded\n"
+            f"Amount: ${res.amount:,.2f}\n"
+            f"Status: {res.status}\n"
+            f"Reference: {res.settlement_id}\n"
+            f"Mode: {res.mode}. No real funds moved."
         ), photon_text=(
             f"✅ Reimbursement demo routed · ${res.amount:,.2f}\n"
             f"Status · {res.status}\nRef · {res.settlement_id}\nNo real funds moved."
@@ -512,7 +578,7 @@ async def followups(ctx: Context):
                 continue
             case["asked"] = True
             save(ctx, case)
-            await reply(ctx, case, "Did you go to your visit today? Reply yes or no.")
+            await reply(ctx, case, "Visit follow-up: did you receive care today? Reply yes or no.")
 
 
 @agent.on_event("startup")

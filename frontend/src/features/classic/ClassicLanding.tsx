@@ -574,7 +574,7 @@ export default function ClassicLanding({
             Tell it{" "}
             <em style={{ color: "var(--color-accent-300)" }}>what happened.</em>
           </h2>
-          <p style={{ fontSize: "18px", lineHeight: "1.6", maxWidth: "480px", margin: "24px 0 0", color: "var(--color-neutral-300)" }}>Billo checks for emergency signs, shows three nearby places with real prices, and keeps the thread until the bill is settled.</p>
+          <p style={{ fontSize: "18px", lineHeight: "1.6", maxWidth: "480px", margin: "24px 0 0", color: "var(--color-neutral-300)" }}>Billo checks for emergency indicators, shows clearly labeled nearby estimates, and keeps the case connected through bill review.</p>
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "40px" }}>
             <a className="btn" href="https://asi1.ai" style={{ minHeight: "52px", padding: "0 24px", fontSize: "16px", color: "var(--color-accent-300)", border: "1.5px solid var(--color-accent-300)" }}>Start in ASI:One</a>
             {" "}

@@ -272,7 +272,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
           </div>
           <div className={hv.heroFeatureStrip} aria-label="Billo features">
             <span>Emergency rules first</span>
-            <span>Real care prices</span>
+            <span>Transparent care estimates</span>
             <span>Bill &amp; receipt OCR</span>
             <span>Benefit paths</span>
           </div>
@@ -323,7 +323,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
                         {" "}book Westwood
                       </div>
                       <div style={{ flexShrink: "0", alignSelf: "flex-start", maxWidth: "85%", background: "var(--color-bg)", border: "1px solid var(--color-divider)", padding: "8px 12px", borderRadius: "16px 16px 16px 4px" }}>
-                        Booked. Expected price:{" "}
+                        Care plan saved. Estimated price:{" "}
                         <strong style={{ fontWeight: "600" }}>$240</strong>
                       </div>
                       <div style={{ flexShrink: "0", alignSelf: "flex-start", display: "flex", gap: "6px" }}>
@@ -412,7 +412,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
               <BilloWord />
               {" "}book Westwood
             </div>
-            <div style={{ alignSelf: "flex-start", background: "oklch(0.90 0.06 50)", color: "var(--color-text)", padding: "9px 14px", borderRadius: "16px 16px 16px 4px", fontSize: "14px" }}>Booked · expected $240</div>
+            <div style={{ alignSelf: "flex-start", background: "oklch(0.90 0.06 50)", color: "var(--color-text)", padding: "9px 14px", borderRadius: "16px 16px 16px 4px", fontSize: "14px" }}>Care plan saved · estimated $240</div>
           </div>
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>
             <path d="M5 12h14" />

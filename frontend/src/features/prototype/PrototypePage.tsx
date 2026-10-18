@@ -181,7 +181,7 @@ export default function PrototypePage({ startScreen = "landing" }: { startScreen
                         <span style={{ marginTop: "auto", background: "var(--color-neutral-100)", borderRadius: "99px", padding: "5px 10px", fontSize: "11px", alignSelf: "flex-start" }}>✓ Clear</span>
                       </div>
                       <div style={{ background: "oklch(0.94 0.08 95)", borderRadius: "22px", padding: "16px", display: "flex", flexDirection: "column", gap: "14px", minHeight: "130px" }}>
-                        <span style={{ fontFamily: "var(--font-heading)", fontSize: "21px", lineHeight: "1" }}>3 real prices</span>
+                        <span style={{ fontFamily: "var(--font-heading)", fontSize: "21px", lineHeight: "1" }}>3 care estimates</span>
                         <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "7px" }}>
                           <div>
                             <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", fontSize: "10px" }}>
@@ -623,7 +623,7 @@ export default function PrototypePage({ startScreen = "landing" }: { startScreen
                       {" "}book Westwood
                     </div>
                     <div style={{ alignSelf: "flex-start", maxWidth: "88%", background: "oklch(0.90 0.06 50)", padding: "12px 14px", borderRadius: "18px 18px 18px 4px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                      <span>Booked! Expected price:</span>
+                      <span>Care plan saved. Estimated price:</span>
                       {" "}
                       <span style={{ fontFamily: "var(--font-heading)", fontSize: "36px", lineHeight: "1", fontVariantNumeric: "tabular-nums" }}>$240.00</span>
                       <button onClick={goVisit1} style={{ alignSelf: "flex-start", border: "0", cursor: "pointer", background: "var(--color-neutral-100)", borderRadius: "99px", padding: "7px 14px", fontFamily: "var(--font-body)", fontSize: "12px", color: "var(--color-text)" }}>Open visit page →</button>
