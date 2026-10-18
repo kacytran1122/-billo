@@ -33,6 +33,18 @@ test("desktop navigation and hero use centered and side-by-side placement", () =
   assert.match(landingStyles, /\.heroPhones[\s\S]*grid-column: 2/);
 });
 
+test("phone previews keep one compact visual size across breakpoints", () => {
+  assert.match(landingSource, /className=\{hv\.phoneFrame\}/);
+  assert.match(landingStyles, /\.phoneFrame[\s\S]*transform: scale\(\.86\)/);
+  assert.match(landingStyles, /\.phoneAsi,[\s\S]*inline-size: 250px/);
+});
+
+test("navigation section state is synchronized efficiently while scrolling", () => {
+  assert.match(landingSource, /requestAnimationFrame\(updateActiveSection\)/);
+  assert.match(landingSource, /getBoundingClientRect\(\)\.top <= marker/);
+  assert.match(landingSource, /window\.addEventListener\("scroll", onScroll/);
+});
+
 test("below-the-fold sections use browser-native lazy rendering", () => {
   const deferredUses = landingSource.match(/hv\.deferredSection/g) ?? [];
   assert.ok(deferredUses.length >= 3);

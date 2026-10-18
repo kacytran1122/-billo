@@ -86,11 +86,13 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
   const activeRef = useRef<SectionId>("top");
 
   useEffect(() => {
-    const onScroll = () => {
+    let frame = 0;
+    const updateActiveSection = () => {
+      const marker = Math.min(window.innerHeight * 0.38, 220);
       let a: SectionId = "top";
       for (const [id] of SECTIONS.slice(1)) {
         const el = document.getElementById(id);
-        if (el && el.getBoundingClientRect().top <= 140) a = id;
+        if (el && el.getBoundingClientRect().top <= marker) a = id;
       }
       if (a !== activeRef.current) {
         activeRef.current = a;
@@ -99,11 +101,18 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
           history.replaceState(null, "", a === "top" ? location.pathname + location.search : "#" + a);
         } catch {}
       }
+      frame = 0;
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateActiveSection);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
+    window.addEventListener("resize", onScroll, { passive: true });
+    updateActiveSection();
     return () => {
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
     };
   }, []);
 
@@ -286,7 +295,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
           <div className={hv.heroPhones} style={{ position: "relative", display: "flex", justifyContent: "center", alignItems: "flex-start", gap: "40px", flexWrap: "wrap", marginTop: "72px" }}>
             {showAsi && (
               <div className={hv.phoneAsi} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "18px", transform: "rotate(-3deg)" }}>
-                <div style={{ width: "290px", height: "600px", borderRadius: "48px", background: "var(--color-text)", padding: "10px", boxShadow: "var(--shadow-lg)", boxSizing: "border-box" }}>
+                <div className={hv.phoneFrame} style={{ width: "290px", height: "600px", borderRadius: "48px", background: "var(--color-text)", padding: "10px", boxShadow: "var(--shadow-lg)", boxSizing: "border-box" }}>
                   <div style={{ width: "100%", height: "100%", borderRadius: "38px", background: "var(--color-neutral-100)", overflow: "hidden", display: "flex", flexDirection: "column", textAlign: "left" }}>
                     <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}>
                       <div style={{ width: "84px", height: "22px", borderRadius: "12px", background: "var(--color-text)" }} />
@@ -346,7 +355,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
             )}
             {showIMessage && (
               <div className={hv.phoneIMessage} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "18px", transform: "rotate(3deg) translateY(36px)" }}>
-                <div style={{ width: "290px", height: "600px", borderRadius: "48px", background: "var(--color-text)", padding: "10px", boxShadow: "var(--shadow-lg)", boxSizing: "border-box" }}>
+                <div className={hv.phoneFrame} style={{ width: "290px", height: "600px", borderRadius: "48px", background: "var(--color-text)", padding: "10px", boxShadow: "var(--shadow-lg)", boxSizing: "border-box" }}>
                   <div style={{ width: "100%", height: "100%", borderRadius: "38px", background: "#ffffff", overflow: "hidden", display: "flex", flexDirection: "column", textAlign: "left", fontFamily: "var(--font-body)" }}>
                     <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}>
                       <div style={{ width: "84px", height: "22px", borderRadius: "12px", background: "var(--color-text)" }} />
