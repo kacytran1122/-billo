@@ -8,6 +8,7 @@ import hmac
 import json
 import os
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -81,6 +82,44 @@ def test_health_checks_are_not_traced_and_parent_decision_wins():
     assert obs.traces_sampler({"asgi_scope": {"path": "/health"}}) == 0.0
     assert obs.traces_sampler({"transaction_context": {"name": "/reader/extract"}}) == 1.0
     assert obs.traces_sampler({"parent_sampled": False}) == 0.0
+
+
+def test_safe_diagnostics_never_expose_dsn(monkeypatch):
+    monkeypatch.setenv("SENTRY_DSN", "https://secret@example.ingest.sentry.io/123")
+    monkeypatch.setenv("SENTRY_ENVIRONMENT", "production")
+    out = obs.diagnostics("core")
+    assert out["enabled"] is True and out["environment"] == "production"
+    assert "dsn" not in out and "secret" not in json.dumps(out)
+
+
+def test_task_span_records_budget_and_failure_metrics(monkeypatch):
+    spans, metrics = [], []
+
+    class Span:
+        data = {}
+        status = ""
+
+        def set_data(self, key, value):
+            self.data[key] = value
+
+        def set_status(self, value):
+            self.status = value
+
+    @contextmanager
+    def fake_span(**_kwargs):
+        span = Span()
+        span.data = {}
+        spans.append(span)
+        yield span
+
+    monkeypatch.setattr(obs.sentry_sdk, "start_span", fake_span)
+    monkeypatch.setattr(obs, "metric", lambda kind, name, value=1.0, unit=None, **attrs:
+                        metrics.append((kind, name, value, unit, attrs)))
+    with pytest.raises(RuntimeError):
+        with obs.task_span("document-reader", "document.reader", 0, route="after-care"):
+            raise RuntimeError("safe failure")
+    assert spans[0].status == "internal_error" and spans[0].data["budget_exceeded"] is True
+    assert {item[1] for item in metrics} >= {"billo.task.failed", "billo.task.duration", "billo.task.slow"}
 
 
 # ------------------------------------------------------------------ scrubber units
@@ -162,6 +201,17 @@ def test_webhook_routes_by_check_tag_and_keeps_span():
     assert alert["check"] == "bill_reader"  # from the tag, not the title
     assert alert["case_id"] == "abcd1234"
     assert alert["span_id"] == "00f067aa0ba902b7" and alert["issue_id"] == "42"
+
+
+@pytest.mark.parametrize(("title", "check"), [
+    ("Visa settlement timed out", "settlement"),
+    ("iMessage delivery failed", "delivery"),
+    ("Visit followup cron missed", "followup"),
+    ("Provider registry unavailable", "npi"),
+])
+def test_webhook_classifies_recovery_task_from_safe_title(title, check):
+    payload = {"data": {"event": {"title": title}}}
+    assert main._sentry_alert(payload)["check"] == check
 
 
 def test_webhook_requires_valid_signature(monkeypatch):

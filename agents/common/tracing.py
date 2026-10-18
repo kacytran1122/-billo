@@ -23,10 +23,11 @@ from .config import ROOT
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from observability.sentry import case_hash, metric, tag_case  # noqa: E402
+from observability.sentry import case_hash, metric, tag_case, task_span  # noqa: E402
 from observability.sentry import init_sentry as _init  # noqa: E402
 
-__all__ = ["carry", "case_hash", "case_scope", "case_span", "check", "init_sentry", "metric", "tag_case"]
+__all__ = ["carry", "case_hash", "case_scope", "case_span", "check", "init_sentry", "metric",
+           "tag_case", "task_span"]
 
 
 def init_sentry(service: str) -> bool:
@@ -93,6 +94,7 @@ def check(name: str, alert_on_4xx: bool = False) -> Iterator[None]:
             yield
         except Exception as exc:
             if alert_on_4xx or not expected(exc):
+                sentry_sdk.get_current_scope().fingerprint = ["billo", name, type(exc).__name__]
                 sentry_sdk.capture_exception(exc)
                 metric("count", "billo.check.failed", check=name)
             raise

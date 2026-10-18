@@ -5,7 +5,7 @@ from uagents import Agent, Context
 from common.config import PORTS, READMES, require_seed
 from common.core import core_post
 from common.models import SettlementRequest, SettlementResult
-from common.tracing import carry, case_span, init_sentry, metric
+from common.tracing import carry, case_span, check, init_sentry, metric, task_span
 
 init_sentry("settlement_router")
 
@@ -25,7 +25,8 @@ async def route(ctx: Context, sender: str, req: SettlementRequest):
     reply_to = req.reply_to or sender
     result = SettlementResult(case_id=req.case_id, action=req.action, ok=False, trace=carry())
     try:
-        with case_span(req, op="agent.settlement", name=req.action):
+        with case_span(req, op="agent.settlement", name=req.action), check("settlement"), task_span(
+                "settlement-guard", "settlement.guard", 3000, action=req.action, route="settlement"):
             if req.action == "inspect_qr":
                 data = await core_post("/visa/qr/inspect", {
                     "case_id": req.case_id, "file_url": req.file_url, "demo": req.demo,

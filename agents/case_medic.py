@@ -4,7 +4,9 @@ Sentry alert webhook -> Core API /sentry/webhook -> POST /alert here.
 1. Read the trace through the Sentry API (if a token is set).
 2. Pick one fixed action (plain rules, no LLM):
    bill_reader -> retry_reader   (stricter schema / backup model)
-   workflow    -> review_record  (keep the record open for human review)
+   npi/delivery -> review_record (keep the record open for human review)
+   settlement  -> pause_settlement (never continue a money action after an error)
+   followup    -> reschedule_followup (retry the reminder safely later)
 3. Tell the Coordinator, which applies it and texts the patient.
 4. Record the action as a span on the same trace.
 """
@@ -23,6 +25,9 @@ init_sentry("case_medic")
 ACTIONS = {
     "bill_reader": ("retry_reader", "I am reading your bill again more carefully. One moment."),
     "npi": ("review_record", "I could not confirm the provider right now. I kept your record open and did not guess."),
+    "settlement": ("pause_settlement", "I paused this settlement check. Nothing moved and the record is ready for review."),
+    "delivery": ("review_record", "A message could not be delivered. I kept your record open without changing it."),
+    "followup": ("reschedule_followup", "The follow-up check was delayed. I safely scheduled it to try again."),
     "workflow": ("review_record", "One check needs review. I kept your record open and did not infer a result."),
 }
 SENTRY_API = env("SENTRY_API_URL", "https://sentry.io").rstrip("/")
@@ -65,6 +70,10 @@ def trace_headers(alert: Alert) -> dict:
 async def on_alert(ctx: Context, alert: Alert) -> Ack:
     if alert.token != INTERNAL_TOKEN:
         return Ack(ok=False, detail="bad token")
+    dedupe_key = f"sentry-alert:{alert.issue_id}:{alert.check}" if alert.issue_id else ""
+    if dedupe_key and ctx.storage.get(dedupe_key):
+        metric("count", "billo.medic.duplicate", check=alert.check, action="ignored")
+        return Ack(ok=True, detail="already handled")
     action, patient_text = ACTIONS.get(alert.check, ACTIONS["workflow"])
     with case_scope(channel="sentry"):
         if alert.case_id:  # already the keyed hash; never re-hash it
@@ -82,6 +91,8 @@ async def on_alert(ctx: Context, alert: Alert) -> Ack:
             if ADDR["coordinator"]:  # empty case_id -> Coordinator heals the latest open case
                 await ctx.send(ADDR["coordinator"], MedicAction(
                     case_id=alert.case_id, action=action, patient_text=patient_text, trace=carry()))
+            if dedupe_key:
+                ctx.storage.set(dedupe_key, True)
     return Ack(ok=True, detail=action)
 
 

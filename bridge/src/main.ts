@@ -15,7 +15,7 @@
  *
  * Spectrum usage follows News Next Door (a past Photon winner), spectrum-ts 12.10.1.
  */
-import { Sentry, traceHeaders } from "./sentry.ts"; // first: Sentry must start before anything else
+import { observedSpan, Sentry, traceHeaders } from "./sentry.ts"; // first: Sentry must start before anything else
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { Spectrum, type Message, type Space } from "spectrum-ts";
@@ -50,12 +50,14 @@ async function core(path: string, body?: unknown) {
 }
 
 async function forward(payload: Record<string, unknown>) {
-  const r = await fetch(`${GATEWAY}/imessage`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    // the trace rides inside the body: the Gateway is a uAgents REST handler and cannot read headers
-    body: JSON.stringify({ token: TOKEN, ...payload, trace: traceHeaders() }),
-  });
+  const r = await observedSpan({ op: "bridge.forward", name: "gateway-forward" }, 2000, () =>
+    fetch(`${GATEWAY}/imessage`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      // the trace rides inside the body: the Gateway is a uAgents REST handler and cannot read headers
+      body: JSON.stringify({ token: TOKEN, ...payload, trace: traceHeaders() }),
+    }),
+  );
   if (!r.ok) {
     console.error("[bridge] gateway refused", r.status);
     Sentry.withScope((scope) => {
@@ -98,9 +100,8 @@ function parse(message: Message): { sender: string; text: string; att?: Att } | 
 /** Upload a receipt/final-bill image to the Core API for immediate extraction. */
 async function upload(att: Att): Promise<string> {
   if (!att.mimeType.startsWith("image/") && att.mimeType !== "application/pdf") return "";
-  return Sentry.startSpan({ op: "bridge.upload", name: "bill photo -> core", attributes: { "file.mime": att.mimeType } }, async (span) => {
+  return observedSpan({ op: "bridge.upload", name: "bill-upload", attributes: { "file.mime": att.mimeType } }, 10000, async () => {
     const buf = await att.read();
-    span.setAttribute("file.bytes", buf.length);
     const r = await fetch(`${CORE}/files`, {
       method: "POST",
       headers: { "content-type": att.mimeType, "x-internal-token": TOKEN },
@@ -194,7 +195,7 @@ async function main() {
     await typing(space, false);
     try {
       // the http integration already continued the Gateway's trace for this request
-      await Sentry.startSpan({ op: "bridge.outbound", name: "send iMessage" }, () => space.send(text));
+      await observedSpan({ op: "bridge.outbound", name: "imessage-send" }, 3000, () => space.send(text));
       res.end(JSON.stringify({ ok: true }));
     } catch (e) {
       Sentry.withScope((scope) => {

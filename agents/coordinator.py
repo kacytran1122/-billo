@@ -432,6 +432,11 @@ async def on_medic(ctx: Context, sender: str, act: MedicAction):
 
 async def _apply_medic(ctx: Context, case: dict, act: MedicAction) -> None:
     case["flags"][act.action] = True
+    if act.action == "pause_settlement":
+        case["settlement_paused"] = True
+    elif act.action == "reschedule_followup":
+        case["asked"] = False
+        case["followup_due"] = time.time() + 300
     save(ctx, case)
     await reply(ctx, case, act.patient_text)
     if act.action == "retry_reader" and case["stage"] == "organizing":

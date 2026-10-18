@@ -34,7 +34,8 @@ from sentry_sdk.integrations.starlette import StarletteIntegration  # noqa: E402
 
 from . import reader, rules, store, visa  # noqa: E402
 
-from observability.sentry import case_hash, init_sentry, metric, tag_case, verify_webhook  # noqa: E402
+from observability.sentry import (case_hash, diagnostics, init_sentry, metric, tag_case,
+                                  task_span, verify_webhook)  # noqa: E402
 
 # Privacy-safe Sentry (see observability/sentry.py): no bodies, no query strings, no locals,
 # scrubbed events/spans/logs. 4xx responses are guards doing their job, so only 5xx are issues.
@@ -66,29 +67,31 @@ def auth(token: str | None) -> None:
 @app.get("/health")
 def health():
     return {"ok": True, "db": store.use_db(), "mode": os.getenv("BILLO_MODE", "demo"),
-            "visa_qr": visa.QR_MODE, "visa_direct": visa.DIRECT_MODE}
+            "visa_qr": visa.QR_MODE, "visa_direct": visa.DIRECT_MODE,
+            "observability": diagnostics("core")}
 
 
 # ------------------------------------------------------------------ Care Finder
 @app.get("/care/search")
 def care_search(q: str = "", near: str = "UCLA", x_internal_token: str | None = Header(None)):
     auth(x_internal_token)
-    code = "73560" if any(w in q.lower() for w in ("knee", "ankle", "leg", "fall", "soccer")) else "99213"
-    key = os.getenv("GOOGLE_MAPS_API_KEY", "")
-    out = []
-    for p in store.places():
-        pic = ""
-        if key:  # Google Static Maps (satellite). Show attribution in the UI; do not cache images.
-            pic = (f"https://maps.googleapis.com/maps/api/staticmap?center={p['lat']},{p['lng']}"
-                   f"&zoom=18&size=600x300&maptype=satellite&markers={p['lat']},{p['lng']}&key={key}")
-        stats = store.price_stats(code, include_er=p["kind"] == "er")
-        out.append({
-            "name": p["name"], "kind": p["kind"], "npi": p["npi"], "address": p["address"], "hours": p["hours"],
-            "price_low": p["price_low"], "price_typical": p["price_typical"],
-            "price_source": f"{stats['source']} p50 ${stats['p50']:,.0f} for {code}" if stats else "posted price",
-            "picture_url": pic, "pay_domain": p.get("pay_domain", ""),
-        })
-    return {"code": code, "places": out}
+    with task_span("care-search", "workflow.care_search", 1000, route="care"):
+        code = "73560" if any(w in q.lower() for w in ("knee", "ankle", "leg", "fall", "soccer")) else "99213"
+        key = os.getenv("GOOGLE_MAPS_API_KEY", "")
+        out = []
+        for p in store.places():
+            pic = ""
+            if key:  # Google Static Maps (satellite). Show attribution in the UI; do not cache images.
+                pic = (f"https://maps.googleapis.com/maps/api/staticmap?center={p['lat']},{p['lng']}"
+                       f"&zoom=18&size=600x300&maptype=satellite&markers={p['lat']},{p['lng']}&key={key}")
+            stats = store.price_stats(code, include_er=p["kind"] == "er")
+            out.append({
+                "name": p["name"], "kind": p["kind"], "npi": p["npi"], "address": p["address"], "hours": p["hours"],
+                "price_low": p["price_low"], "price_typical": p["price_typical"],
+                "price_source": f"{stats['source']} p50 ${stats['p50']:,.0f} for {code}" if stats else "posted price",
+                "picture_url": pic, "pay_domain": p.get("pay_domain", ""),
+            })
+        return {"code": code, "places": out}
 
 
 # ------------------------------------------------------------------ Good Faith Estimate + calendar
@@ -194,7 +197,7 @@ def extract(body: ExtractIn, x_internal_token: str | None = Header(None)):
     tag_case(body.case_id)
     started = time.perf_counter()
     try:
-        with sentry_sdk.start_span(op="document.reader", name="bill photo -> typed lines") as span:
+        with task_span("document-reader", "document.reader", 10000, route="after-care") as span:
             bill = reader.read_bill(body.file_url, body.demo or (DEMO and not body.file_url), body.strict)
             path = bill.get("reader", "unknown")
             span.set_data("reader", path)
@@ -548,7 +551,10 @@ def _sentry_alert(payload: dict) -> dict:
     title = (event.get("title") or issue.get("title") or payload.get("message") or "").lower()
     check = tags.get("check") or (
         "bill_reader" if any(w in title for w in ("reader", "json", "ocr")) else
-        "npi" if "npi" in title else "workflow")
+        "npi" if any(w in title for w in ("npi", "provider")) else
+        "settlement" if any(w in title for w in ("visa", "payment", "settlement", "payout")) else
+        "delivery" if any(w in title for w in ("bridge", "message", "delivery", "imessage")) else
+        "followup" if any(w in title for w in ("followup", "reminder", "cron")) else "workflow")
     trace = (event.get("contexts", {}) or {}).get("trace", {}) or {}
     return {"token": TOKEN, "check": check, "case_id": tags.get("case", ""),
             "trace_id": trace.get("trace_id", ""), "span_id": trace.get("span_id", ""),

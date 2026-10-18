@@ -20,6 +20,7 @@ const PATTERNS: [RegExp, string][] = [
   [/\$\s?\d[\d,]*(?:\.\d+)?/g, "[amount]"],
 ];
 const SENSITIVE_KEY = /(?:^|[^a-z0-9])(text|body|phone|handle|sender|email|address|lines|file_url|attachment|token|secret|authorization|cookie)/i;
+const SAFE_METRIC_ATTRS = new Set(["agent", "task", "result", "budget", "route", "mode", "action", "reader"]);
 
 export function scrubText(value: string): string {
   return PATTERNS.reduce((v, [re, sub]) => v.replace(re, sub), value);
@@ -118,6 +119,12 @@ if (DSN) {
     beforeSendTransaction: (event) => scrubEvent(event),
     beforeBreadcrumb: (crumb) => scrubBreadcrumb(crumb),
     beforeSendLog: (log) => ({ ...log, message: scrubText(String(log.message)), attributes: scrub(log.attributes) }),
+    beforeSendMetric: (metric) => ({
+      ...metric,
+      attributes: Object.fromEntries(
+        Object.entries(metric.attributes ?? {}).filter(([key]) => SAFE_METRIC_ATTRS.has(key) || key.startsWith("sentry.")),
+      ),
+    }),
   });
   Sentry.setTag("agent", "bridge");
 }
@@ -130,6 +137,38 @@ export function traceHeaders(): Record<string, string> {
   if (data["sentry-trace"]) out["sentry-trace"] = data["sentry-trace"];
   if (data.baggage) out.baggage = data.baggage;
   return out;
+}
+
+type ObservedOptions = {
+  op: string;
+  name: string;
+  attributes?: Record<string, string | number | boolean>;
+};
+
+/** Span + latency/failure/budget metrics for one bridge task. Never records payloads. */
+export function observedSpan<T>(options: ObservedOptions, budgetMs: number, work: () => Promise<T>): Promise<T> {
+  return Sentry.startSpan(options, async (span) => {
+    const started = performance.now();
+    let result = "ok";
+    try {
+      return await work();
+    } catch (error) {
+      result = "failed";
+      Sentry.metrics.count("billo.task.failed", 1, { attributes: { task: options.name, result } });
+      throw error;
+    } finally {
+      const duration = performance.now() - started;
+      const budget = duration > budgetMs ? "exceeded" : "within";
+      span.setAttributes({ "task.duration_ms": duration, "task.budget_ms": budgetMs, "task.budget": budget });
+      Sentry.metrics.distribution("billo.task.duration", duration, {
+        unit: "millisecond",
+        attributes: { task: options.name, result, budget },
+      });
+      if (budget === "exceeded") {
+        Sentry.metrics.count("billo.task.slow", 1, { attributes: { task: options.name, budget } });
+      }
+    }
+  });
 }
 
 export { Sentry };

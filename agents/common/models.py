@@ -147,7 +147,7 @@ class Ack(Model):
 class Alert(Model):
     """Core API -> Case Medic (REST), built from a Sentry alert webhook."""
     token: str = ""
-    check: str  # bill_reader | workflow | npi
+    check: str  # bill_reader | npi | settlement | delivery | followup | workflow
     case_id: str = ""  # hashed case tag, never the raw id
     trace_id: str = ""
     span_id: str = ""  # span that failed, so the fix joins the same trace
@@ -157,7 +157,7 @@ class Alert(Model):
 
 class MedicAction(Traced):
     case_id: str
-    action: str  # retry_reader | review_record
+    action: str  # retry_reader | review_record | pause_settlement | reschedule_followup
     patient_text: str
 
 

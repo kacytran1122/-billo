@@ -89,15 +89,18 @@
   <path d="M1115 875 V925" class="arrow"/>
 
   <!-- Sentry -->
-  <rect x="1580" y="550" width="170" height="670" rx="24" fill="#fff0f6" stroke="#ad1d5a" stroke-width="3"/>
+  <rect x="1580" y="550" width="170" height="990" rx="24" fill="#fff0f6" stroke="#ad1d5a" stroke-width="3"/>
   <text x="1665" y="590" text-anchor="middle" class="label" fill="#ad1d5a">SENTRY</text>
   <rect x="1600" y="620" width="130" height="120" rx="16" fill="#ad1d5a"/>
   <text x="1665" y="660" text-anchor="middle" class="boxh" fill="#fff">Observe</text><text x="1665" y="690" text-anchor="middle" class="small" fill="#fff">one case</text><text x="1665" y="716" text-anchor="middle" class="small" fill="#fff">one trace</text>
-  <text x="1605" y="775" class="boxh ink">Tracing</text><text x="1605" y="802" class="small muted">bridge → agents</text><text x="1605" y="825" class="small muted">→ Core → reply</text>
-  <text x="1605" y="865" class="boxh ink">Metrics</text><text x="1605" y="892" class="small muted">OCR · stages</text><text x="1605" y="915" class="small muted">settlement results</text>
-  <text x="1605" y="955" class="boxh ink">Crons</text><text x="1605" y="982" class="small muted">follow-up checks</text>
-  <text x="1605" y="1022" class="boxh ink">Alerts</text><text x="1605" y="1049" class="small muted">signed webhook</text><text x="1605" y="1072" class="small muted">wakes Case Medic</text>
-  <text x="1605" y="1112" class="boxh ink">Privacy</text><text x="1605" y="1139" class="small muted">no bodies or PHI</text><text x="1605" y="1162" class="small muted">hashed case IDs</text>
+  <text x="1605" y="775" class="boxh ink">Tracing</text><text x="1605" y="802" class="small muted">bridge → agents</text><text x="1605" y="825" class="small muted">Core → reply</text>
+  <text x="1605" y="865" class="boxh ink">Budgets</text><text x="1605" y="892" class="small muted">latency</text><text x="1605" y="915" class="small muted">slow tasks</text>
+  <text x="1605" y="955" class="boxh ink">Metrics</text><text x="1605" y="982" class="small muted">OCR · stages</text><text x="1605" y="1005" class="small muted">settlement</text>
+  <text x="1605" y="1045" class="boxh ink">Crons</text><text x="1605" y="1072" class="small muted">follow-up checks</text>
+  <text x="1605" y="1112" class="boxh ink">Releases</text><text x="1605" y="1139" class="small muted">deploy health</text><text x="1605" y="1162" class="small muted">profiles</text>
+  <text x="1605" y="1202" class="boxh ink">Recovery</text><text x="1605" y="1229" class="small muted">signed · deduped</text><text x="1605" y="1252" class="small muted">Case Medic tasks</text>
+  <text x="1605" y="1292" class="boxh ink">Privacy</text><text x="1605" y="1319" class="small muted">no bodies or PHI</text><text x="1605" y="1342" class="small muted">hashed case IDs</text>
+  <text x="1605" y="1382" class="boxh ink">Operations</text><text x="1605" y="1409" class="small muted">dashboards · alerts</text><text x="1605" y="1432" class="small muted">smoke test · gate</text>
   <path d="M1580 700 H1508" class="dash"/><path d="M1580 1085 H1508" class="dash"/>
 
   <!-- Bottom services -->

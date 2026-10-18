@@ -23,8 +23,10 @@ import hmac
 import os
 import re
 import subprocess
+import time
+from contextlib import contextmanager
 from functools import lru_cache
-from typing import Any, Callable
+from typing import Any, Callable, Iterator
 
 import sentry_sdk
 
@@ -77,7 +79,7 @@ SAFE_DATA_COLLECTION: dict[str, Any] = {
 # Only these metric attributes are kept; everything else is dropped.
 SAFE_METRIC_ATTRS = frozenset({
     "agent", "check", "reader", "stage", "channel", "result", "action", "route", "mode",
-    "environment", "release",
+    "environment", "release", "task", "budget",
 })
 
 _IGNORED_TRANSACTIONS = re.compile(r"(^|\s)/(health|docs|openapi\.json|favicon\.ico)\b")
@@ -299,6 +301,52 @@ def metric(kind: str, name: str, value: float = 1.0, unit: str | None = None, **
         fn(name, value, unit=unit, attributes={k: v for k, v in attrs.items() if k in SAFE_METRIC_ATTRS})
     except Exception:  # metrics must never break a patient flow
         pass
+
+
+@contextmanager
+def task_span(task: str, op: str, budget_ms: int, **attrs: Any) -> Iterator[Any]:
+    """Observe one controlled workflow task without recording its input or output.
+
+    The span carries a performance budget and result while metrics provide latency,
+    failure and budget-breach counters. Attribute names are allowlisted and values
+    must be low-cardinality labels such as ``reader=ocr`` or ``route=benefits``.
+    """
+    safe = {k: v for k, v in attrs.items() if k in SAFE_METRIC_ATTRS}
+    started = time.perf_counter()
+    result = "ok"
+    with sentry_sdk.start_span(op=op, name=task) as span:
+        span.set_data("task", task)
+        span.set_data("budget_ms", budget_ms)
+        for key, value in safe.items():
+            span.set_data(key, value)
+        try:
+            yield span
+        except Exception:
+            result = "failed"
+            span.set_status("internal_error")
+            metric("count", "billo.task.failed", task=task, result=result, **safe)
+            raise
+        finally:
+            duration_ms = (time.perf_counter() - started) * 1000
+            slow = duration_ms > budget_ms
+            span.set_data("duration_ms", round(duration_ms, 2))
+            span.set_data("budget_exceeded", slow)
+            metric("distribution", "billo.task.duration", duration_ms, unit="millisecond",
+                   task=task, result=result, budget="exceeded" if slow else "within", **safe)
+            if slow:
+                metric("count", "billo.task.slow", task=task, budget="exceeded", **safe)
+
+
+def diagnostics(service: str) -> dict[str, Any]:
+    """Safe deployment diagnostics for health checks; never returns a DSN or token."""
+    return {
+        "service": service,
+        "enabled": bool(os.getenv("SENTRY_DSN", "").strip()),
+        "environment": os.getenv("SENTRY_ENVIRONMENT", "hackathon"),
+        "release": release(),
+        "trace_sample_rate": float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "1.0")),
+        "profile_sample_rate": float(os.getenv("SENTRY_PROFILE_SESSION_SAMPLE_RATE", "1.0")),
+    }
 
 
 def verify_webhook(secret: str, body: bytes, signature: str) -> bool:
