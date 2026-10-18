@@ -3,3 +3,90 @@
 .hover2:hover { background: var(--color-neutral-800) !important; }
 .hover3:hover { background: var(--color-neutral-200) !important; }
 .hover4:hover { transform: translateY(-2px) !important; box-shadow: var(--shadow-md) !important; }
+
+/* The landing page keeps one balanced content rail at every viewport size. */
+.headerSpacer { height: 71px; }
+.desktopNavigation { display: flex; align-items: center; gap: 16px; }
+.mobileMenuButton,
+.mobileNavigation { display: none; }
+.balancedSection { inline-size: min(100%, 1400px); }
+
+/* Native rendering deferral preserves server-rendered content and accessibility
+   while avoiding layout/paint work until a lower section nears the viewport. */
+.deferredSection {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 760px;
+}
+
+@media (max-width: 1180px) {
+  .headerInner { padding-inline: 20px !important; }
+  .heroPhones { gap: 24px !important; }
+  .heroBadge { display: none !important; }
+}
+
+@media (min-width: 721px) and (max-width: 900px) {
+  .heroInner { padding-inline: 20px !important; }
+  .heroTitle { font-size: clamp(64px, 10vw, 88px) !important; }
+  .heroPhones {
+    flex-wrap: nowrap !important;
+    gap: 12px !important;
+  }
+  .phoneAsi,
+  .phoneIMessage {
+    scale: .88;
+    margin-inline: -17px;
+  }
+  .caseFlow { gap: 14px !important; }
+  .caseFlow > svg { rotate: 90deg; }
+  .featureGrid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 720px) {
+  .headerSpacer { height: 71px; }
+  .headerInner { padding: 12px 16px !important; }
+  .desktopNavigation { display: none; }
+  .mobileMenuButton { display: flex; }
+  .mobileNavigation { display: flex; }
+  .heroInner { padding: 36px 18px 72px !important; }
+  .heroTitle { font-size: clamp(50px, 15vw, 68px) !important; }
+  .heroPhones {
+    align-items: center !important;
+    flex-direction: column;
+    flex-wrap: nowrap !important;
+    gap: 56px !important;
+    margin-top: 56px !important;
+  }
+  .phoneAsi { transform: rotate(-1.5deg) !important; }
+  .phoneIMessage { transform: rotate(1.5deg) !important; }
+  .heroBadge { display: none !important; }
+  .caseSection {
+    border-radius: 32px !important;
+    margin-top: 72px !important;
+    padding: 72px 18px !important;
+  }
+  .caseFlow {
+    align-items: stretch !important;
+    flex-direction: column;
+    flex-wrap: nowrap !important;
+    margin-top: 40px !important;
+  }
+  .caseFlow > div { inline-size: 100%; max-width: none !important; }
+  .caseFlow > svg { align-self: center; rotate: 90deg; }
+  .balancedSection { padding-inline: 18px !important; }
+  .featureGrid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    margin-top: 42px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .heroTitle { font-size: 48px !important; }
+  .heroInner { padding-inline: 14px !important; }
+  .heroPhones { margin-inline: -6px; }
+  .balancedSection { padding-inline: 14px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hover4:hover { transform: none !important; }
+}

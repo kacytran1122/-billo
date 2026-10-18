@@ -80,14 +80,12 @@ function useScrollReveal() {
 }
 
 export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: HeroPhones }) {
-  const [width, setWidth] = useState(1200);
   const [menu, setMenu] = useState(false);
   const [active, setActive] = useState<SectionId>("top");
   const [chooser, setChooser] = useState(false);
   const activeRef = useRef<SectionId>("top");
 
   useEffect(() => {
-    const onResize = () => setWidth(window.innerWidth);
     const onScroll = () => {
       let a: SectionId = "top";
       for (const [id] of SECTIONS.slice(1)) {
@@ -102,12 +100,9 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
         } catch {}
       }
     };
-    window.addEventListener("resize", onResize);
     window.addEventListener("scroll", onScroll, { passive: true });
-    onResize();
     onScroll();
     return () => {
-      window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onScroll);
     };
   }, []);
@@ -126,10 +121,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
     [],
   );
 
-  // Values the markup binds to (same names as the original design logic).
-  const wide = width > 720;
-  const narrow = !wide;
-  const menuOpen = narrow && menu;
+  const menuOpen = menu;
   const menuClosed = !menuOpen;
   const showMenu = menuOpen;
   const toggleMenu = () => setMenu((m) => !m);
@@ -154,17 +146,16 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
 
   return (
     <div className="page page--neutral-100">
-      <div style={{ height: "71px" }} />
+      <div className={hv.headerSpacer} />
       <header style={{ position: "fixed", top: "0", left: "0", right: "0", zIndex: "50", background: "color-mix(in oklch, oklch(0.91 0.06 300) 88%, transparent)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: "1px solid oklch(0.84 0.07 300)" }}>
-        <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
+        <div className={hv.headerInner} style={{ maxWidth: "1240px", margin: "0 auto", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
           <a href="#top" onClick={goTop} aria-label="Billo" style={{ color: "var(--color-text)", textDecoration: "none" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontFamily: "var(--font-heading)", fontSize: "32px", fontWeight: "400", fontStyle: "normal", lineHeight: "1", letterSpacing: "-.02em" }}>
               <BilloLogo size={34} />
               <span style={{ display: "inline-flex", alignItems: "baseline" }}>billo</span>
             </span>
           </a>
-          {wide && (
-            <>
+          <div className={hv.desktopNavigation}>
               <nav aria-label="Main" style={{ display: "flex", gap: "4px", alignItems: "center", fontSize: "15px", background: "var(--color-neutral-100)", borderRadius: "99px", padding: "4px", boxShadow: "var(--shadow-sm)" }}>
                 {links.map((l, lIndex) => (
                   <Fragment key={lIndex}>
@@ -181,10 +172,8 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
                 Get started{" "}
                 <span>→</span>
               </button>
-            </>
-          )}
-          {narrow && (
-            <button className={hv.hover3} onClick={toggleMenu} aria-label="Menu" aria-expanded={menuOpen} style={{ width: "46px", height: "46px", borderRadius: "50%", border: "1px solid var(--color-divider)", background: "var(--color-neutral-100)", color: "var(--color-text)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
+          </div>
+          <button className={`${hv.mobileMenuButton} ${hv.hover3}`} onClick={toggleMenu} aria-label="Menu" aria-expanded={menuOpen} style={{ width: "46px", height: "46px", borderRadius: "50%", border: "1px solid var(--color-divider)", background: "var(--color-neutral-100)", color: "var(--color-text)", cursor: "pointer", alignItems: "center", justifyContent: "center", flex: "none" }}>
               {menuClosed && (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <path d="M4 7h16M4 12h16M4 17h16" />
@@ -195,11 +184,10 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
                   <path d="M6 6l12 12M18 6L6 18" />
                 </svg>
               )}
-            </button>
-          )}
+          </button>
         </div>
         {showMenu && (
-          <nav aria-label="Main" style={{ padding: "4px 16px 16px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "19px" }}>
+          <nav className={hv.mobileNavigation} aria-label="Main" style={{ padding: "4px 16px 16px", flexDirection: "column", gap: "6px", fontSize: "19px" }}>
             {links.map((l, lIndex) => (
               <Fragment key={lIndex}>
                 {l.active && (
@@ -266,18 +254,18 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
         <a href="tel:911" style={{ color: "var(--color-accent-300)" }}>911</a>
         . Billo doesn't handle emergencies.
       </div>
-      <section id="top" style={{ position: "relative", overflow: "hidden", scrollMarginTop: "80px" }}>
+      <section id="top" className={hv.hero} style={{ position: "relative", overflow: "hidden", scrollMarginTop: "80px" }}>
         <div style={{ position: "absolute", width: "520px", height: "520px", borderRadius: "50%", background: "oklch(0.92 0.06 165)", left: "-160px", top: "180px" }} />
         <div style={{ position: "absolute", width: "440px", height: "440px", borderRadius: "50%", background: "oklch(0.91 0.06 300)", right: "-120px", top: "60px" }} />
         <div style={{ position: "absolute", width: "300px", height: "300px", borderRadius: "50%", background: "oklch(0.94 0.08 95)", left: "48%", top: "520px" }} />
-        <div style={{ position: "relative", maxWidth: "1240px", margin: "0 auto", padding: "48px 24px 96px", textAlign: "center" }}>
+        <div className={hv.heroInner} style={{ position: "relative", maxWidth: "1240px", margin: "0 auto", padding: "48px 24px 96px", textAlign: "center" }}>
           <div style={{ display: "inline-flex", gap: "8px", alignItems: "center", background: "var(--color-neutral-100)", border: "1px solid var(--color-divider)", borderRadius: "99px", padding: "6px 14px 6px 8px", fontSize: "13px" }}>
             <span style={{ background: "oklch(0.90 0.06 50)", borderRadius: "99px", padding: "2px 10px" }}>New</span>
             Now in ASI:One{" "}
             &amp;
             {" "}iMessage
           </div>
-          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "clamp(56px,9vw,124px)", lineHeight: ".9", letterSpacing: "-.025em", margin: "26px auto 0", maxWidth: "980px", textWrap: "balance" }}>
+          <h1 className={hv.heroTitle} style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "clamp(56px,9vw,124px)", lineHeight: ".9", letterSpacing: "-.025em", margin: "26px auto 0", maxWidth: "980px", textWrap: "balance" }}>
             Make every care dollar{" "}
             <em style={{ color: "var(--color-accent-700)" }}>count.</em>
           </h1>
@@ -295,9 +283,9 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
               Text on iMessage
             </Link>
           </div>
-          <div style={{ position: "relative", display: "flex", justifyContent: "center", alignItems: "flex-start", gap: "40px", flexWrap: "wrap", marginTop: "72px" }}>
+          <div className={hv.heroPhones} style={{ position: "relative", display: "flex", justifyContent: "center", alignItems: "flex-start", gap: "40px", flexWrap: "wrap", marginTop: "72px" }}>
             {showAsi && (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "18px", transform: "rotate(-3deg)" }}>
+              <div className={hv.phoneAsi} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "18px", transform: "rotate(-3deg)" }}>
                 <div style={{ width: "290px", height: "600px", borderRadius: "48px", background: "var(--color-text)", padding: "10px", boxShadow: "var(--shadow-lg)", boxSizing: "border-box" }}>
                   <div style={{ width: "100%", height: "100%", borderRadius: "38px", background: "var(--color-neutral-100)", overflow: "hidden", display: "flex", flexDirection: "column", textAlign: "left" }}>
                     <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}>
@@ -357,7 +345,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
               </div>
             )}
             {showIMessage && (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "18px", transform: "rotate(3deg) translateY(36px)" }}>
+              <div className={hv.phoneIMessage} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "18px", transform: "rotate(3deg) translateY(36px)" }}>
                 <div style={{ width: "290px", height: "600px", borderRadius: "48px", background: "var(--color-text)", padding: "10px", boxShadow: "var(--shadow-lg)", boxSizing: "border-box" }}>
                   <div style={{ width: "100%", height: "100%", borderRadius: "38px", background: "#ffffff", overflow: "hidden", display: "flex", flexDirection: "column", textAlign: "left", fontFamily: "var(--font-body)" }}>
                     <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}>
@@ -401,27 +389,27 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
                 <span style={{ fontFamily: "var(--font-heading)", fontSize: "22px", fontStyle: "italic" }}>After care · iMessage</span>
               </div>
             )}
-            <div style={{ position: "absolute", left: "calc(50% - 420px)", top: "90px", background: "oklch(0.90 0.06 50)", borderRadius: "18px", padding: "12px 18px", boxShadow: "var(--shadow-md)", transform: "rotate(-8deg)", textAlign: "left" }}>
+            <div className={hv.heroBadge} style={{ position: "absolute", left: "calc(50% - 420px)", top: "90px", background: "oklch(0.90 0.06 50)", borderRadius: "18px", padding: "12px 18px", boxShadow: "var(--shadow-md)", transform: "rotate(-8deg)", textAlign: "left" }}>
               <div style={{ fontSize: "11px", letterSpacing: ".08em", textTransform: "uppercase" }}>Expected</div>
               <div style={{ fontFamily: "var(--font-heading)", fontSize: "38px", lineHeight: "1", fontVariantNumeric: "tabular-nums" }}>$240</div>
             </div>
-            <div style={{ position: "absolute", right: "calc(50% - 430px)", top: "300px", background: "oklch(0.94 0.08 95)", borderRadius: "99px", padding: "10px 18px", boxShadow: "var(--shadow-md)", transform: "rotate(6deg)", fontSize: "14px", display: "flex", gap: "8px", alignItems: "center" }}>
+            <div className={hv.heroBadge} style={{ position: "absolute", right: "calc(50% - 430px)", top: "300px", background: "oklch(0.94 0.08 95)", borderRadius: "99px", padding: "10px 18px", boxShadow: "var(--shadow-md)", transform: "rotate(6deg)", fontSize: "14px", display: "flex", gap: "8px", alignItems: "center" }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 6 9 17l-5-5" />
               </svg>
               Bill matches
             </div>
-            <div style={{ position: "absolute", left: "calc(50% - 400px)", top: "600px", background: "oklch(0.91 0.05 235)", borderRadius: "99px", padding: "10px 18px", boxShadow: "var(--shadow-md)", transform: "rotate(4deg)", fontSize: "14px" }}>3 prices nearby</div>
+            <div className={hv.heroBadge} style={{ position: "absolute", left: "calc(50% - 400px)", top: "600px", background: "oklch(0.91 0.05 235)", borderRadius: "99px", padding: "10px 18px", boxShadow: "var(--shadow-md)", transform: "rotate(4deg)", fontSize: "14px" }}>3 prices nearby</div>
           </div>
         </div>
       </section>
-      <section id="case" style={{ scrollMarginTop: "80px", background: "oklch(0.91 0.05 235)", borderRadius: "48px", maxWidth: "1400px", margin: "110px auto 0", padding: "96px 24px", boxSizing: "border-box" }}>
+      <section id="case" className={`${hv.balancedSection} ${hv.caseSection}`} style={{ scrollMarginTop: "80px", background: "oklch(0.91 0.05 235)", borderRadius: "48px", maxWidth: "1400px", margin: "110px auto 0", padding: "96px 24px", boxSizing: "border-box" }}>
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "clamp(44px,6vw,76px)", lineHeight: ".95", margin: "0", textAlign: "center", letterSpacing: "-.015em" }}>
           Start in ASI:One.{" "}
           <em>Continue in iMessage.</em>
         </h2>
         <p style={{ fontSize: "18px", lineHeight: "1.5", margin: "20px auto 0", maxWidth: "520px", textAlign: "center", color: "var(--color-neutral-800)" }}>Scan your Billo code once. Your case follows you.</p>
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "20px", marginTop: "56px" }}>
+        <div className={hv.caseFlow} style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "20px", marginTop: "56px" }}>
           <div style={{ flex: "1 1 240px", maxWidth: "300px", background: "var(--color-text)", color: "var(--color-neutral-100)", borderRadius: "28px", padding: "26px", display: "flex", flexDirection: "column", gap: "16px", minHeight: "220px", boxSizing: "border-box" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
               <span style={{ width: "24px", height: "24px", borderRadius: "7px", border: "1.5px solid var(--color-accent-300)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-heading)", fontStyle: "italic", color: "var(--color-accent-300)" }}>A</span>
@@ -477,13 +465,13 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
           <span style={{ background: "oklch(0.92 0.06 165)", borderRadius: "99px", padding: "8px 16px", fontSize: "14px" }}>Status</span>
         </div>
       </section>
-      <section id="features" style={{ scrollMarginTop: "80px", maxWidth: "1240px", margin: "0 auto", padding: "110px 24px 40px" }}>
+      <section id="features" className={`${hv.balancedSection} ${hv.deferredSection}`} style={{ scrollMarginTop: "80px", maxWidth: "1240px", margin: "0 auto", padding: "110px 24px 40px" }}>
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "clamp(44px,6vw,76px)", lineHeight: ".95", margin: "0", textAlign: "center", letterSpacing: "-.015em" }}>
           All you need is{" "}
           <BilloWord />
           .
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,max(calc((100% - 60px) / 4),min(calc((100% - 20px) / 2),calc((270px - (100% - 60px) / 4) * 9999)))),1fr))", gridAutoRows: "1fr", gap: "20px", marginTop: "64px" }}>
+        <div className={hv.featureGrid} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,max(calc((100% - 60px) / 4),min(calc((100% - 20px) / 2),calc((270px - (100% - 60px) / 4) * 9999)))),1fr))", gridAutoRows: "1fr", gap: "20px", marginTop: "64px" }}>
           <div style={{ background: "oklch(0.92 0.06 165)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
             <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>Safety first</div>
             <div style={{ marginTop: "auto", background: "var(--color-neutral-100)", borderRadius: "18px", padding: "16px", boxShadow: "var(--shadow-sm)", display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px" }}>
@@ -642,7 +630,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
           </div>
         </div>
       </section>
-      <section id="pages" style={{ scrollMarginTop: "80px", padding: "110px 24px 120px" }}>
+      <section id="pages" className={`${hv.balancedSection} ${hv.deferredSection}`} style={{ scrollMarginTop: "80px", padding: "110px 24px 120px" }}>
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "clamp(44px,6vw,76px)", lineHeight: ".95", margin: "0", textAlign: "center", letterSpacing: "-.015em" }}>
           Before, during,{" "}
           <em>after.</em>
@@ -669,7 +657,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
           </Link>
         </div>
       </section>
-      <section id="faq" style={{ scrollMarginTop: "80px", maxWidth: "900px", margin: "0 auto", padding: "110px 24px 120px" }}>
+      <section id="faq" className={`${hv.balancedSection} ${hv.deferredSection}`} style={{ scrollMarginTop: "80px", maxWidth: "900px", margin: "0 auto", padding: "110px 24px 120px" }}>
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "clamp(44px,6vw,76px)", lineHeight: ".95", margin: "0", textAlign: "center", letterSpacing: "-.015em" }}>
           Frequently Asked{" "}
           <em>Questions</em>
