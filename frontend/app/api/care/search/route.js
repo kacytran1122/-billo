@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { coreRequest } from "@/lib/server-api";
+import { normalizeCareSearch } from "@/lib/search";
 
 export async function GET(request) {
-  const search = request.nextUrl.searchParams;
-  const q = search.get("q")?.slice(0, 160) || "routine visit";
-  const near = search.get("near")?.slice(0, 80) || "UCLA";
+  const { q, near } = normalizeCareSearch(request.nextUrl.searchParams);
 
   try {
     const result = await coreRequest(
