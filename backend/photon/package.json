@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "start": "tsx src/main.ts",
-    "test": "tsx --test src/*.test.ts",
+    "test": "tsx --test ../../tests/backend/photon/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "engines": {

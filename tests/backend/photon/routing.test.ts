@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { hasBilloMention, isPrivateOnlyGroupRequest, stripBilloMention } from "./routing.ts";
+import { hasBilloMention, isPrivateOnlyGroupRequest, stripBilloMention } from "../../../backend/photon/src/routing.ts";
 
 test("chat activation recognizes @Billo case-insensitively", () => {
   assert.equal(hasBilloMention("@Billo find urgent care near UCLA"), true);
