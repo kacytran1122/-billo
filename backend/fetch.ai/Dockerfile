@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 COPY backend/fetch.ai ./backend/fetch.ai
 COPY backend/observability ./backend/observability
+COPY backend/rules ./backend/rules
 
 RUN useradd --create-home --uid 10001 billo \
     && chown -R billo:billo /app
