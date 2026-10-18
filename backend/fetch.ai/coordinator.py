@@ -154,7 +154,8 @@ async def step_symptoms(ctx: Context, case: dict, text: str, group_safe: bool = 
 
 async def step_book(ctx: Context, case: dict, n: int) -> None:
     if not (1 <= n <= len(case["places"])):
-        await reply(ctx, case, "Please pick one of the numbers in the list.")
+        choices = ", ".join(f"{i}. {place['name']}" for i, place in enumerate(case["places"], 1))
+        await reply(ctx, case, f"Please choose a valid option: {choices}.")
         return
     place = case["places"][n - 1]
     est = await core_post("/estimates", {"case_id": case["id"], "npi": place["npi"], "place": place["name"],
@@ -246,7 +247,14 @@ async def step_reimburse(ctx: Context, case: dict, text: str) -> None:
 async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_group: bool = False) -> None:
     low = text.lower().strip()
     m = re.match(r"^(book|pick|choose)\s*#?\s*(\d)", low)
-    if m and case["places"]:
+    if low == "stop":
+        case["stopped"] = True
+        case["followup_due"] = 0
+        save(ctx, case)
+        await reply(ctx, case, "Stopped. I canceled queued reminders for this case. Send a new message whenever you want to continue.")
+    elif m and case["places"]:
+        if case.pop("stopped", False):
+            save(ctx, case)
         await step_book(ctx, case, int(m.group(2)))
     elif low.startswith("approve clinic payment"):
         await step_approve_clinic_payment(ctx, case)
@@ -442,7 +450,7 @@ async def followups(ctx: Context):
     with monitor(monitor_slug="visit-followup", monitor_config=FOLLOWUP_MONITOR):
         for cid in ctx.storage.get("case_ids") or []:
             case = load(ctx, cid)
-            if not case or case["stage"] != "booked" or case.get("asked") or not case.get("followup_due"):
+            if not case or case["stage"] != "booked" or case.get("stopped") or case.get("asked") or not case.get("followup_due"):
                 continue
             if now < case["followup_due"]:
                 continue

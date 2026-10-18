@@ -144,7 +144,13 @@ def visit_event(body: VisitIn, x_internal_token: str | None = Header(None)):
     base = gfe["amount"] if gfe else 0
     if not added:
         return {"say": "Got it. I did not find a price for that yet, but I saved it in your visit log.", "total": total}
-    return {"say": f"Saved. Your visit so far: about ${base + total:,.0f} (estimate ${base:,.0f} + {n} item(s)).", "total": base + total}
+    return {
+        "say": (
+            f"Saved. Your visit so far: about ${base + total:,.0f} "
+            f"(estimate ${base:,.0f} + {n} possible billing-code item(s))."
+        ),
+        "total": base + total,
+    }
 
 
 # ------------------------------------------------------------------ uploads (bill photos from iMessage)
