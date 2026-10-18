@@ -26,8 +26,6 @@ services:
       CASE_MEDIC_URL: http://case-medic:8007
       BILLO_UPLOADS_DIR: /tmp/billo-uploads
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:8000:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
       interval: 15s
@@ -40,37 +38,30 @@ services:
   coordinator:
     <<: *agent
     command: python coordinator.py
-    ports: ["127.0.0.1:8001:8001"]
 
   red-flag:
     <<: *agent
     command: python red_flag.py
-    ports: ["127.0.0.1:8002:8002"]
 
   care-finder:
     <<: *agent
     command: python care_finder.py
-    ports: ["127.0.0.1:8003:8003"]
 
   bill-auditor:
     <<: *agent
     command: python bill_auditor.py
-    ports: ["127.0.0.1:8004:8004"]
 
   settlement-router:
     <<: *agent
     command: python settlement_router.py
-    ports: ["127.0.0.1:8005:8005"]
 
   imessage-gateway:
     <<: *agent
     command: python imessage_gateway.py
-    ports: ["127.0.0.1:8006:8006"]
 
   case-medic:
     <<: *agent
     command: python case_medic.py
-    ports: ["127.0.0.1:8007:8007"]
 
   photon:
     build:
