@@ -149,7 +149,7 @@ async function handle(space: Space, message: Message) {
 
   console.log(`[bridge] accepted ${chatKind} mention (${text.length} workflow chars)`);
   if (!text && !ev.att) {
-    await space.send("@Billo is here. Tell me what happened or attach a bill or receipt in this chat.");
+    await space.send("👋 @Billo is ready.\nTell me what happened—or attach a bill or receipt.");
     return;
   }
   await typing(space, true);

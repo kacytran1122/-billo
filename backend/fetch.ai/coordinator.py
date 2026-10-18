@@ -39,6 +39,10 @@ from common.models import (
     SettlementResult,
     dump,
 )
+from common.photon_copy import benefits as photon_benefits
+from common.photon_copy import booking_saved as photon_booking_saved
+from common.photon_copy import care_matches as photon_care_matches
+from common.photon_copy import organized_bill as photon_organized_bill
 from common.tracing import carry, case_hash, case_scope, case_span, init_sentry, metric
 
 init_sentry("coordinator")
@@ -113,12 +117,13 @@ def save(ctx: Context, case: dict) -> None:
     ctx.storage.set("case_ids", sorted(ids))
 
 
-async def reply(ctx: Context, case: dict, text: str) -> None:
-    """Send to whichever door this case is using now."""
+async def reply(ctx: Context, case: dict, text: str, *, photon_text: str | None = None) -> None:
+    """Send detailed copy to ASI:One and compact copy to Photon/iMessage."""
     if case["channel"] == "asi1":
         await say(ctx, case["who"], text)
     elif case["channel"] == "imessage" and ADDR["gateway"]:
-        await ctx.send(ADDR["gateway"], OutboundText(space_id=case["who"], text=text, case_id=case["id"], trace=carry()))
+        await ctx.send(ADDR["gateway"], OutboundText(
+            space_id=case["who"], text=photon_text or text, case_id=case["id"], trace=carry()))
 
 
 # ------------------------------------------------------------------ steps
@@ -148,8 +153,8 @@ async def step_symptoms(ctx: Context, case: dict, text: str, group_safe: bool = 
     lines = [f"No emergency signs found. Here are {len(opts.places)} places near you, with real prices:"]
     for i, p in enumerate(opts.places, 1):
         lines.append(f"{i}. {p.name} ({p.kind.replace('_', ' ')}) · about ${p.price_typical:,.0f} · {p.hours}")
-    lines.append("Booking happens in a private chat." if group_safe else "Reply 'book 1', 'book 2' or 'book 3'.")
-    await reply(ctx, case, "\n".join(lines))
+    lines.append("Reply 'book 1', 'book 2' or 'book 3'.")
+    await reply(ctx, case, "\n".join(lines), photon_text=photon_care_matches(case["places"]))
 
 
 async def step_book(ctx: Context, case: dict, n: int) -> None:
@@ -169,7 +174,7 @@ async def step_book(ctx: Context, case: dict, n: int) -> None:
         f"Add to calendar: {est['ics_url']}  (or Google Calendar: {est['gcal_url']})\n"
         f"At the clinic you can tell me what they do (for example 'they did an X-ray') and I keep a running total.\n"
         f"Want this on your iPhone? Scan {link['qr_url']} or text {link['code']} to {link['line'] or 'Billo'} within 15 minutes."
-    ))
+    ), photon_text=photon_booking_saved(place, est["amount"], est["ics_url"]))
 
 
 async def step_visit_log(ctx: Context, case: dict, text: str) -> None:
@@ -180,7 +185,12 @@ async def step_visit_log(ctx: Context, case: dict, text: str) -> None:
 async def step_after_care(ctx: Context, case: dict, file_url: str, payment_status: str) -> None:
     case["stage"] = "organizing"
     save(ctx, case)
-    await reply(ctx, case, "Reading the document now. I will organize the payment record and match it to your saved care plan.")
+    await reply(
+        ctx,
+        case,
+        "Reading the document now. I will organize the payment record and match it to your saved care plan.",
+        photon_text="📸 Got it — reading your bill.\nChecking provider, charges + saved estimate.",
+    )
     await ctx.send(ADDR["bill_auditor"], AfterCareRequest(
         case_id=case["id"], file_url=file_url, demo=not file_url,
         hospital_npi=(case.get("place") or {}).get("npi", ""), payment_status=payment_status,
@@ -199,14 +209,19 @@ async def step_benefits(ctx: Context, case: dict, text: str) -> None:
         lines.append(f"- {path['name']}: possible, not confirmed. Needed: {path['needed']}.")
     if result["paths"]:
         lines.append("Check each plan's rules and deadline before submitting anything.")
-    await reply(ctx, case, "\n".join(lines))
+    await reply(ctx, case, "\n".join(lines), photon_text=photon_benefits(result["paths"]))
 
 
 async def step_scan_clinic_qr(ctx: Context, case: dict, file_url: str, demo: bool = False) -> None:
     if not case.get("after_care") or case["after_care"].get("payment_status") != "unpaid":
         await reply(ctx, case, "First send and organize the unpaid final bill. I need its verified provider and amount before I can trust a clinic QR.")
         return
-    await reply(ctx, case, "Checking the QR checksum, Visa network marker, clinic identity, currency and exact bill amount. No money moves during this check.")
+    await reply(
+        ctx,
+        case,
+        "Checking the QR checksum, Visa network marker, clinic identity, currency and exact bill amount. No money moves during this check.",
+        photon_text="🔎 Checking this clinic QR…\nMerchant · amount · currency\nNo money moves yet.",
+    )
     await ctx.send(ADDR["payment_guard"], SettlementRequest(
         case_id=case["id"], action="inspect_qr", file_url=file_url, demo=demo,
         reply_to=str(ctx.agent.address), trace=carry()))
@@ -251,7 +266,12 @@ async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_g
         case["stopped"] = True
         case["followup_due"] = 0
         save(ctx, case)
-        await reply(ctx, case, "Stopped. I canceled queued reminders for this case. Send a new message whenever you want to continue.")
+        await reply(
+            ctx,
+            case,
+            "Stopped. I canceled queued reminders for this case. Send a new message whenever you want to continue.",
+            photon_text="✅ Stopped. Reminders canceled.\nTag @Billo whenever you want to restart.",
+        )
     elif m and case["places"]:
         if case.pop("stopped", False):
             save(ctx, case)
@@ -276,9 +296,14 @@ async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_g
     elif case["stage"] == "booked" and any(w in low for w in DONE_WORDS):
         await step_visit_log(ctx, case, text)
     elif low in ("help", "?"):
-        await reply(ctx, case, "Tell me what happened, or send a final bill or paid receipt. For an unpaid bill I can verify a clinic Visa QR; for a paid receipt I can route an approved reimbursement. Text STOP to stop messages.")
+        await reply(
+            ctx,
+            case,
+            "Tell me what happened, or send a final bill or paid receipt. For an unpaid bill I can verify a clinic Visa QR; for a paid receipt I can route an approved reimbursement. Text STOP to stop messages.",
+            photon_text="👋 Tag @Billo to:\n• compare care prices\n• read a bill or receipt\n• check benefits or a clinic QR\nText STOP anytime.",
+        )
     else:
-        await step_symptoms(ctx, case, text)
+        await step_symptoms(ctx, case, text, group_safe=is_group)
 
 
 # ------------------------------------------------------------------ ASI:One door
@@ -374,7 +399,22 @@ async def on_result(ctx: Context, sender: str, res: AfterCareResult):
     elif res.payment_status == "unknown":
         text.append("Tell me whether this is a paid receipt or an unpaid bill so the record is labeled correctly.")
     text.append("If you have an HSA, FSA, HRA, out-of-network plan, employer, school, travel, or accident benefit, tell me which one. I will check possible paths without promising eligibility.")
-    await reply(ctx, case, "\n".join(text))
+    await reply(
+        ctx,
+        case,
+        "\n".join(text),
+        photon_text=photon_organized_bill(
+            kind=kind,
+            total=res.total,
+            reader=res.reader,
+            provider_match=res.provider_match,
+            estimate_amount=res.estimate_amount,
+            estimate_difference=res.estimate_difference,
+            unreviewed_lines=res.unreviewed_lines,
+            needs_review=res.needs_review,
+            payment_status=res.payment_status,
+        ),
+    )
 
 
 @agent.on_message(model=SettlementResult)
@@ -396,16 +436,25 @@ async def on_settlement(ctx: Context, sender: str, res: SettlementResult):
             await reply(ctx, case, (
                 f"Verified: {res.merchant_name}, ${res.amount:,.2f}. No money has moved. "
                 "Reply 'approve clinic payment' to open the Visa wallet handoff."
+            ), photon_text=(
+                f"✅ QR verified\n{res.merchant_name} · ${res.amount:,.2f}\n"
+                "No money moved.\nNext · @Billo approve clinic payment"
             ))
     elif res.action == "approve_qr":
         await reply(ctx, case, (
             f"Your verified Visa wallet handoff simulation is ready: {res.handoff_url} "
             f"({res.mode} mode). No card data was collected and no money moved."
+        ), photon_text=(
+            f"💳 Visa demo ready\n{res.handoff_url}\n"
+            "No card data collected. No money moved."
         ))
     elif res.action == "reimburse":
         await reply(ctx, case, (
             f"Reimbursement routed: ${res.amount:,.2f}, status {res.status}, reference {res.settlement_id}. "
             f"This is {res.mode} mode; no real funds moved in the demo."
+        ), photon_text=(
+            f"✅ Reimbursement demo routed · ${res.amount:,.2f}\n"
+            f"Status · {res.status}\nRef · {res.settlement_id}\nNo real funds moved."
         ))
 
 
