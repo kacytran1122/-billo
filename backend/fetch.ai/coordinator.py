@@ -15,6 +15,7 @@ through the Core API.
 """
 import re
 import time
+import yaml
 from uuid import uuid4
 
 import sentry_sdk
@@ -23,9 +24,9 @@ from uagents import Agent, Context, Protocol
 from uagents_core.contrib.protocols.chat import ChatAcknowledgement, ChatMessage, chat_protocol_spec
 
 from common.chat import ack, resources_of, say, text_of
-from common.config import ADDR, FOLLOWUP_MINUTES, MODE, PORTS, READMES, require_seed
+from common.config import ADDR, BACKEND_ROOT, FOLLOWUP_MINUTES, MODE, PORTS, READMES, require_seed
 from common.core import core_get, core_post
-from common.conversation import normalize_request, payment_status as document_payment_status, quick_reply
+from common.conversation import SCOPE_REPLY, care_request, clinical_advice_request, normalize_request, payment_status as document_payment_status, quick_reply
 from common.models import (
     AfterCareRequest,
     AfterCareResult,
@@ -44,9 +45,12 @@ from common.photon_copy import benefits as photon_benefits
 from common.photon_copy import booking_saved as photon_booking_saved
 from common.photon_copy import care_matches as photon_care_matches
 from common.photon_copy import organized_bill as photon_organized_bill
+from common.screen_links import with_screen_link
+from common.safety import first_matching_rule
 from common.tracing import carry, case_hash, case_scope, case_span, init_sentry, metric
 
 init_sentry("coordinator")
+SAFETY_RULES = yaml.safe_load((BACKEND_ROOT / "rules/red_flags.yaml").read_text())["rules"]
 
 agent = Agent(
     name="Billo",
@@ -57,8 +61,8 @@ agent = Agent(
     handle_messages_concurrently=True,
     readme_path=str(READMES / "coordinator.md"),
     description=(
-        "Billo compares real care prices before a visit and organizes bills, receipts, benefits, "
-        "reimbursements, and next steps after care with safety first."
+        "Billo provides location-matched demo care estimates, organizes bills and receipts, and "
+        "explains possible benefit paths and next steps with safety first."
     ),
 )
 
@@ -140,10 +144,10 @@ def save(ctx: Context, case: dict) -> None:
 async def reply(ctx: Context, case: dict, text: str, *, photon_text: str | None = None) -> None:
     """Send detailed copy to ASI:One and compact copy to Photon/iMessage."""
     if case["channel"] == "asi1":
-        await say(ctx, case["who"], text)
+        await say(ctx, case["who"], with_screen_link(text, case.get("stage", "new")))
     elif case["channel"] == "imessage" and ADDR["gateway"]:
         await ctx.send(ADDR["gateway"], OutboundText(
-            space_id=case["who"], text=photon_text or text, case_id=case["id"], trace=carry()))
+            space_id=case["who"], text=with_screen_link(photon_text or text, case.get("stage", "new")), case_id=case["id"], trace=carry()))
 
 
 # ------------------------------------------------------------------ steps
@@ -153,6 +157,14 @@ async def step_symptoms(ctx: Context, case: dict, text: str, group_safe: bool = 
         case["near"] = requested_location
     near = case.get("near", "UCLA, Los Angeles, CA")
     prior_query = case.get("care_query", "")
+    if requested_location and not prior_query and not care_request(text):
+        save(ctx, case)
+        await reply(
+            ctx,
+            case,
+            f"Location saved: {near}. What care do you need help finding? Describe the symptom or service so I can run the safety check before showing options.",
+        )
+        return
     care_query = f"{prior_query}. Current location: {near}" if requested_location and prior_query else text
     if not (requested_location and prior_query):
         case["care_query"] = text
@@ -166,6 +178,16 @@ async def step_symptoms(ctx: Context, case: dict, text: str, group_safe: bool = 
         case["stage"] = "emergency"
         save(ctx, case)
         await reply(ctx, case, res.message)
+        return
+    if clinical_advice_request(text):
+        await reply(ctx, case, (
+            "I can help you find care and understand costs, but I can’t diagnose, prescribe, or recommend a medication dose. "
+            "Please ask a licensed clinician or pharmacist. Tell me your city or ZIP code if you’d like help comparing care options."
+        ))
+        return
+    if not requested_location and not case.get("near"):
+        save(ctx, case)
+        await reply(ctx, case, "Which city or ZIP code should I search? I saved your care request and won’t assume your location.")
         return
     opts, _ = await ctx.send_and_receive(
         ADDR["care_finder"], FindCareRequest(
@@ -327,7 +349,14 @@ async def step_reimburse(ctx: Context, case: dict, text: str) -> None:
 async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_group: bool = False) -> None:
     text = normalize_request(text)
     low = text.lower().strip()
-    m = re.fullmatch(r"(?:book|pick|choose)\s*#?\s*(\d+)", low)
+    # Emergency wording takes precedence even in upload captions or benefit/payment requests.
+    emergency_rule = first_matching_rule(text, SAFETY_RULES)
+    if emergency_rule:
+        case["stage"] = "emergency"
+        save(ctx, case)
+        await reply(ctx, case, emergency_rule["say"])
+        return
+    m = re.fullmatch(r"(?:book|pick|choose|save)(?:\s+(?:option|number|provider))?\s*#?\s*(\d+)(?:\s+(?:please|as my care plan))?", low)
     immediate = quick_reply(text, has_files=bool(files), stage=case["stage"], asked=case.get("asked", False))
     if low == "stop":
         case["stopped"] = True
@@ -364,6 +393,8 @@ async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_g
         await reply(ctx, case, "Understood. If you’d like another option, tell me the preferred city or ZIP code and any timing constraints.")
     elif case["stage"] == "booked" and any(w in low for w in DONE_WORDS):
         await step_visit_log(ctx, case, text)
+    elif not care_request(text, has_prior=bool(case.get("care_query"))) and not location_hint(text):
+        await reply(ctx, case, SCOPE_REPLY)
     else:
         await step_symptoms(ctx, case, text, group_safe=is_group)
 

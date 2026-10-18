@@ -79,6 +79,9 @@ services:
       # Keep existing projects on iMessage unless WhatsApp Business has been
       # enabled in Photon and explicitly selected in the host environment.
       PHOTON_CHANNELS: ${PHOTON_CHANNELS:-imessage}
+      PHOTON_STATE_FILE: /data/photon-beta.json
+    volumes:
+      - photon_data:/data
     restart: unless-stopped
     depends_on:
       core:
@@ -111,5 +114,6 @@ networks:
   billo:
 
 volumes:
+  photon_data:
   caddy_data:
   caddy_config:

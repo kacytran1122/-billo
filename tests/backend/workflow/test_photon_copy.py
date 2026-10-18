@@ -16,7 +16,8 @@ def test_care_matches_is_short_and_has_one_tagged_action():
     assert text.startswith("📍 Your care shortlist\n\nDemo estimates")
     assert "1. Campus Health\n   ~$180 estimated" in text
     assert "Next: @Billo book 1 (or another option number)" in text
-    assert text.endswith("Saving an option does not confirm an appointment.")
+    assert "Saving an option does not confirm an appointment." in text
+    assert text.endswith("https://www.getbillo.us/tools/prices")
     assert len(text) < 500
 
 
@@ -24,7 +25,8 @@ def test_booking_copy_keeps_amount_calendar_and_tagged_next_action():
     text = booking_saved({"name": "Westwood Urgent"}, 240, "https://api.getbillo.us/calendar/demo.ics")
     assert "Estimated price · $240" in text
     assert "https://api.getbillo.us/calendar/demo.ics" in text
-    assert text.endswith("At the visit: send @Billo and the service received")
+    assert "At the visit: send @Billo and the service received" in text
+    assert text.endswith("https://www.getbillo.us/tools/estimate")
 
 
 def test_organized_ocr_bill_shows_confidence_and_next_action():
@@ -42,7 +44,8 @@ def test_organized_ocr_bill_shows_confidence_and_next_action():
     assert "Read with OCR · review extracted amounts" in text
     assert "Estimate $240.00 → bill $360.00 (+$120.00)" in text
     assert "⚠️ 1 uncoded charge(s) need review" in text
-    assert text.endswith("Next · @Billo scan clinic QR")
+    assert "Next · @Billo scan clinic QR" in text
+    assert text.endswith("https://www.getbillo.us/tools/match")
 
 
 def test_vision_review_and_paid_benefit_action_are_clear():
@@ -60,7 +63,8 @@ def test_vision_review_and_paid_benefit_action_are_clear():
     assert "Read with vision · review extracted amounts" in text
     assert "Provider match · review needed" in text
     assert "⚠️ Verify line(s) 2, 4" in text
-    assert text.endswith("Next · @Billo check my HSA or insurance")
+    assert "Next · @Billo check my HSA or insurance" in text
+    assert text.endswith("https://www.getbillo.us/tools/match")
 
 
 def test_benefit_copy_is_explicitly_not_a_promise():
@@ -73,7 +77,8 @@ def test_care_match_actions_never_reference_missing_options():
     assert "No verified care options found" in care_matches([])
     text = care_matches([{"name": "Clinic", "kind": "clinic", "price_typical": 120, "hours": "9–5"}])
     assert "Next: @Billo book 1" in text
-    assert text.endswith("Saving an option does not confirm an appointment.")
+    assert "Saving an option does not confirm an appointment." in text
+    assert text.endswith("https://www.getbillo.us/tools/prices")
 
 
 def test_demo_results_are_not_presented_as_verified_ocr():

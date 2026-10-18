@@ -10,7 +10,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY backend/photon/tsconfig.json ./
 COPY backend/photon/src ./src
 
-RUN chown -R node:node /app
+RUN mkdir -p /data && chown -R node:node /app /data
 USER node
 
 EXPOSE 3000

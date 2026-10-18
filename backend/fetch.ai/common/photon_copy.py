@@ -5,6 +5,8 @@ compact form: one headline, the essential numbers, and one clear next action.
 """
 from __future__ import annotations
 
+from .screen_links import screen_url
+
 
 def care_matches(places: list[dict], location: str = "") -> str:
     if not places:
@@ -21,6 +23,7 @@ def care_matches(places: list[dict], location: str = "") -> str:
         )
     lines.append("Next: @Billo book 1" if len(places) == 1 else "Next: @Billo book 1 (or another option number)")
     lines.append("Saving an option does not confirm an appointment.")
+    lines.append(f"Compare care (demo): {screen_url('prices')}")
     return "\n".join(lines)
 
 
@@ -34,6 +37,7 @@ def booking_saved(place: dict, amount: float, calendar_url: str) -> str:
         f"📅 {calendar_url}",
         "",
         "At the visit: send @Billo and the service received",
+        f"Review the saved estimate (demo): {screen_url('estimate')}",
     ])
 
 
@@ -44,6 +48,7 @@ def benefits(paths: list[dict]) -> str:
     lines.extend(f"• {path['name']}\n  Needs: {path['needed']}\n" for path in paths)
     lines.append("Eligibility is not confirmed. Check your plan deadline.")
     lines.append("Next: @Billo check my benefits")
+    lines.append(f"Review benefit paths (demo): {screen_url('benefits')}")
     return "\n".join(lines)
 
 
@@ -84,4 +89,5 @@ def organized_bill(
         lines.append("Next · @Billo check my HSA or insurance")
     else:
         lines.append("Next · @Billo this is paid / unpaid")
+    lines.append(f"Review the organized charges (demo): {screen_url('match')}")
     return "\n".join(lines)

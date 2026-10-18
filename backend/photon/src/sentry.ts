@@ -13,6 +13,7 @@ loadEnv({ path: new URL("../../.env", import.meta.url).pathname });
 const env = (k: string, d = "") => (process.env[k] ?? d).trim();
 
 const PATTERNS: [RegExp, string][] = [
+  [/pho_(?:sk|ask)_[A-Za-z0-9_-]+/g, "[api-key]"],
   [/[\w.+-]+@[\w-]+\.[\w.-]+/g, "[email]"],
   [/\b\d(?:[ -]?\d){12,18}\b/g, "[card]"],
   [/\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b/g, "[date]"],

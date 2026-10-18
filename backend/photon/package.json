@@ -16,6 +16,7 @@
   "dependencies": {
     "@sentry/node": "^11.8.0",
     "dotenv": "^16.4.5",
+    "socket.io-client": "4.8.3",
     "spectrum-ts": "12.10.1",
     "tsx": "^4.23.15"
   },
