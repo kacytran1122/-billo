@@ -1,20 +1,28 @@
 {
-  "name": "billo-frontend",
-  "version": "1.0.0",
+  "name": "billio-frontend",
+  "version": "0.1.0",
   "private": true,
-  "type": "module",
+  "description": "Billo — healthcare bill-fairness companion (Next.js frontend, migrated from Claude Design exports)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test ../tests/frontend/*.test.mjs"
+    "test": "tsx --test ../tests/frontend/**/*.test.ts",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=20.9.0"
   },
   "dependencies": {
     "next": "16.4.2",
     "react": "19.3.1",
     "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "^19",
+    "tsx": "^4.20.6",
+    "typescript": "5.9.3"
   }
 }

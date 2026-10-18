@@ -1,0 +1,2 @@
+/* Hover states carried over from the design (inline styles win, hence !important). */
+.hover1:hover { background: var(--color-neutral-200) !important; }

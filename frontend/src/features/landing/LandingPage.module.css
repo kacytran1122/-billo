@@ -1,0 +1,5 @@
+/* Hover states carried over from the design (inline styles win, hence !important). */
+.hover1:hover { background: oklch(0.91 0.06 300) !important; }
+.hover2:hover { background: var(--color-neutral-800) !important; }
+.hover3:hover { background: var(--color-neutral-200) !important; }
+.hover4:hover { transform: translateY(-2px) !important; box-shadow: var(--shadow-md) !important; }

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildSmsUrl, formatMoney, normalizePlaces, sanitizeSmsAddress } from "../../frontend/lib/format.js";
-import { normalizeCareSearch } from "../../frontend/lib/search.js";
+import { buildSmsUrl, formatMoney, normalizePlaces, sanitizeSmsAddress } from "../../../frontend/src/lib/format.ts";
+import { normalizeCareSearch } from "../../../frontend/src/lib/search.ts";
 
 test("formats care costs as whole US dollars", () => {
   assert.equal(formatMoney(240), "$240");

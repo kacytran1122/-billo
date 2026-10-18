@@ -11,4 +11,5 @@ backend/api/uploads/
 backend/fetch.ai/*_data.json
 frontend/.next/
 frontend/out/
+*.tsbuildinfo
 *.db
