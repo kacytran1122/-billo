@@ -4,19 +4,17 @@ import { useEffect, useState, type MouseEvent } from "react";
 import QRCode from "qrcode";
 import { BilloLogo } from "@/components/BilloLogo";
 import { BilloWord } from "@/components/BilloWord";
-import { buildSmsUrl } from "@/lib/format";
+import { whatsappDestination } from "@/lib/channels";
 import styles from "./ChannelConnect.module.css";
 
-export type ConnectChannel = "asi" | "imessage" | "whatsapp";
+export type ConnectChannel = "asi" | "whatsapp";
 
 export const ASI_ONE_URL = "https://asi1.ai/ai/agent1qdral3yqhqaa28czja8ddwf7kzgj4evwmpd39qjz3zuxwc64tucyus67y0z";
-export const IMESSAGE_URL = buildSmsUrl("+17739371364", "@Billo start");
-export const WHATSAPP_URL = process.env.NEXT_PUBLIC_BILLO_WHATSAPP_URL?.trim() ?? "";
+export const WHATSAPP_URL = whatsappDestination(process.env.NEXT_PUBLIC_BILLO_WHATSAPP_URL);
 
 const CHANNELS: Readonly<Record<ConnectChannel, { label: string; status: string }>> = {
   asi: { label: "ASI:One", status: "Live agent" },
-  imessage: { label: "iMessage", status: "Live via Photon" },
-  whatsapp: { label: "WhatsApp", status: WHATSAPP_URL ? "Live" : "Future connection" },
+  whatsapp: { label: "WhatsApp", status: WHATSAPP_URL ? "Via Photon" : "Needs setup" },
 };
 
 function useQr(destination: string) {
@@ -53,10 +51,10 @@ function ChannelPreview({ channel }: { channel: ConnectChannel }) {
     );
   }
 
-  if (channel === "imessage") {
+  if (channel === "whatsapp") {
     return (
-      <div className={`${styles.phone} ${styles.messagePhone}`} aria-label="iMessage Billo chat preview">
-        <div className={styles.phoneTop}><span /><BilloLogo size={24} /><strong>Billo · Messages</strong></div>
+      <div className={`${styles.phone} ${styles.messagePhone}`} aria-label="WhatsApp Billo chat preview">
+        <div className={styles.phoneTop}><span /><BilloLogo size={24} /><strong>Billo · WhatsApp</strong></div>
         <div className={`${styles.bubble} ${styles.blue}`}>@Billo check this bill</div>
         <div className={styles.receipt}><b>WESTWOOD URGENT CARE</b><span>Office visit&nbsp; $240</span><span>X-ray&nbsp; $120</span><strong>Total&nbsp; $360</strong></div>
         <div className={`${styles.bubble} ${styles.gray}`}>Matched to your visit. Total verified: $360.</div>
@@ -64,14 +62,7 @@ function ChannelPreview({ channel }: { channel: ConnectChannel }) {
     );
   }
 
-  return (
-    <div className={`${styles.phone} ${styles.whatsappPhone}`} aria-label="Future WhatsApp Billo chat preview">
-      <div className={styles.phoneTop}><span /><BilloLogo size={24} /><strong>Billo · WhatsApp</strong></div>
-      <div className={`${styles.bubble} ${styles.whatsSent}`}>@Billo organize my receipt</div>
-      <div className={`${styles.bubble} ${styles.whatsReceived}`}>This channel activates after a verified Billo Business number is connected.</div>
-      <div className={styles.futureBadge}>Future development</div>
-    </div>
-  );
+  return null;
 }
 
 export function ChannelConnect({
@@ -84,7 +75,7 @@ export function ChannelConnect({
   onClose: () => void;
 }) {
   const channel = initialChannel;
-  const destination = channel === "asi" ? ASI_ONE_URL : channel === "imessage" ? IMESSAGE_URL : WHATSAPP_URL;
+  const destination = channel === "asi" ? ASI_ONE_URL : WHATSAPP_URL;
   const qr = useQr(destination);
 
   useEffect(() => {
@@ -123,7 +114,7 @@ export function ChannelConnect({
             {destination && !qr && <div className={styles.qrLoading}>Building secure handoff…</div>}
             {destination && (
               <>
-                <p className={styles.help}>{channel === "imessage" ? "Opens Messages with @Billo ready to send to the live Photon line." : "Opens Billo's public ASI:One agent profile."}</p>
+                <p className={styles.help}>{channel === "whatsapp" ? "Opens WhatsApp with @Billo ready to send." : "Opens Billo's public ASI:One agent profile."}</p>
                 <a className={styles.openButton} href={destination} target={channel === "asi" ? "_blank" : undefined} rel={channel === "asi" ? "noreferrer" : undefined}>
                   Open {current.label} <span>→</span>
                 </a>

@@ -1,12 +1,12 @@
 /**
  * Billo "classical" landing page (migrated from "Billo 4.html").
- * Editorial layout with a single hero chat (ASI:One or iMessage),
+ * Editorial layout with a single hero chat (ASI:One or WhatsApp),
  * a step marquee, visit-link cards and the "what Billo never does" list.
  * No client state, so it renders as a server component.
  */
 import { Fragment } from "react";
 
-export type ChatApp = "ASI:One" | "iMessage";
+export type ChatApp = "ASI:One" | "WhatsApp";
 
 const STEPS = [
   "Symptoms", "Emergency check", "Three nearby prices", "Book",
@@ -69,7 +69,7 @@ export default function ClassicLanding({
   showMarquee?: boolean;
 }) {
   const isAsi = chatApp === "ASI:One";
-  const isIMessage = chatApp === "iMessage";
+  const isIMessage = chatApp === "WhatsApp";
   const marquee = <Marquee />;
   const qr = QR;
   const nevers = NEVERS;
@@ -133,7 +133,7 @@ export default function ClassicLanding({
               </svg>
             </a>
             {" "}
-            <a className="btn btn-secondary" href="sms:+13105550100" style={{ minHeight: "52px", padding: "0 24px", fontSize: "16px" }}>Text Billo on iMessage</a>
+            <a className="btn btn-secondary" href="/#connect" style={{ minHeight: "52px", padding: "0 24px", fontSize: "16px" }}>Text Billo on WhatsApp</a>
           </div>
           <p style={{ fontSize: "14px", color: "var(--color-neutral-700)", margin: "16px 0 0", fontStyle: "italic" }}>In ASI:One, search for Billo and tell it what happened.</p>
         </div>
@@ -152,7 +152,7 @@ export default function ClassicLanding({
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   <span style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "18px", lineHeight: "1.1" }}>Billo</span>
                   {isIMessage && (
-                    <span style={{ fontSize: "11px", color: "var(--color-neutral-700)" }}>iMessage · private chat</span>
+                    <span style={{ fontSize: "11px", color: "var(--color-neutral-700)" }}>WhatsApp · private chat</span>
                   )}
                   {isAsi && (
                     <span style={{ fontSize: "11px", color: "var(--color-neutral-700)" }}>ASI:One · Coordinator agent</span>
@@ -244,7 +244,7 @@ export default function ClassicLanding({
             <em>The whole thread</em>
             , before and after the visit.
           </h2>
-          <p style={{ fontSize: "17px", lineHeight: "1.65", margin: "0", textAlign: "justify", hyphens: "auto", color: "var(--color-neutral-800)" }}>The hard part isn't one bill — it's that nothing connects. Tell Billo what happened, and it carries what you learned before care into what arrives after it. Everything happens in one conversation, in ASI:One or iMessage.</p>
+          <p style={{ fontSize: "17px", lineHeight: "1.65", margin: "0", textAlign: "justify", hyphens: "auto", color: "var(--color-neutral-800)" }}>The hard part isn't one bill — it's that nothing connects. Tell Billo what happened, and it carries what you learned before care into what arrives after it. Everything happens in one conversation, in ASI:One or WhatsApp.</p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,250px),1fr))", gap: "0", marginTop: "64px", borderTop: "1px solid var(--color-text)" }}>
           <div style={{ padding: "28px 24px 28px 0", borderRight: "1px solid var(--color-divider)" }}>
@@ -332,7 +332,7 @@ export default function ClassicLanding({
                     </span>
                     <h4 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "30px", lineHeight: "1", margin: "18px 0 0" }}>
                       Continue in{" "}
-                      <em>iMessage</em>
+                      <em>WhatsApp</em>
                     </h4>
                     <p style={{ fontSize: "11.5px", lineHeight: "1.5", margin: "10px 0 0", color: "var(--color-neutral-800)" }}>
                       Scan with your phone camera. Your first message carries the code{" "}
@@ -346,7 +346,7 @@ export default function ClassicLanding({
                         </Fragment>
                       ))}
                     </div>
-                    <div className="btn btn-primary" style={{ marginTop: "18px", fontSize: "13px" }}>Open in iMessage</div>
+                    <div className="btn btn-primary" style={{ marginTop: "18px", fontSize: "13px" }}>Open in WhatsApp</div>
                     <div style={{ marginTop: "auto", padding: "10px 12px", border: "1px solid var(--color-divider)", borderRadius: "var(--radius-md)", fontSize: "11px", lineHeight: "1.45", display: "flex", gap: "8px", alignItems: "center" }}>
                       <span style={{ width: "8px", height: "8px", borderRadius: "50%", border: "1.5px solid var(--color-accent)", flex: "none" }} />
                       Waiting for your first message. Works for 15 minutes.
@@ -578,11 +578,11 @@ export default function ClassicLanding({
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "40px" }}>
             <a className="btn" href="https://asi1.ai" style={{ minHeight: "52px", padding: "0 24px", fontSize: "16px", color: "var(--color-accent-300)", border: "1.5px solid var(--color-accent-300)" }}>Start in ASI:One</a>
             {" "}
-            <a className="btn" href="sms:+13105550100" style={{ minHeight: "52px", padding: "0 24px", fontSize: "16px", color: "var(--color-neutral-100)", border: "1px solid var(--color-neutral-700)" }}>Text Billo on iMessage</a>
+            <a className="btn" href="/#connect" style={{ minHeight: "52px", padding: "0 24px", fontSize: "16px", color: "var(--color-neutral-100)", border: "1px solid var(--color-neutral-700)" }}>Text Billo on WhatsApp</a>
           </div>
         </div>
         <footer style={{ maxWidth: "1200px", margin: "0 auto", padding: "28px 24px 40px", borderTop: "1px solid var(--color-neutral-800)", display: "flex", justifyContent: "space-between", gap: "16px", flexWrap: "wrap", fontSize: "13px", color: "var(--color-neutral-400)", position: "relative" }}>
-          <span>Built at LA Hacks 2026 on Fetch.ai agents, Photon iMessage, Tiger Data, Sentry and a Visa simulation.</span>
+          <span>Built at LA Hacks 2026 on Fetch.ai agents, Photon WhatsApp, Tiger Data, Sentry and a Visa simulation.</span>
           {" "}
           <span>All patients and documents in the demo are synthetic.</span>
         </footer>

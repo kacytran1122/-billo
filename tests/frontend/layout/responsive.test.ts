@@ -19,8 +19,8 @@ const connectStyles = readFileSync(
   "utf8",
 );
 
-test("the first hero shows only the iMessage phone", () => {
-  assert.match(homeSource, /heroPhones="iMessage only"/);
+test("the first hero shows only the WhatsApp phone", () => {
+  assert.match(homeSource, /heroPhones="WhatsApp only"/);
   assert.match(landingSource, /data-single/);
   assert.match(landingStyles, /heroPhones\[data-single="true"\]/);
   assert.match(landingStyles, /block-size: 548px/);
@@ -42,7 +42,7 @@ test("phone, tablet, laptop, and wide layouts have explicit balance rules", () =
   assert.match(landingStyles, /grid-template-columns: 1fr/);
 });
 
-test("the ASI One to iMessage handoff arrows follow the layout direction", () => {
+test("the ASI One to WhatsApp handoff arrows follow the layout direction", () => {
   assert.match(landingStyles, /@media \(min-width: 901px\)[\s\S]*\.caseFlow > svg \{ align-self: center; rotate: 0deg; \}/);
   assert.match(landingStyles, /@media \(max-width: 900px\)[\s\S]*\.caseFlow > svg \{ align-self: center; rotate: 90deg; \}/);
   assert.match(landingStyles, /grid-template-columns: minmax\(220px, 300px\) 36px auto 36px minmax\(220px, 300px\)/);
