@@ -16,7 +16,7 @@ import { ChannelConnect, type ConnectChannel } from "@/features/connect/ChannelC
 import { FeatureSimulation, type FeatureStep } from "@/features/simulation/FeatureSimulation";
 import hv from "./LandingPage.module.css";
 
-export type HeroPhones = "Both" | "ASI:One only" | "WhatsApp only";
+export type HeroPhones = "Both" | "ASI:One only" | "iMessage only";
 
 type SectionId = "top" | "case" | "features" | "faq";
 
@@ -160,9 +160,9 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
   }));
   const activeLabel = SECTIONS.find(([id]) => id === active)?.[1] ?? "Home";
   useEffect(() => {
-    if (window.location.hash === "#connect") openChooser("whatsapp");
+    if (window.location.hash === "#connect") openChooser("imessage");
   }, []);
-  const showAsi = heroPhones !== "WhatsApp only";
+  const showAsi = heroPhones !== "iMessage only";
   const showIMessage = heroPhones !== "ASI:One only";
   const qr = QR;
 
@@ -250,7 +250,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
             <span style={{ background: "oklch(0.90 0.06 50)", borderRadius: "99px", padding: "2px 10px" }}>New</span>
             Now in ASI:One{" "}
             &amp;
-            {" "}WhatsApp
+            {" "}iMessage
           </div>
           <h1 className={hv.heroTitle} style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "clamp(56px,9vw,124px)", lineHeight: ".9", letterSpacing: "-.025em", margin: "26px auto 0", maxWidth: "980px", textWrap: "balance" }}>
             Make every care dollar{" "}
@@ -263,11 +263,11 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
               Open in ASI:One
             </button>
             {" "}
-            <button onClick={() => openChooser("whatsapp")} style={{ display: "inline-flex", alignItems: "center", gap: "10px", minHeight: "54px", padding: "0 26px", borderRadius: "99px", background: "var(--color-neutral-100)", border: "1px solid var(--color-text)", color: "var(--color-text)", fontFamily: "var(--font-body)", cursor: "pointer", fontSize: "16px" }}>
+            <button onClick={() => openChooser("imessage")} style={{ display: "inline-flex", alignItems: "center", gap: "10px", minHeight: "54px", padding: "0 26px", borderRadius: "99px", background: "var(--color-neutral-100)", border: "1px solid var(--color-text)", color: "var(--color-text)", fontFamily: "var(--font-body)", cursor: "pointer", fontSize: "16px" }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="oklch(0.6 0.17 255)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
               </svg>
-              Text on WhatsApp
+              Text on iMessage
             </button>
           </div>
           <div className={hv.heroFeatureStrip} aria-label="Billo features">
@@ -351,7 +351,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
                       <span style={{ fontSize: "11px" }}>Billo</span>
                     </div>
                     <div style={{ flex: "1", minHeight: "0", overflow: "hidden", padding: "12px 12px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", lineHeight: "1.35" }}>
-                      <div style={{ alignSelf: "center", fontSize: "10px", color: "var(--color-neutral-600)" }}>WhatsApp · Today 4:12 PM</div>
+                      <div style={{ alignSelf: "center", fontSize: "10px", color: "var(--color-neutral-600)" }}>iMessage · Today 4:12 PM</div>
                       <div style={{ flexShrink: "0", alignSelf: "flex-end", maxWidth: "70%", background: "oklch(0.6 0.17 255)", color: "#fff", padding: "8px 12px", borderRadius: "18px" }}>
                         <BilloWord />
                         {" "}the bill
@@ -375,11 +375,11 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
                     </div>
                     <div style={{ padding: "8px 12px 16px", display: "flex", gap: "8px", alignItems: "center" }}>
                       <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "var(--color-neutral-200)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", color: "var(--color-neutral-700)" }}>+</div>
-                      <div style={{ flex: "1", border: "1px solid var(--color-neutral-300)", borderRadius: "18px", padding: "7px 12px", fontSize: "12px", color: "var(--color-neutral-600)" }}>WhatsApp</div>
+                      <div style={{ flex: "1", border: "1px solid var(--color-neutral-300)", borderRadius: "18px", padding: "7px 12px", fontSize: "12px", color: "var(--color-neutral-600)" }}>iMessage</div>
                     </div>
                   </div>
                 </div>
-                <span style={{ fontFamily: "var(--font-heading)", fontSize: "22px", fontStyle: "italic" }}>After care · WhatsApp</span>
+                <span style={{ fontFamily: "var(--font-heading)", fontSize: "22px", fontStyle: "italic" }}>After care · iMessage</span>
               </div>
             )}
             <div className={hv.heroBadge} style={{ position: "absolute", left: "calc(50% - 420px)", top: "90px", background: "oklch(0.90 0.06 50)", borderRadius: "18px", padding: "12px 18px", boxShadow: "var(--shadow-md)", transform: "rotate(-8deg)", textAlign: "left" }}>
@@ -399,7 +399,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
       <section id="case" className={`${hv.balancedSection} ${hv.caseSection}`} style={{ scrollMarginTop: "80px", background: "oklch(0.91 0.05 235)", borderRadius: "48px", maxWidth: "1400px", margin: "110px auto 0", padding: "96px 24px", boxSizing: "border-box" }}>
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "clamp(44px,6vw,76px)", lineHeight: ".95", margin: "0", textAlign: "center", letterSpacing: "-.015em" }}>
           Start in ASI:One.{" "}
-          <em>Continue in WhatsApp.</em>
+          <em>Continue in iMessage.</em>
         </h2>
         <p style={{ fontSize: "18px", lineHeight: "1.5", margin: "20px auto 0", maxWidth: "520px", textAlign: "center", color: "var(--color-neutral-800)" }}>Scan your Billo code once. Your case follows you.</p>
         <div className={hv.caseFlow} style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "20px", marginTop: "56px" }}>
@@ -435,7 +435,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="oklch(0.6 0.17 255)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
               </svg>
-              WhatsApp
+              iMessage
             </span>
             <div style={{ marginTop: "auto", alignSelf: "flex-end", background: "oklch(0.6 0.17 255)", color: "#fff", padding: "9px 14px", borderRadius: "18px", fontSize: "14px" }}>
               <BilloWord />
@@ -504,7 +504,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
               <span>Is Billo free?</span>
               <span style={{ width: "36px", height: "36px", borderRadius: "50%", background: "var(--color-neutral-100)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none", fontSize: "22px" }}>+</span>
             </summary>
-            <p style={{ margin: "0", padding: "0 0 26px", fontSize: "17px", lineHeight: "1.55", maxWidth: "640px" }}>Yes. Billo is free to use in ASI:One and WhatsApp.</p>
+            <p style={{ margin: "0", padding: "0 0 26px", fontSize: "17px", lineHeight: "1.55", maxWidth: "640px" }}>Yes. Billo is free to use in ASI:One and iMessage.</p>
           </details>
           <details style={{ background: "oklch(0.92 0.06 165)", borderRadius: "28px", padding: "0 28px" }}>
             <summary style={{ listStyle: "none", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", minHeight: "76px", fontSize: "clamp(19px,2vw,24px)" }}>
@@ -529,7 +529,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
           </details>
           <details style={{ background: "oklch(0.91 0.05 235)", borderRadius: "28px", padding: "0 28px" }}>
             <summary style={{ listStyle: "none", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", minHeight: "76px", fontSize: "clamp(19px,2vw,24px)" }}>
-              <span>How do I move from ASI:One to WhatsApp?</span>
+              <span>How do I move from ASI:One to iMessage?</span>
               <span style={{ width: "36px", height: "36px", borderRadius: "50%", background: "var(--color-neutral-100)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none", fontSize: "22px" }}>+</span>
             </summary>
             <p style={{ margin: "0", padding: "0 0 26px", fontSize: "17px", lineHeight: "1.55", maxWidth: "640px" }}>Scan your Billo code or tap the link. Your booking, prices and bills move with you.</p>
@@ -554,7 +554,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
           <div style={{ position: "relative", display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginTop: "40px" }}>
             <button onClick={() => openChooser("asi")} style={{ display: "inline-flex", alignItems: "center", minHeight: "54px", padding: "0 28px", border: "0", borderRadius: "99px", background: "var(--color-text)", color: "var(--color-neutral-100)", fontFamily: "var(--font-body)", cursor: "pointer", fontSize: "16px" }}>Open in ASI:One</button>
             {" "}
-            <button onClick={() => openChooser("whatsapp")} style={{ display: "inline-flex", alignItems: "center", minHeight: "54px", padding: "0 28px", border: "0", borderRadius: "99px", background: "var(--color-neutral-100)", color: "var(--color-text)", fontFamily: "var(--font-body)", cursor: "pointer", fontSize: "16px" }}>Text on WhatsApp</button>
+            <button onClick={() => openChooser("imessage")} style={{ display: "inline-flex", alignItems: "center", minHeight: "54px", padding: "0 28px", border: "0", borderRadius: "99px", background: "var(--color-neutral-100)", color: "var(--color-text)", fontFamily: "var(--font-body)", cursor: "pointer", fontSize: "16px" }}>Text on iMessage</button>
           </div>
         </div>
         <footer style={{ maxWidth: "1400px", margin: "0 auto", padding: "22px 24px", display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap", fontSize: "12.5px", color: "var(--color-neutral-700)" }}>

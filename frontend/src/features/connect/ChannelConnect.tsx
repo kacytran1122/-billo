@@ -4,17 +4,16 @@ import { useEffect, useState, type MouseEvent } from "react";
 import QRCode from "qrcode";
 import { BilloLogo } from "@/components/BilloLogo";
 import { BilloWord } from "@/components/BilloWord";
-import { whatsappDestination } from "@/lib/channels";
+import { IMESSAGE_URL } from "@/lib/channels";
 import styles from "./ChannelConnect.module.css";
 
-export type ConnectChannel = "asi" | "whatsapp";
+export type ConnectChannel = "asi" | "imessage";
 
 export const ASI_ONE_URL = "https://asi1.ai/ai/agent1qdral3yqhqaa28czja8ddwf7kzgj4evwmpd39qjz3zuxwc64tucyus67y0z";
-export const WHATSAPP_URL = whatsappDestination(process.env.NEXT_PUBLIC_BILLO_WHATSAPP_URL);
 
 const CHANNELS: Readonly<Record<ConnectChannel, { label: string; status: string }>> = {
   asi: { label: "ASI:One", status: "Live agent" },
-  whatsapp: { label: "WhatsApp", status: WHATSAPP_URL ? "Via Photon" : "Needs setup" },
+  imessage: { label: "iMessage", status: "Via Photon" },
 };
 
 function useQr(destination: string) {
@@ -51,10 +50,10 @@ function ChannelPreview({ channel }: { channel: ConnectChannel }) {
     );
   }
 
-  if (channel === "whatsapp") {
+  if (channel === "imessage") {
     return (
-      <div className={`${styles.phone} ${styles.messagePhone}`} aria-label="WhatsApp Billo chat preview">
-        <div className={styles.phoneTop}><span /><BilloLogo size={24} /><strong>Billo · WhatsApp</strong></div>
+      <div className={`${styles.phone} ${styles.messagePhone}`} aria-label="iMessage Billo chat preview">
+        <div className={styles.phoneTop}><span /><BilloLogo size={24} /><strong>Billo · iMessage</strong></div>
         <div className={`${styles.bubble} ${styles.blue}`}>@Billo check this bill</div>
         <div className={styles.receipt}><b>WESTWOOD URGENT CARE</b><span>Office visit&nbsp; $240</span><span>X-ray&nbsp; $120</span><strong>Total&nbsp; $360</strong></div>
         <div className={`${styles.bubble} ${styles.gray}`}>Matched to your visit. Total verified: $360.</div>
@@ -75,7 +74,7 @@ export function ChannelConnect({
   onClose: () => void;
 }) {
   const channel = initialChannel;
-  const destination = channel === "asi" ? ASI_ONE_URL : WHATSAPP_URL;
+  const destination = channel === "asi" ? ASI_ONE_URL : IMESSAGE_URL;
   const qr = useQr(destination);
 
   useEffect(() => {
@@ -114,7 +113,7 @@ export function ChannelConnect({
             {destination && !qr && <div className={styles.qrLoading}>Building secure handoff…</div>}
             {destination && (
               <>
-                <p className={styles.help}>{channel === "whatsapp" ? "Opens WhatsApp with @Billo ready to send." : "Opens Billo's public ASI:One agent profile."}</p>
+                <p className={styles.help}>{channel === "imessage" ? "Opens Messages with a greeting ready to send. No tag is needed in a direct chat. This shared Photon line currently requires an assigned participant; opening Messages alone does not authorize a new number." : "Opens Billo's public ASI:One agent profile."}</p>
                 <a className={styles.openButton} href={destination} target={channel === "asi" ? "_blank" : undefined} rel={channel === "asi" ? "noreferrer" : undefined}>
                   Open {current.label} <span>→</span>
                 </a>
@@ -122,8 +121,8 @@ export function ChannelConnect({
             )}
             {!destination && (
               <div className={styles.notReady}>
-                <strong>WhatsApp is not connected yet.</strong>
-                <p>A real QR appears automatically after a verified WhatsApp Business link is added as <code>NEXT_PUBLIC_BILLO_WHATSAPP_URL</code>.</p>
+                <strong>Messaging is not connected yet.</strong>
+                <p>Use ASI:One while messaging access is being configured.</p>
               </div>
             )}
             <small className={styles.privacy}>Billo responds only after you contact it. Never include emergency information—call 911 instead.</small>

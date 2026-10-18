@@ -1,5 +1,9 @@
 export const ASI_ONE_URL = "https://asi1.ai/ai/agent1qdral3yqhqaa28czja8ddwf7kzgj4evwmpd39qjz3zuxwc64tucyus67y0z";
 
+/** Photon project assignment verified through the Beta API. A shared line needs assignment first. */
+export const IMESSAGE_LINE = "+16282634622";
+export const IMESSAGE_URL = `sms:${IMESSAGE_LINE}?body=${encodeURIComponent("Hi Billo")}`;
+
 /** Only publish an operator-configured WhatsApp destination, never a demo number. */
 export function whatsappDestination(value: string | undefined): string {
   if (!value?.trim()) return "";

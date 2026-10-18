@@ -14,27 +14,27 @@ const STAGE_COPY: Record<JourneyStage, {
 }> = {
   booked: {
     eyebrow: "Before care",
-    title: "You’re booked.",
-    description: "Your appointment, expected price, directions, and reminders are together in one place.",
-    status: "Appointment confirmed",
+    title: "Your care plan is saved.",
+    description: "Your selected provider, demo estimate, location, and reminder are together. Contact the provider to confirm an appointment.",
+    status: "Selection saved",
   },
   during: {
     eyebrow: "During care",
     title: "Keep a live visit record.",
-    description: "Log tests and services as they happen. Billo keeps the expected total visible before the bill arrives.",
-    status: "Visit in progress",
+    description: "Log tests and services as they happen. Billo keeps a running demo estimate visible before the final bill arrives.",
+    status: "Demo visit log",
   },
   verified: {
     eyebrow: "After care",
-    title: "Your bill matches the visit.",
-    description: "Every charge is matched to the care you recorded, with differences called out before payment.",
-    status: "Record verified",
+    title: "Your bill is organized.",
+    description: "Extracted charges are compared with the visit record, and uncertain items are flagged for your review.",
+    status: "Demo review",
   },
   payment: {
     eyebrow: "After care",
     title: "Approve only the right amount.",
     description: "The clinic, bill, and amount are checked once more before the simulated Visa payment step.",
-    status: "Ready for approval",
+    status: "Demo ready for review",
   },
 };
 
@@ -43,17 +43,17 @@ function StageDetails({ stage }: { stage: JourneyStage }) {
     return (
       <>
         <article className={hv.primaryCard}>
-          <span className={hv.cardLabel}>Appointment</span>
+          <span className={hv.cardLabel}>Selected care option</span>
           <h2>Westwood Urgent Care</h2>
           <dl className={hv.details}>
-            <div><dt>Date</dt><dd>Tuesday · 3:30 PM</dd></div>
-            <div><dt>Expected</dt><dd>$180–$240</dd></div>
+            <div><dt>Reminder</dt><dd>Tuesday · 3:30 PM</dd></div>
+            <div><dt>Demo estimate</dt><dd>$180–$240</dd></div>
             <div><dt>Location</dt><dd>Westwood · 1.2 miles</dd></div>
           </dl>
         </article>
         <aside className={hv.sideCard}>
           <span className={hv.cardLabel}>Before you go</span>
-          <ul><li>Appointment saved</li><li>Calendar reminder ready</li><li>Expected price saved</li></ul>
+          <ul><li>Care option saved</li><li>Calendar reminder ready</li><li>Provider confirmation required</li></ul>
         </aside>
       </>
     );
@@ -72,7 +72,7 @@ function StageDetails({ stage }: { stage: JourneyStage }) {
           <button className={hv.secondaryAction} type="button">+ Log another service</button>
         </article>
         <aside className={hv.totalCard}>
-          <span className={hv.cardLabel}>Running estimate</span>
+          <span className={hv.cardLabel}>Running demo estimate</span>
           <strong>$360</strong>
           <p>Based on the services recorded so far.</p>
         </aside>
@@ -84,17 +84,17 @@ function StageDetails({ stage }: { stage: JourneyStage }) {
     return (
       <>
         <article className={hv.primaryCard}>
-          <span className={hv.cardLabel}>Line-by-line check</span>
-          <h2>Everything matches</h2>
+          <span className={hv.cardLabel}>Demo line-by-line review</span>
+          <h2>Sample charges extracted</h2>
           <div className={hv.lineItems}>
-            <div><span>Office visit</span><strong>$240 ✓</strong></div>
-            <div><span>Knee X-ray</span><strong>$120 ✓</strong></div>
-            <div className={hv.totalLine}><span>Verified total</span><strong>$360</strong></div>
+            <div><span>Office visit</span><strong>$240 · printed</strong></div>
+            <div><span>Knee X-ray</span><strong>$120 · printed</strong></div>
+            <div className={hv.totalLine}><span>Printed demo total</span><strong>$360</strong></div>
           </div>
         </article>
         <aside className={hv.sideCard}>
-          <span className={hv.cardLabel}>Benefits check</span>
-          <ul><li>HSA eligible</li><li>Itemized receipt ready</li><li>No duplicate charges found</li></ul>
+          <span className={hv.cardLabel}>Possible benefit path</span>
+          <ul><li>HSA may apply</li><li>Itemized receipt needed</li><li>Plan administrator decides</li></ul>
         </aside>
       </>
     );

@@ -31,7 +31,7 @@ test("the old static feature cards are removed", () => {
 test("simulation matches the full case-workspace reference", () => {
   assert.match(modal, /Interactive Billo workflow simulation/);
   assert.match(modal, /Case 8F2A · interactive demo/);
-  assert.match(modal, /COMPARE CARE/);
+  assert.match(modal, /RUN DEMO SEARCH/);
   assert.match(modal, /Westwood Urgent Care/);
   assert.match(modalStyles, /\.embed/);
   assert.doesNotMatch(modalStyles, /position: fixed/);
@@ -48,5 +48,7 @@ test("simulation uses live care search and keeps payment QR", () => {
   assert.match(modal, /fetch\(`\/api\/care\/search/);
   assert.match(modal, /normalizePlaces/);
   assert.match(modal, /QRCells cells=\{PAYMENT_QR\}/);
-  assert.match(modal, /Choose a bill to scan/);
+  assert.match(modal, /Choose a local demo bill/);
+  assert.match(modal, /does not upload or read it/);
+  assert.match(modal, /No payment can be approved or sent from this screen/);
 });

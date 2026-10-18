@@ -3,7 +3,7 @@
 /**
  * Billo clickable prototype (migrated from "Billo 2.html").
  * A phone frame with eight screens — landing, ASI:One chat, link page,
- * visit stages (booked / during / after), wallet and WhatsApp.
+ * visit stages (booked / during / after), wallet and iMessage.
  * Deep-link a screen with a hash, e.g. /prototype#asi.
  */
 import { Fragment, useEffect, useState } from "react";
@@ -25,7 +25,7 @@ const TAB_LABELS: Record<Screen, string> = {
   v2: "During",
   v3: "After",
   wallet: "Wallet",
-  imsg: "WhatsApp",
+  imsg: "iMessage",
 };
 
 const QR = makeQR("BILLO-4821");
@@ -132,7 +132,7 @@ export default function PrototypePage({ startScreen = "landing" }: { startScreen
                       <span style={{ background: "oklch(0.90 0.06 50)", borderRadius: "99px", padding: "2px 8px" }}>New</span>
                       ASI:One{" "}
                       &amp;
-                      {" "}WhatsApp
+                      {" "}iMessage
                     </div>
                     <h1 style={{ position: "relative", fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "58px", lineHeight: ".9", letterSpacing: "-.02em", margin: "18px 0 0" }}>
                       Make every care dollar{" "}
@@ -145,7 +145,7 @@ export default function PrototypePage({ startScreen = "landing" }: { startScreen
                         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="oklch(0.6 0.17 255)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
                         </svg>
-                        Text on WhatsApp
+                        Text on iMessage
                       </button>
                     </div>
                     <div style={{ position: "relative", margin: "26px auto 0", width: "250px", background: "var(--color-neutral-100)", borderRadius: "24px", padding: "14px", boxShadow: "var(--shadow-lg)", textAlign: "left", display: "flex", flexDirection: "column", gap: "8px", fontSize: "12px", lineHeight: "1.4", transform: "rotate(-2deg)" }}>
@@ -248,7 +248,7 @@ export default function PrototypePage({ startScreen = "landing" }: { startScreen
                   <div style={{ padding: "28px 16px 8px" }}>
                     <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "36px", lineHeight: ".95", margin: "0", textAlign: "center" }}>
                       Start in ASI:One.{" "}
-                      <em>Continue in WhatsApp.</em>
+                      <em>Continue in iMessage.</em>
                     </h2>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginTop: "18px" }}>
                       <span style={{ background: "var(--color-text)", color: "var(--color-neutral-100)", borderRadius: "14px", padding: "10px 12px", fontSize: "12px" }}>ASI:One</span>
@@ -257,7 +257,7 @@ export default function PrototypePage({ startScreen = "landing" }: { startScreen
                       <button onClick={goLink} style={{ border: "0", cursor: "pointer", background: "oklch(0.94 0.08 95)", borderRadius: "14px", padding: "10px 12px", fontFamily: "var(--font-body)", fontSize: "12px", color: "var(--color-text)", letterSpacing: ".04em" }}>BILLO-4821</button>
                       <span>→</span>
                       {" "}
-                      <span style={{ background: "oklch(0.6 0.17 255)", color: "#fff", borderRadius: "14px", padding: "10px 12px", fontSize: "12px" }}>WhatsApp</span>
+                      <span style={{ background: "oklch(0.6 0.17 255)", color: "#fff", borderRadius: "14px", padding: "10px 12px", fontSize: "12px" }}>iMessage</span>
                     </div>
                     <div style={{ marginTop: "12px", border: "1.5px solid var(--color-text)", borderRadius: "20px", padding: "12px", display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6px", fontSize: "11.5px" }}>
                       <span style={{ width: "100%", textAlign: "center", fontFamily: "var(--font-heading)", fontStyle: "italic", fontSize: "17px" }}>One shared case record</span>
@@ -325,7 +325,7 @@ export default function PrototypePage({ startScreen = "landing" }: { startScreen
                   <div style={{ background: "oklch(0.91 0.05 235)", borderRadius: "28px", padding: "26px 22px", display: "flex", flexDirection: "column", alignItems: "center", gap: "18px", textAlign: "center" }}>
                     <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "40px", lineHeight: ".95", margin: "0" }}>
                       Continue in{" "}
-                      <em>WhatsApp</em>
+                      <em>iMessage</em>
                     </h1>
                     <div style={{ width: "200px", height: "200px", padding: "14px", background: "#fff", borderRadius: "20px", boxSizing: "border-box", display: "grid", gridTemplateColumns: "repeat(21,1fr)", gap: "0", boxShadow: "var(--shadow-md)" }}>
                       <QRCells cells={qr} />
@@ -338,7 +338,7 @@ export default function PrototypePage({ startScreen = "landing" }: { startScreen
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
                       </svg>
-                      Open in WhatsApp
+                      Open in iMessage
                     </button>
                   </div>
                   {linkWaiting && (
@@ -352,7 +352,7 @@ export default function PrototypePage({ startScreen = "landing" }: { startScreen
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}>
                         <path d="M20 6 9 17l-5-5" />
                       </svg>
-                      Linked! Your case continues in WhatsApp.
+                      Linked! Your case continues in iMessage.
                     </div>
                   )}
                   <p style={{ fontSize: "12px", color: "var(--color-neutral-700)", textAlign: "center", margin: "0" }}>Scan with your phone camera, or tap the button on your phone.</p>
@@ -645,7 +645,7 @@ export default function PrototypePage({ startScreen = "landing" }: { startScreen
               )}
               {/* ============ IMESSAGE CHAT ============ */}
               {isIMessage && (
-                <div data-screen-label="WhatsApp chat" style={{ display: "flex", flexDirection: "column", minHeight: "100%", background: "#fff", fontFamily: "var(--font-body)" }}>
+                <div data-screen-label="iMessage chat" style={{ display: "flex", flexDirection: "column", minHeight: "100%", background: "#fff", fontFamily: "var(--font-body)" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", padding: "2px 0 12px", background: "var(--color-neutral-100)", borderBottom: "1px solid var(--color-neutral-200)" }}>
                     <div style={{ width: "50px", height: "50px", borderRadius: "50%", background: "oklch(0.91 0.06 300)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <BilloLogo size={34} />
@@ -653,7 +653,7 @@ export default function PrototypePage({ startScreen = "landing" }: { startScreen
                     <span style={{ fontSize: "12px" }}>Billo ›</span>
                   </div>
                   <div style={{ flex: "1", padding: "14px 14px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "14px", lineHeight: "1.35" }}>
-                    <div style={{ alignSelf: "center", fontSize: "11px", color: "var(--color-neutral-600)" }}>WhatsApp · Today 9:02 AM</div>
+                    <div style={{ alignSelf: "center", fontSize: "11px", color: "var(--color-neutral-600)" }}>iMessage · Today 9:02 AM</div>
                     <div style={{ alignSelf: "flex-end", maxWidth: "78%", background: "oklch(0.6 0.17 255)", color: "#fff", padding: "8px 13px", borderRadius: "19px" }}>
                       <BilloWord />
                       {" "}BILLO-4821
@@ -691,7 +691,7 @@ export default function PrototypePage({ startScreen = "landing" }: { startScreen
                   </div>
                   <div style={{ padding: "8px 12px 18px", display: "flex", gap: "8px", alignItems: "center" }}>
                     <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--color-neutral-200)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", color: "var(--color-neutral-700)" }}>+</div>
-                    <div style={{ flex: "1", border: "1px solid var(--color-neutral-300)", borderRadius: "19px", padding: "8px 14px", fontSize: "13px", color: "var(--color-neutral-600)" }}>WhatsApp</div>
+                    <div style={{ flex: "1", border: "1px solid var(--color-neutral-300)", borderRadius: "19px", padding: "8px 14px", fontSize: "13px", color: "var(--color-neutral-600)" }}>iMessage</div>
                   </div>
                 </div>
               )}
