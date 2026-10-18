@@ -12,6 +12,7 @@ import { BilloWord } from "@/components/BilloWord";
 import { LandingIntro } from "@/components/loading/LandingIntro";
 import { QRCells } from "@/components/QRCells";
 import { makeQR } from "@/lib/qr";
+import { ChannelConnect, type ConnectChannel } from "@/features/connect/ChannelConnect";
 import { FeatureSimulation, type FeatureStep } from "@/features/simulation/FeatureSimulation";
 import hv from "./LandingPage.module.css";
 
@@ -85,6 +86,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
   const [menu, setMenu] = useState(false);
   const [active, setActive] = useState<SectionId>("top");
   const [chooser, setChooser] = useState(false);
+  const [connectChannel, setConnectChannel] = useState<ConnectChannel>("asi");
   const [featureStep, setFeatureStep] = useState<FeatureStep>("prices");
   const activeRef = useRef<SectionId>("top");
   const progressRef = useRef<HTMLSpanElement>(null);
@@ -143,12 +145,12 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
   const toggleMenu = () => setMenu((m) => !m);
   const goTop = jump("top");
   const chooserOpen = chooser;
-  const openChooser = () => {
+  const openChooser = (channel: ConnectChannel = "asi") => {
+    setConnectChannel(channel);
     setChooser(true);
     setMenu(false);
   };
   const closeChooser = () => setChooser(false);
-  const stop = (e: MouseEvent) => e.stopPropagation();
   const links = SECTIONS.map(([id, label]) => ({
     label,
     href: "#" + id,
@@ -187,7 +189,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
                   </Fragment>
                 ))}
               </nav>
-              <button className={hv.hover2} onClick={openChooser} style={{ display: "flex", alignItems: "center", gap: "8px", minHeight: "44px", padding: "0 20px", borderRadius: "99px", background: "var(--color-text)", color: "var(--color-neutral-100)", border: "0", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: "15px" }}>
+              <button className={hv.hover2} onClick={() => openChooser("asi")} style={{ display: "flex", alignItems: "center", gap: "8px", minHeight: "44px", padding: "0 20px", borderRadius: "99px", background: "var(--color-text)", color: "var(--color-neutral-100)", border: "0", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: "15px" }}>
                 Get started{" "}
                 <span>→</span>
               </button>
@@ -223,54 +225,14 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
                 )}
               </Fragment>
             ))}
-            <button onClick={openChooser} style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "54px", borderRadius: "99px", background: "var(--color-text)", color: "var(--color-neutral-100)", border: "0", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: "17px", marginTop: "4px" }}>Get started →</button>
+            <button onClick={() => openChooser("asi")} style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "54px", borderRadius: "99px", background: "var(--color-text)", color: "var(--color-neutral-100)", border: "0", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: "17px", marginTop: "4px" }}>Get started →</button>
           </nav>
         )}
         <div className={hv.scrollProgress} aria-hidden="true">
           <span ref={progressRef} />
         </div>
       </header>
-      {chooserOpen && (
-        <div onClick={closeChooser} style={{ position: "fixed", inset: "0", zIndex: "100", background: "color-mix(in oklch, var(--color-text) 45%, transparent)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-          <div role="dialog" aria-modal="true" aria-label="Where do you want to start?" onClick={stop} style={{ position: "relative", width: "100%", maxWidth: "560px", background: "var(--color-neutral-100)", borderRadius: "36px", padding: "36px 28px 28px", boxShadow: "var(--shadow-lg)", boxSizing: "border-box", textAlign: "center" }}>
-            <button onClick={closeChooser} aria-label="Close" style={{ position: "absolute", top: "16px", right: "16px", width: "40px", height: "40px", borderRadius: "50%", border: "0", background: "var(--color-neutral-200)", cursor: "pointer", color: "var(--color-text)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            </button>
-            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "44px", lineHeight: ".95", margin: "0" }}>
-              Where do you{" "}
-              <em>want to chat?</em>
-            </h2>
-            <p style={{ margin: "12px 0 0", fontSize: "16px", color: "var(--color-neutral-800)" }}>You can switch later. Your case moves with you.</p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "12px", marginTop: "28px" }}>
-              <Link className={hv.hover4} href="/prototype#asi" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "14px", background: "oklch(0.94 0.08 95)", borderRadius: "26px", padding: "22px", color: "var(--color-text)", textDecoration: "none", textAlign: "left" }}>
-                <span style={{ width: "44px", height: "44px", borderRadius: "12px", background: "var(--color-text)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-heading)", fontStyle: "italic", fontSize: "24px", color: "var(--color-accent-300)" }}>A</span>
-                {" "}
-                <span style={{ fontFamily: "var(--font-heading)", fontSize: "28px", lineHeight: "1" }}>ASI:One</span>
-                {" "}
-                <span style={{ fontSize: "14px", lineHeight: "1.4" }}>Compare 3 nearby prices and book.</span>
-                {" "}
-                <span style={{ marginTop: "auto", fontSize: "15px" }}>Start →</span>
-              </Link>
-              {" "}
-              <Link className={hv.hover4} href="/prototype#imsg" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "14px", background: "oklch(0.91 0.05 235)", borderRadius: "26px", padding: "22px", color: "var(--color-text)", textDecoration: "none", textAlign: "left" }}>
-                <span style={{ width: "44px", height: "44px", borderRadius: "12px", background: "oklch(0.6 0.17 255)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
-                  </svg>
-                </span>
-                {" "}
-                <span style={{ fontFamily: "var(--font-heading)", fontSize: "28px", lineHeight: "1" }}>iMessage</span>
-                {" "}
-                <span style={{ fontSize: "14px", lineHeight: "1.4" }}>Text Billo and send a photo of your bill.</span>
-                {" "}
-                <span style={{ marginTop: "auto", fontSize: "15px" }}>Start →</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
+      <ChannelConnect open={chooserOpen} initialChannel={connectChannel} onClose={closeChooser} />
       <div style={{ background: "var(--color-text)", color: "var(--color-neutral-100)", fontSize: "13px", textAlign: "center", padding: "8px 16px" }}>
         Emergency? Call{" "}
         <a href="tel:911" style={{ color: "var(--color-accent-300)" }}>911</a>
@@ -293,17 +255,23 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
           </h1>
           <p className={hv.heroSubtitle} style={{ fontSize: "19px", lineHeight: "1.5", margin: "22px auto 0", maxWidth: "460px", color: "var(--color-neutral-800)" }}>Compare prices before. Check the bill after. All in one chat.</p>
           <div className={hv.heroActions} style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginTop: "32px" }}>
-            <Link href="/prototype#asi" style={{ display: "inline-flex", alignItems: "center", gap: "10px", minHeight: "54px", padding: "0 26px", borderRadius: "99px", background: "var(--color-text)", color: "var(--color-neutral-100)", textDecoration: "none", fontSize: "16px" }}>
+            <button onClick={() => openChooser("asi")} style={{ display: "inline-flex", alignItems: "center", gap: "10px", minHeight: "54px", padding: "0 26px", borderRadius: "99px", border: "0", background: "var(--color-text)", color: "var(--color-neutral-100)", fontFamily: "var(--font-body)", cursor: "pointer", fontSize: "16px" }}>
               <span style={{ width: "22px", height: "22px", borderRadius: "6px", border: "1.5px solid var(--color-accent-300)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-heading)", fontStyle: "italic", fontSize: "14px", color: "var(--color-accent-300)" }}>A</span>
               Open in ASI:One
-            </Link>
+            </button>
             {" "}
-            <Link href="/prototype#imsg" style={{ display: "inline-flex", alignItems: "center", gap: "10px", minHeight: "54px", padding: "0 26px", borderRadius: "99px", background: "var(--color-neutral-100)", border: "1px solid var(--color-text)", color: "var(--color-text)", textDecoration: "none", fontSize: "16px" }}>
+            <button onClick={() => openChooser("imessage")} style={{ display: "inline-flex", alignItems: "center", gap: "10px", minHeight: "54px", padding: "0 26px", borderRadius: "99px", background: "var(--color-neutral-100)", border: "1px solid var(--color-text)", color: "var(--color-text)", fontFamily: "var(--font-body)", cursor: "pointer", fontSize: "16px" }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="oklch(0.6 0.17 255)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
               </svg>
               Text on iMessage
-            </Link>
+            </button>
+          </div>
+          <div className={hv.heroFeatureStrip} aria-label="Billo features">
+            <span>Emergency rules first</span>
+            <span>Real care prices</span>
+            <span>Bill &amp; receipt OCR</span>
+            <span>Benefit paths</span>
           </div>
           <div className={hv.heroPhones} data-single={heroPhones === "Both" ? "false" : "true"} style={{ position: "relative", display: "flex", justifyContent: "center", alignItems: "flex-start", gap: "40px", flexWrap: "wrap", marginTop: "72px" }}>
             {showAsi && (
@@ -581,9 +549,9 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
             <em>count.</em>
           </h2>
           <div style={{ position: "relative", display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginTop: "40px" }}>
-            <Link href="/prototype#asi" style={{ display: "inline-flex", alignItems: "center", minHeight: "54px", padding: "0 28px", borderRadius: "99px", background: "var(--color-text)", color: "var(--color-neutral-100)", textDecoration: "none", fontSize: "16px" }}>Open in ASI:One</Link>
+            <button onClick={() => openChooser("asi")} style={{ display: "inline-flex", alignItems: "center", minHeight: "54px", padding: "0 28px", border: "0", borderRadius: "99px", background: "var(--color-text)", color: "var(--color-neutral-100)", fontFamily: "var(--font-body)", cursor: "pointer", fontSize: "16px" }}>Open in ASI:One</button>
             {" "}
-            <Link href="/prototype#imsg" style={{ display: "inline-flex", alignItems: "center", minHeight: "54px", padding: "0 28px", borderRadius: "99px", background: "var(--color-neutral-100)", color: "var(--color-text)", textDecoration: "none", fontSize: "16px" }}>Text on iMessage</Link>
+            <button onClick={() => openChooser("imessage")} style={{ display: "inline-flex", alignItems: "center", minHeight: "54px", padding: "0 28px", border: "0", borderRadius: "99px", background: "var(--color-neutral-100)", color: "var(--color-text)", fontFamily: "var(--font-body)", cursor: "pointer", fontSize: "16px" }}>Text on iMessage</button>
           </div>
         </div>
         <footer style={{ maxWidth: "1400px", margin: "0 auto", padding: "22px 24px", display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap", fontSize: "12.5px", color: "var(--color-neutral-700)" }}>

@@ -6,6 +6,12 @@
 
 The diagram is available as an editable SVG. Select the image to open it at full resolution.
 
+## Original vision and future development
+
+This was my first intention for Billo. Twenty-four hours was not enough to finish the full vision, so I preserved the interactive walkthrough and will continue developing it outside the hackathon.
+
+[Open the original interactive Billo walkthrough](Future%20Development/billo-walkthrough.html).
+
 **Make every care dollar count.**
 
 Billo is an AI care companion that helps patients understand costs before care and organize bills, receipts, benefits, and next steps afterward. It works in ASI:One and in tagged iMessage conversations through Photon Spectrum, with deterministic safety and payment rules around every AI-assisted action.

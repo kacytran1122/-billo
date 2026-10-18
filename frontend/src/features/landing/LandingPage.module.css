@@ -38,6 +38,22 @@
   transition: transform 80ms linear;
 }
 .balancedSection { inline-size: min(100%, 1400px); }
+.heroFeatureStrip {
+  display: flex;
+  grid-column: 1;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 18px;
+}
+.heroFeatureStrip span {
+  padding: 7px 11px;
+  border: 1px solid color-mix(in oklch, var(--color-text) 15%, transparent);
+  border-radius: 99px;
+  background: color-mix(in oklch, var(--color-neutral-100) 86%, transparent);
+  font-size: 11px;
+  white-space: nowrap;
+}
 .phoneAsi,
 .phoneIMessage { inline-size: 250px; }
 .phoneFrame {
@@ -83,7 +99,8 @@
   .heroEyebrow,
   .heroTitle,
   .heroSubtitle,
-  .heroActions { grid-column: 1; }
+  .heroActions,
+  .heroFeatureStrip { grid-column: 1; }
   .heroEyebrow { justify-self: start; }
   .heroTitle {
     align-self: end;
@@ -92,6 +109,7 @@
   }
   .heroSubtitle { margin-inline: 0 !important; }
   .heroActions { justify-content: flex-start !important; }
+  .heroFeatureStrip { justify-content: flex-start; }
   .heroPhones {
     grid-column: 2;
     grid-row: 1 / -1;
@@ -115,7 +133,8 @@
   .heroEyebrow,
   .heroTitle,
   .heroSubtitle,
-  .heroActions { grid-column: 1; }
+  .heroActions,
+  .heroFeatureStrip { grid-column: 1; }
   .heroEyebrow { justify-self: start; }
   .heroTitle {
     align-self: end;
@@ -124,6 +143,7 @@
   }
   .heroSubtitle { margin-inline: 0 !important; }
   .heroActions { justify-content: flex-start !important; }
+  .heroFeatureStrip { justify-content: flex-start; }
   .heroPhones {
     grid-column: 2;
     grid-row: 1 / -1;
@@ -210,7 +230,8 @@
   .heroEyebrow,
   .heroTitle,
   .heroSubtitle,
-  .heroActions { grid-column: 1; }
+  .heroActions,
+  .heroFeatureStrip { grid-column: 1; }
   .heroEyebrow { justify-self: start; font-size: 11px !important; }
   .heroTitle {
     align-self: end;
@@ -220,6 +241,9 @@
   .heroSubtitle { margin-inline: 0 !important; font-size: 15px !important; }
   .heroActions { justify-content: flex-start !important; gap: 8px !important; }
   .heroActions a { min-height: 46px !important; padding-inline: 14px !important; font-size: 13px !important; }
+  .heroActions button { min-height: 46px !important; padding-inline: 14px !important; font-size: 13px !important; }
+  .heroFeatureStrip { justify-content: flex-start; }
+  .heroFeatureStrip span { font-size: 9px; padding: 5px 8px; }
   .heroPhones {
     grid-column: 2;
     grid-row: 1 / -1;
@@ -248,6 +272,8 @@
   .heroSubtitle { font-size: 13px !important; }
   .heroActions { align-items: stretch; flex-direction: column; }
   .heroActions a { justify-content: center; width: 100%; box-sizing: border-box; }
+  .heroActions button { justify-content: center; width: 100%; box-sizing: border-box; }
+  .heroFeatureStrip span:nth-child(n+3) { display: none; }
   .heroPhones[data-single="true"] .phoneIMessage {
     inline-size: 112px;
     block-size: 266px;

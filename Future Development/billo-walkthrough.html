@@ -1,0 +1,720 @@
+<title>Billo Walkthrough</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one self-playing "video" stage (16:9, or 9:16 on phones) with player controls under it. */
+:root{
+  --bg:#f3f2f2; --ink:#201f1d; --muted:#6e6964; --accent:#a06f24;
+  --bar:#201f1d; --bar-ink:#f3f2f2;
+  --font-display:"Times New Roman",Times,serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#181716; --ink:#eeeae5; --muted:#a59e97; --accent:#e1ad66; --bar:#0e0d0c; --bar-ink:#eeeae5; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#181716; --ink:#eeeae5; --muted:#a59e97; --accent:#e1ad66; --bar:#0e0d0c; --bar-ink:#eeeae5; color-scheme:dark }
+
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-display);font-size:17px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}
+.future-note{max-width:1200px;margin:0 auto 20px;padding:16px 20px;border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);border-radius:14px;background:color-mix(in srgb,var(--accent) 9%,var(--bg));display:flex;gap:12px 20px;align-items:baseline;flex-wrap:wrap}
+.future-note strong{font-family:var(--font-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.future-note span{color:var(--muted)}
+.wrap{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.intro-h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 24px}
+.intro-h h1{font-weight:400;font-size:clamp(28px,4vw,40px);margin:0;letter-spacing:-.015em;text-wrap:balance}
+.intro-h p{margin:0;color:var(--muted);font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+
+/* ---------- player ---------- */
+.player{background:var(--bar);border-radius:14px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.player:fullscreen{border-radius:0;display:flex;flex-direction:column;justify-content:center;background:#0e0d0c}
+.viewport{position:relative;width:100%;overflow:hidden;background:#0e0d0c;cursor:pointer}
+.controls{display:flex;align-items:center;gap:10px;padding:10px 14px 12px;background:var(--bar);color:var(--bar-ink);font-family:var(--font-mono);font-size:12px}
+.controls button{background:none;border:0;color:inherit;font:inherit;width:34px;height:34px;border-radius:8px;cursor:pointer;display:inline-grid;place-items:center;flex:none}
+.controls button:hover{background:rgba(243,242,242,.1)}
+.controls button svg{width:18px;height:18px;fill:currentColor}
+.controls button:focus-visible,#scrub:focus-visible{outline:2px solid #e1ad66;outline-offset:2px}
+.controls .cc{font-size:10.5px;font-weight:500;border:1.5px solid currentColor;border-radius:4px;padding:1px 4px;line-height:1.2}
+.controls button[aria-pressed="false"] .cc{opacity:.45}
+.controls .spd{font-size:12px}
+.time{font-variant-numeric:tabular-nums;white-space:nowrap;opacity:.85}
+.track{position:relative;flex:1;min-width:60px;height:28px;display:flex;align-items:center}
+.ticks{position:absolute;left:0;right:0;top:12px;height:4px;pointer-events:none;z-index:1}
+.ticks i{position:absolute;top:0;width:3px;height:4px;background:var(--bar)}
+#scrub{-webkit-appearance:none;appearance:none;width:100%;height:4px;margin:0;border-radius:2px;cursor:pointer;
+  background:linear-gradient(to right,#e1ad66 var(--pct,0%),rgba(243,242,242,.22) var(--pct,0%))}
+#scrub::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#f3f2f2;box-shadow:0 0 0 3px rgba(225,173,102,.35);position:relative;z-index:2}
+#scrub::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:#f3f2f2}
+#scrub::-moz-range-track{background:transparent}
+.chname{white-space:nowrap;color:#e1ad66;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+@media (max-width:640px){ .chname,.hide-sm{display:none} .controls{gap:4px;padding:8px 8px 10px} }
+
+/* ================= STAGE (fixed brand look in both themes) ================= */
+.stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;color:#201f1d;overflow:hidden;font-family:"Times New Roman",Times,serif;
+  background:radial-gradient(1100px 600px at 75% 30%,#f8f6f4 0%,#f1efee 60%,#eceae8 100%);
+  --mint:#2f7a55; --mint-soft:#e3f2ea; --red:#a8402c; --red-soft:#f8e6e1; --amber:#8a5a12; --amber-soft:#fbeed6; --gold:#b68235; --gold-soft:#fff3e4}
+.stage.tall{width:600px;height:1060px}
+.stage .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+.abs{position:absolute}
+.head{left:452px;top:40px;width:780px}
+.phone{left:64px;top:40px;width:330px;height:640px}
+.panel{left:452px;top:150px;width:780px;height:404px}
+.steps{left:452px;top:572px;width:780px;height:56px}
+.cap{left:452px;top:648px;width:780px}
+.tall .head{left:28px;top:28px;width:544px}
+.tall .phone{left:28px;top:130px;width:300px;height:520px}
+.tall .steps{left:356px;top:130px;width:216px;height:520px}
+.tall .panel{left:28px;top:668px;width:544px;height:322px}
+.tall .cap{left:28px;top:1000px;width:544px}
+
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:13px;letter-spacing:.12em;color:#a06f24;text-transform:uppercase}
+.eyebrow .of{color:#9b9797}
+.htitle{font-size:38px;line-height:1.08;letter-spacing:-.015em;margin-top:8px;text-wrap:balance}
+.tall .htitle{font-size:31px}
+.head.swap{animation:swap .5s ease}
+@keyframes swap{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* phone */
+.phone{border-radius:48px;background:#1d1c1b;padding:10px;box-shadow:0 24px 50px rgba(32,31,29,.24),inset 0 0 0 2px #3a3836}
+.screen{width:100%;height:100%;border-radius:39px;background:#fff;overflow:hidden;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.ph-top{padding:12px 16px 10px;border-bottom:1px solid #ececec;display:flex;flex-direction:column;align-items:center;gap:3px;background:#f7f7f8}
+.ph-top .notch{width:92px;height:24px;border-radius:14px;background:#1d1c1b;margin-bottom:6px}
+.ph-av{width:40px;height:40px;border-radius:50%;background:#f3f2f2;display:grid;place-items:center;border:1px solid #e3e1df}
+.ph-name{font-size:12px;color:#333}
+.chat{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:7px;padding:12px 10px}
+.chat>*{flex:none}
+.chat .spacer{flex:1 1 auto}
+.chat .stamp-t{align-self:center;font-size:10.5px;color:#8e8e93;margin-bottom:4px}
+.msg{max-width:84%;padding:8px 12px;border-radius:18px;font-size:13.5px;line-height:1.34;white-space:pre-line;overflow-wrap:anywhere}
+.tall .msg{font-size:13px}
+.msg.me{align-self:flex-end;background:#0b84ff;color:#fff;border-bottom-right-radius:6px}
+.msg.bot{align-self:flex-start;background:#e9e9eb;color:#111;border-bottom-left-radius:6px}
+.msg .tag{font-weight:600}
+.msg:not(.on){display:none}
+.msg.pop{animation:pop .32s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+.from{font-size:10.5px;color:#8e8e93;margin:4px 0 -4px 12px;align-self:flex-start}
+.from:not(.on){display:none}
+.typing{align-self:flex-start;background:#e9e9eb;border-radius:18px;padding:10px 14px;display:flex;gap:4px}
+.typing i{width:7px;height:7px;border-radius:50%;background:#9a9aa0;animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+.att{display:block;border-radius:10px;margin:-2px -6px 6px;overflow:hidden;background:#fff}
+.att.billthumb{width:150px;height:96px;padding:8px 10px;background:#fbfaf9;border:1px solid #d0e4ff}
+.billthumb b{display:block;font:600 8px/1.2 Georgia,serif;color:#201f1d;margin-bottom:5px}
+.billthumb i{display:block;height:4px;background:#d7d3d3;margin:4px 0;border-radius:2px}
+.att.qrthumb{width:96px;height:96px;padding:6px}
+.ph-input{margin:6px 10px 14px;border:1px solid #d9d9de;border-radius:18px;padding:7px 12px;font-size:12px;color:#a1a1a6}
+
+/* process stepper */
+.steps{display:flex;justify-content:space-between;align-items:flex-start}
+.steps::before{content:"";position:absolute;left:43px;right:43px;top:12px;height:2px;background:#d7d3d3;border-radius:1px}
+.steps .fill{position:absolute;left:43px;top:12px;height:2px;background:#b68235;border-radius:1px;transition:width .5s ease;width:0}
+.step{position:relative;width:86px;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:13.5px;color:#9b9797;text-align:center;line-height:1.15;transition:color .3s}
+.step .c{width:26px;height:26px;border-radius:50%;background:#f3f2f2;border:1.5px solid #bab6b6;display:grid;place-items:center;font:500 11px "IBM Plex Mono",monospace;color:#9b9797;transition:all .3s}
+.step.done{color:#605d5d}
+.step.done .c{background:#201f1d;border-color:#201f1d;color:#f3f2f2}
+.step.cur{color:#201f1d}
+.step.cur .c{background:#b68235;border-color:#b68235;color:#fff;box-shadow:0 0 0 6px rgba(182,130,53,.18)}
+.steps-h{display:none}
+.tall .steps{flex-direction:column;justify-content:space-between;align-items:stretch;padding-bottom:2px}
+.tall .steps::before{left:12px;right:auto;top:44px;bottom:14px;width:2px;height:auto}
+.tall .steps .fill{left:12px;top:44px;width:2px!important;height:0;transition:height .5s ease}
+.tall .steps-h{display:block;font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.1em;color:#7d7979;text-transform:uppercase}
+.tall .step{flex-direction:row;width:auto;font-size:16px;gap:12px;text-align:left}
+
+/* captions */
+.cap{display:flex;justify-content:center}
+.cap span{background:rgba(32,31,29,.9);color:#f8f4f4;font:17px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:8px 16px;border-radius:999px;text-align:center;max-width:100%}
+.cap span:empty,.nocc .cap{display:none}
+.tall .cap span{font-size:16px;border-radius:14px}
+
+/* reveal mechanics */
+.rv{opacity:0;transform:translateY(8px);transition:opacity .4s ease,transform .4s ease}
+.rv.on{opacity:1;transform:none}
+.scene{position:absolute;inset:0}
+.scene:not(.cur){display:none}
+
+/* panel common */
+.card{background:#fdfcfb;border:1px solid rgba(32,31,29,.1);border-radius:10px;box-shadow:0 1px 2px rgba(45,43,43,.06),0 6px 18px rgba(45,43,43,.06)}
+.card-h{display:flex;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(32,31,29,.08);font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:#7d7979;letter-spacing:.06em;text-transform:uppercase}
+.pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;padding:3px 9px;border-radius:99px;text-transform:uppercase;white-space:nowrap}
+.pill.ok{background:var(--mint-soft);color:var(--mint)}
+.pill.bad{background:var(--red-soft);color:var(--red)}
+.pill.ask{background:var(--amber-soft);color:var(--amber)}
+.pill.gold{background:var(--gold-soft);color:#7d5411}
+.pill.grey{background:#eae7e7;color:#7d7979}
+.tall .card-h{font-size:10px;padding:7px 12px}
+
+/* safety */
+.s-in{display:flex;gap:10px;align-items:baseline;padding:12px 16px;font-size:18px;border-bottom:1px solid rgba(32,31,29,.08)}
+.s-in .mono{font-size:11px;color:#7d7979;letter-spacing:.08em}
+.rule{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:center;padding:8px 16px;border-bottom:1px solid rgba(32,31,29,.06);font-size:15px}
+.rule .k{font-size:15px}
+.rule .w{color:#7d7979;font-style:italic;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.s-res{margin:12px 16px 0;display:flex;align-items:center;gap:10px;font-size:18px}
+.s-note{margin:10px 16px 0;font-size:14px;color:#7d7979}
+.tall .rule{grid-template-columns:104px 1fr auto;padding:6px 12px;font-size:13px}.tall .rule .k{font-size:13px}.tall .rule .w{font-size:12px}
+.tall .s-in{font-size:15px;padding:9px 12px}.tall .s-res{font-size:15px;margin:8px 12px 0}.tall .s-note{font-size:12px;margin:6px 12px 0}
+
+/* providers */
+.provs{display:flex;flex-direction:column;gap:12px}
+.prov{display:grid;grid-template-columns:44px 1fr auto;gap:16px;align-items:center;padding:14px 20px;position:relative}
+.prov .n{font-family:"IBM Plex Mono",monospace;font-size:22px;color:#b68235}
+.prov b{font-weight:400;font-size:23px;display:block;line-height:1.1}
+.prov small{display:block;color:#7d7979;font-size:14px;margin-top:4px}
+.prov .pill{margin-top:6px}
+.price{text-align:right}
+.price small{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.1em;margin:0}
+.price strong{display:block;font-weight:400;font-size:32px;line-height:1.05;font-variant-numeric:tabular-nums}
+.price span{font-size:13px;color:#7d7979}
+.pick{position:absolute;right:-8px;top:-10px}
+.src{font-size:13.5px;color:#7d7979}
+.tall .prov{padding:9px 14px;gap:10px;grid-template-columns:28px 1fr auto}.tall .prov b{font-size:18px}.tall .prov small{font-size:12px}.tall .price strong{font-size:24px}.tall .provs{gap:8px}.tall .src{font-size:12px}
+
+/* estimate */
+.gfe{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;height:100%}
+.doc{padding:20px 24px;position:relative}
+.doc h3{font-weight:400;font-size:26px;margin:0 0 12px;padding-right:170px}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:6px 12px;font-size:15px;margin:0}
+.kv dt{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;color:#7d7979;padding-top:3px;text-transform:uppercase}
+.kv dd{margin:0}
+.amt{margin-top:16px;border-top:1px solid rgba(32,31,29,.12);padding-top:12px;display:flex;justify-content:space-between;align-items:baseline}
+.amt strong{font-weight:400;font-size:46px;font-variant-numeric:tabular-nums}
+.stamp{position:absolute;right:18px;top:18px;transform:rotate(-6deg);border:2px solid #b68235;color:#a06f24;font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.1em;padding:5px 9px;border-radius:4px;text-transform:uppercase}
+.stamp.rv{transform:rotate(-6deg) scale(1.4)}.stamp.rv.on{transform:rotate(-6deg) scale(1)}
+.side{display:flex;flex-direction:column;gap:10px}
+.chip{display:flex;gap:12px;align-items:center;padding:12px 14px;font-size:15px}
+.chip small{display:block;font-size:13px;color:#7d7979}
+.ico{flex:none;width:32px;height:32px;border-radius:8px;background:#fff3e4;display:grid;place-items:center;color:#a06f24;font-family:"IBM Plex Mono",monospace;font-size:12px}
+.later{font-size:14px;color:#605d5d;padding:12px 14px;border-left:2px solid #b68235;background:#fff3e4;border-radius:0 8px 8px 0}
+.tall .gfe{grid-template-columns:1fr 1fr;gap:10px}.tall .doc{padding:12px 14px}.tall .doc h3{font-size:19px;margin-bottom:8px;padding-right:0}.tall .kv{grid-template-columns:1fr;gap:0 8px;font-size:12.5px}.tall .kv dd{margin-bottom:4px}.tall .amt strong{font-size:32px}.tall .amt{margin-top:6px;padding-top:6px}.tall .chip{padding:8px 10px;font-size:12.5px}.tall .chip small{font-size:11px}.tall .later{font-size:12px;padding:8px 10px}.tall .stamp{font-size:9px;right:8px;top:40px}.tall .side{gap:7px}
+
+/* visit log */
+.vq{font-size:20px;margin-bottom:12px}
+.vq u{text-decoration:none;background:linear-gradient(transparent 60%,rgba(182,130,53,.35) 60%)}
+.ledger .row{display:grid;grid-template-columns:76px 1fr 90px;gap:12px;align-items:center;padding:9px 16px;border-bottom:1px solid rgba(32,31,29,.07);font-size:16px}
+.ledger code{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:#a06f24}
+.ledger .m{text-align:right;font-variant-numeric:tabular-nums}
+.ledger .w{display:block;font:11px "IBM Plex Mono",monospace;color:#9b9797}
+.ledger .tot{display:flex;justify-content:space-between;align-items:baseline;padding:12px 16px;background:#fff3e4;border-radius:0 0 10px 10px}
+.ledger .tot strong{font-weight:400;font-size:34px;font-variant-numeric:tabular-nums}
+.vnote{margin-top:10px;font-size:13.5px;color:#7d7979}
+.tall .vq{font-size:15px;margin-bottom:8px}.tall .ledger .row{grid-template-columns:56px 1fr 60px;padding:5px 10px;font-size:12.5px}.tall .ledger .tot{padding:7px 10px}.tall .ledger .tot strong{font-size:24px}.tall .vnote{font-size:11.5px;margin-top:6px}
+
+/* reader */
+.reader{display:grid;grid-template-columns:300px 1fr;gap:20px;height:100%}
+.paper{position:relative;background:#fff;border:1px solid rgba(32,31,29,.14);box-shadow:0 8px 22px rgba(45,43,43,.12);padding:18px 18px 14px;font-family:Georgia,"Times New Roman",serif;font-size:11px;color:#2d2b2b;overflow:hidden;transform:rotate(-1.2deg);align-self:start}
+.paper h4{margin:0;font-size:14px}
+.paper .sub{color:#7d7979;font-size:9.5px;margin:2px 0 10px}
+.paper table{width:100%;border-collapse:collapse;font-size:10px}
+.paper td{padding:4px 0;border-bottom:1px dotted #d7d3d3}
+.paper td:last-child{text-align:right}
+.paper .ptot{display:flex;justify-content:space-between;margin-top:10px;font-weight:bold;font-size:12px}
+.scanbar{position:absolute;left:0;right:0;height:46px;top:calc(var(--p,0) * 100% - 23px);background:linear-gradient(transparent,rgba(182,130,53,.28),transparent);border-bottom:2px solid rgba(182,130,53,.8);opacity:calc(var(--p,0) * (1 - var(--p,0)) * 4)}
+.ext .row{display:grid;grid-template-columns:22px 62px 1fr 74px;gap:8px;align-items:center;padding:7px 14px;border-bottom:1px solid rgba(32,31,29,.07);font-size:14.5px}
+.ext .row .mono{font-size:12px}
+.ext .m{text-align:right;font-variant-numeric:tabular-nums}
+.ext .ln{color:#9b9797;font-size:11px}
+.ext .total{font-weight:600}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tall .reader{grid-template-columns:200px 1fr;gap:12px}.tall .paper{padding:10px;font-size:8px}.tall .paper h4{font-size:10.5px}.tall .paper table{font-size:7.5px}.tall .paper td{padding:2px 0}.tall .paper .ptot{font-size:9px;margin-top:6px}.tall .paper .sub{margin-bottom:6px;font-size:7.5px}
+.tall .ext .row{grid-template-columns:14px 46px 1fr 50px;gap:5px;padding:4px 8px;font-size:11.5px}.tall .ext .row .mono{font-size:10px}.tall .facts{gap:5px;margin-top:7px}.tall .facts .pill{font-size:9.5px;padding:2px 7px}
+
+/* audit */
+.aud .row{display:grid;grid-template-columns:62px 1fr 64px 270px;gap:12px;align-items:center;padding:5px 16px;border-bottom:1px solid rgba(32,31,29,.07);font-size:15px}
+.aud .row .mono{font-size:12px;color:#605d5d}
+.aud .m{text-align:right;font-variant-numeric:tabular-nums}
+.aud .v{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.aud .v small{font-size:11px;color:#7d7979;line-height:1.2}
+.aud .gfe-row{background:#faf3f1}
+.aud .sum{display:flex;gap:28px;align-items:baseline;padding:7px 16px;flex-wrap:wrap}
+.aud .sum div{display:flex;flex-direction:column}
+.aud .sum .mono{font-size:10.5px;letter-spacing:.1em;color:#7d7979;text-transform:uppercase}
+.aud .sum strong{font-weight:400;font-size:26px;font-variant-numeric:tabular-nums}
+.tall .aud .row{grid-template-columns:44px 1fr 44px 160px;gap:6px;padding:2px 10px;font-size:11.5px}.tall .aud .row .mono{font-size:9.5px}.tall .aud .v small{font-size:9.5px}.tall .aud .pill{font-size:9px;padding:2px 6px}.tall .aud .sum{padding:3px 10px;gap:18px}.tall .aud .sum strong{font-size:18px}.tall .aud .card-h{padding:5px 10px}
+
+/* benefits */
+.ben{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.ben .named{padding:18px 20px;font-size:17px}
+.ben .named .big{font-size:40px;line-height:1.1;margin:6px 0}
+.ben .path{padding:18px 20px;border-color:#b68235}
+.ben .path b{font-weight:400;font-size:24px;display:block;margin:10px 0 6px}
+.ben .path p{margin:6px 0 0;font-size:15px;color:#605d5d}
+.others{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px;color:#7d7979}
+.tall .ben{gap:10px}.tall .ben .named,.tall .ben .path{padding:12px 14px;font-size:13px}.tall .ben .named .big{font-size:28px}.tall .ben .path b{font-size:17px}.tall .ben .path p{font-size:12px}.tall .others{font-size:11.5px;gap:5px}.tall .others .pill{font-size:9px}
+
+/* payment */
+.pay{display:grid;grid-template-columns:240px 1fr;gap:22px;height:100%}
+.qrbox{padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;align-self:start}
+.qrbox canvas{width:170px;height:170px;image-rendering:pixelated}
+.qrbox .mono{font-size:11.5px;color:#605d5d;line-height:1.5}
+.checks .row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(32,31,29,.07);font-size:16px}
+.verified{margin-top:12px;padding:12px 16px;font-size:17px;background:var(--mint-soft);color:#1f5a3d;border-radius:10px}
+.sim{display:inline-block;margin:14px 0 0 auto;float:right;transform:rotate(-4deg);border:2px solid #a8402c;color:#a8402c;background:rgba(251,250,249,.94);font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.08em;padding:8px 12px;border-radius:4px;text-transform:uppercase;line-height:1.5}
+.sim.rv{transform:rotate(-4deg) scale(1.3)}.sim.rv.on{transform:rotate(-4deg) scale(1)}
+.tall .pay{grid-template-columns:160px 1fr;gap:10px}.tall .qrbox{padding:10px}.tall .qrbox canvas{width:110px;height:110px}.tall .qrbox .mono{font-size:9px}.tall .checks .row{padding:6px 10px;font-size:12.5px}.tall .checks .pill{font-size:9px}.tall .verified{font-size:13px;padding:8px 10px;margin-top:8px}.tall .sim{font-size:9px;margin-top:8px;padding:5px 8px}
+
+/* summary */
+.sumg{display:grid;grid-template-columns:1fr 1fr;gap:18px;height:100%}
+.flow{padding:6px 0}
+.flow .row{display:flex;justify-content:space-between;align-items:baseline;padding:11px 20px;border-bottom:1px solid rgba(32,31,29,.07);font-size:17px}
+.flow .row:last-child{border-bottom:0}
+.flow strong{font-weight:400;font-size:30px;font-variant-numeric:tabular-nums}
+.flow .lbl small{display:block;font-size:12.5px;color:#7d7979}
+.todo{padding:6px 0}
+.todo .row{display:grid;grid-template-columns:24px 1fr;gap:12px;padding:11px 18px;border-bottom:1px solid rgba(32,31,29,.07);font-size:16px;line-height:1.3}
+.todo .row:last-child{border-bottom:0}
+.todo .row small{display:block;font-size:12.5px;color:#7d7979;margin-top:2px}
+.box{width:20px;height:20px;border:1.5px solid #b68235;border-radius:5px;margin-top:1px}
+.box.ck{background:#b68235;position:relative}
+.box.ck::after{content:"";position:absolute;left:6px;top:2px;width:5px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.tall .sumg{gap:10px}.tall .flow .row{padding:6px 12px;font-size:12.5px}.tall .flow strong{font-size:20px}.tall .flow .lbl small{font-size:10px}.tall .todo .row{padding:6px 10px;font-size:12px;gap:8px;grid-template-columns:18px 1fr}.tall .todo .row small{font-size:10px}.tall .box{width:15px;height:15px}.tall .box.ck::after{left:4px;top:1px;width:4px;height:8px}
+
+/* full-stage cards */
+.cardfull{position:absolute;inset:0;background:radial-gradient(900px 520px at 50% 45%,#faf8f6 0%,#efedeb 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:40px;z-index:5;transition:opacity .6s ease}
+.cardfull:not(.on){opacity:0;pointer-events:none}
+.cardfull .word{display:flex;align-items:center;gap:14px;font-size:110px;line-height:1;letter-spacing:-.02em}
+.cardfull .word svg{width:100px;height:100px}
+.cardfull .tagline{font-size:34px;font-style:italic;color:#444141;text-wrap:balance}
+.cardfull .meta{font-family:"IBM Plex Mono",monospace;font-size:13px;letter-spacing:.1em;color:#7d7979;text-transform:uppercase;max-width:46ch;line-height:1.7}
+.tall .cardfull .word{font-size:76px}.tall .cardfull .word svg{width:70px;height:70px}.tall .cardfull .tagline{font-size:26px}.tall .cardfull .meta{font-size:12px}
+
+.bigplay{position:absolute;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;background:rgba(32,31,29,.82);display:grid;place-items:center;z-index:20;pointer-events:none;transition:opacity .25s, transform .25s}
+.bigplay svg{width:34px;height:34px;fill:#f3f2f2;margin-left:5px}
+.playing .bigplay{opacity:0;transform:scale(.8)}
+
+@media (prefers-reduced-motion: reduce){
+  .rv,.step,.step .c,.steps .fill,.cardfull{transition:none}
+  .msg.pop,.head.swap,.typing i{animation:none}
+}
+</style>
+
+<aside class="future-note" aria-label="Future development note">
+  <strong>Future Development</strong>
+  <span>This was my first intention for Billo. Twenty-four hours was not enough to finish the full vision, so I preserved the interactive walkthrough here and will continue developing it outside the hackathon.</span>
+</aside>
+<div class="wrap">
+  <header class="intro-h">
+    <h1>How Billo handles one bill, start to finish</h1>
+    <p>Demo case · Maya’s knee · synthetic data</p>
+  </header>
+
+  <section class="player" id="player" aria-label="Billo walkthrough video">
+    <div class="viewport" id="viewport">
+      <div class="stage" id="stage">
+        <div class="abs head" id="head"><div class="eyebrow" id="eyebrow"></div><div class="htitle" id="htitle"></div></div>
+
+        <div class="abs phone"><div class="screen">
+          <div class="ph-top"><div class="notch"></div><div class="ph-av" id="av"></div><div class="ph-name">Billo</div></div>
+          <div class="chat" id="chat"><div class="spacer"></div><div class="stamp-t">Today 4:12 PM</div></div>
+          <div class="ph-input">iMessage</div>
+        </div></div>
+
+        <div class="abs panel" id="panel"></div>
+        <div class="abs steps" id="steps"><div class="steps-h">The process</div><div class="fill" id="fill"></div></div>
+        <div class="abs cap"><span id="cap"></span></div>
+
+        <div class="cardfull" id="introCard"></div>
+        <div class="cardfull" id="endCard"></div>
+      </div>
+      <div class="bigplay" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 4l15 8-15 8z"/></svg></div>
+    </div>
+    <div class="controls">
+      <button id="playBtn" type="button" aria-label="Play"></button>
+      <span class="time" id="time">0:00 / 0:00</span>
+      <div class="track"><div class="ticks" id="ticks"></div><input type="range" id="scrub" min="0" step="0.05" value="0" aria-label="Seek"></div>
+      <span class="chname" id="chname"></span>
+      <button id="ccBtn" type="button" aria-pressed="true" aria-label="Captions"><span class="cc">CC</span></button>
+      <button id="speedBtn" type="button" class="hide-sm" aria-label="Playback speed"><span class="spd">1×</span></button>
+      <button id="fsBtn" type="button" aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5v2H6v3zm10-5h6v5h-2V6h-4zM4 15h2v3h3v2H4zm14 3v-3h2v5h-6v-2z"/></svg></button>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+const ICON = {
+  play: '<svg viewBox="0 0 24 24"><path d="M7 4.5l13 7.5-13 7.5z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>',
+  replay: '<svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg>',
+};
+const LOGO = (dot, stroke) => `<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M86 50 A36 36 0 1 0 68 81" fill="none" stroke="${stroke}" stroke-width="11" stroke-linecap="round"/><path d="M64 32 V56 Q64 68 75 68 Q86 68 86 50" fill="none" stroke="${stroke}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><circle cx="47" cy="50" r="14" fill="${dot}"/></svg>`;
+document.getElementById('av').innerHTML = LOGO('#b68235', '#201f1d').replace('<svg', '<svg width="26" height="26"');
+
+/* ---------------- chapters ---------------- */
+const CH = [
+  { id:'intro',    s:0,  e:5,  n:'',   label:'Opening',          short:'',          title:'' },
+  { id:'safety',   s:5,  e:14, n:'01', label:'Safety check',     short:'Safety',    title:'Emergency signs are checked before anything else' },
+  { id:'compare',  s:14, e:23, n:'02', label:'Compare care',     short:'Compare',   title:'Three nearby options, priced before the visit' },
+  { id:'estimate', s:23, e:31, n:'03', label:'Save an estimate', short:'Estimate',  title:'Booking saves the expected price' },
+  { id:'visit',    s:31, e:39, n:'04', label:'Live visit log',   short:'Visit log', title:'A running total while care happens' },
+  { id:'read',     s:39, e:49, n:'05', label:'Read the bill',    short:'Read bill', title:'The final bill becomes clean, checked data' },
+  { id:'audit',    s:49, e:60, n:'06', label:'Audit the bill',   short:'Audit',     title:'Two checks must agree before a dispute' },
+  { id:'benefits', s:60, e:67, n:'07', label:'Find benefits',    short:'Benefits',  title:'Only the coverage Maya actually names' },
+  { id:'payment',  s:67, e:78, n:'08', label:'Pay safely',       short:'Pay',       title:'Pay the right clinic, for the reviewed amount' },
+  { id:'summary',  s:78, e:87, n:'09', label:'Case summary',     short:'Summary',   title:'Everything Maya needs, in one record' },
+];
+const STEP_CH = CH.slice(1);
+const DUR = 90;
+
+/* ---------------- chat script (seconds) ---------------- */
+const T = s => `<span class="tag">@Billo</span>${s}`;
+const BILL_THUMB = `<span class="att billthumb"><b>Westwood Urgent Care</b><i style="width:90%"></i><i style="width:70%"></i><i style="width:84%"></i><i style="width:60%"></i><i style="width:40%;background:#b8b4b4"></i></span>`;
+const CHAT = [
+  { t:5.6,  me:1, h:T(' my knee hurts after a fall near UCLA') },
+  { t:17.4, h:`No emergency signs found. Here are 3 places near you, with real prices:\n1. Westwood Urgent Care (urgent care) · about $240 · open until 9 pm\n2. Campus Health Clinic (clinic) · about $180 · open until 6 pm\n3. Santa Monica Emergency Room (ER) · about $1,800 · open 24 hours\nReply ‘book 1’, ‘book 2’ or ‘book 3’.` },
+  { t:23.4, me:1, h:T(' book 1') },
+  { t:25.4, h:`Booked: Westwood Urgent Care, 10900 Wilshire Blvd.\nGood Faith Estimate saved: $240. I will use it to organize your final record after care.\nAt the clinic you can tell me what they do and I keep a running total.` },
+  { t:31.4, me:1, h:T(' they did an X-ray and put on a splint') },
+  { t:35.6, h:`Saved. Your visit so far: about $1,245 (estimate $240 + 4 item(s)).` },
+  { t:39.4, me:1, h:BILL_THUMB + T(' here is my final bill') },
+  { t:40.9, h:`Reading the document now. I will organize the payment record and match it to your saved care plan.` },
+  { t:47.0, h:`Done. I organized this bill for $2,140.00.\nI read it locally with OCR, and the parsed charges matched the printed total.\nProvider matches the saved care plan.\nSaved estimate: $240.00; difference: $1,900.00.` },
+  { t:54.2, h:`X-ray knee, 1–2 views: both checks agree this is wrong. It goes in the dispute letter.\nKnee immobilizer: only the price check found a problem, so I will ask the hospital instead of disputing.` },
+  { t:58.0, h:`This bill is $1,900 over your $240 Good Faith Estimate. Plan: pay the estimate, dispute the rest.` },
+  { t:60.4, me:1, h:T(' I have an HSA') },
+  { t:62.6, h:`- HSA self-reimbursement: possible, not confirmed. Needed: receipt and proof of payment.` },
+  { t:67.4, me:1, h:`<canvas class="att qrthumb" width="25" height="25" data-qr></canvas>` + T(' scan clinic QR') },
+  { t:68.9, h:`Checking the QR checksum, payment network, clinic identity, currency and exact bill amount. No money moves during this check.` },
+  { t:72.8, h:`Verified: Westwood Urgent Care, $240.00. No money has moved. Reply ‘approve clinic payment’ to continue.` },
+  { t:74.4, me:1, h:`approve clinic payment` },
+  { t:75.9, h:`Approved as a demo simulation and recorded once. No real money moved.` },
+  { t:78.5, me:1, h:T(' status') },
+  { t:80.2, h:`Case 8F2A: $240 paid (demo). $1,900 in dispute. Next: send the dispute letter, ask about the knee immobilizer, then submit your receipt to your HSA.` },
+];
+
+/* ---------------- captions ---------------- */
+const CAPS = [
+  [5,9.6,'Maya tags @Billo in a text. Billo stays quiet unless it is tagged.'],
+  [9.6,14,'Fixed emergency rules run first. If one matches, Billo stops and tells her to call 911.'],
+  [14,19,'Billo compares nearby places using public price files.'],
+  [19,23,'Maya picks the urgent care that is open until 9 pm.'],
+  [23,27.5,'Booking saves a Good Faith Estimate of $240 to her case.'],
+  [27.5,31,'That estimate becomes the yardstick for the final bill.'],
+  [31,35,'During the visit, Maya texts what the clinic did.'],
+  [35,39,'Billo turns her words into billing codes and adds local prices.'],
+  [39,44,'After care, Maya sends a photo of the final bill.'],
+  [44,49,'OCR reads it on the server, and the lines must add up to the printed total.'],
+  [49,54.5,'Each line goes through a rules check and a price check.'],
+  [54.5,60,'A dispute needs both checks to agree. One check alone means: ask the hospital.'],
+  [60,67,'Billo checks benefits only for coverage Maya names, and never promises eligibility.'],
+  [67,72.6,'Before paying, Billo checks the clinic’s QR: checksum, network, clinic, currency, amount.'],
+  [72.6,78,'Nothing is paid without Maya’s explicit approval. In the demo, no real money moves.'],
+  [78,82.5,'At any time, “status” shows the whole case and the next step.'],
+  [82.5,87,'Expected, billed, paid and disputed amounts stay together in one record.'],
+];
+
+/* ---------------- scenes ---------------- */
+const at = (t) => `data-at="${t}"`;
+const ok = '<span class="pill ok">clear</span>';
+const SCENES = {
+safety: `
+  <div class="card">
+    <div class="card-h"><span>Emergency screen</span><span>fixed word rules · no AI</span></div>
+    <div class="s-in rv" ${at(6.4)}><span class="mono">MESSAGE</span><span>“my knee hurts after a fall near UCLA”</span></div>
+    ${[['Chest pain','chest pain · chest pressure · crushing'],['Breathing','can’t breathe · short of breath · choking'],['Stroke signs','face drooping · slurred · sudden numbness'],['Heavy bleeding','won’t stop bleeding · bone sticking out'],['Head injury','passed out · fainted · confused after']]
+      .map(([k,w],i)=>`<div class="rule rv" ${at(7.0+i*.5)}><span class="k">${k}</span><span class="w">${w}</span>${ok}</div>`).join('')}
+    <div style="padding-bottom:14px">
+      <div class="s-res rv" ${at(9.8)}><span class="pill ok">no rule matched</span><span>Continue to care search</span></div>
+      <div class="s-note rv" ${at(10.6)}>If a rule had matched, Billo stops and replies, for example: “Chest pain can be an emergency. Call 911 now. Do not drive yourself.”</div>
+    </div>
+  </div>`,
+compare: `
+  <div class="provs">
+    ${[['Westwood Urgent Care','urgent care','10900 Wilshire Blvd · open until 9 pm',240,180],
+       ['Campus Health Clinic','clinic','221 Charles E Young Dr S · open until 6 pm',180,120],
+       ['Santa Monica Emergency Room','ER','1250 16th St, Santa Monica · open 24 hours',1800,1200]]
+      .map(([n,k,a,typ,low],i)=>`<div class="card prov rv" ${at(14.6+i*.6)}>
+        <span class="n">${i+1}</span>
+        <div><b>${n}</b><small>${a}</small><span class="pill grey">${k}</span></div>
+        <div class="price"><small>TYPICAL</small><strong>$${typ.toLocaleString('en-US')}</strong><span>from $${low.toLocaleString('en-US')}</span></div>
+        ${i===0?`<span class="pill gold pick rv" ${at(19.6)}>Maya’s pick</span>`:''}
+      </div>`).join('')}
+    <div class="src rv" ${at(16.4)}>Prices come from public price files (synthetic demo set).</div>
+  </div>`,
+estimate: `
+  <div class="gfe">
+    <div class="card doc rv" ${at(24.0)}>
+      <h3>Good Faith Estimate</h3>
+      <dl class="kv">
+        <dt>Patient</dt><dd>Maya (synthetic)</dd>
+        <dt>Provider</dt><dd>Westwood Urgent Care (demo)</dd>
+        <dt>NPI</dt><dd class="mono" style="font-size:13px">1999999901</dd>
+        <dt>Service date</dt><dd>Oct 17, 2026</dd>
+      </dl>
+      <div class="amt rv" ${at(24.8)}><span class="eyebrow">Expected</span><strong>$240</strong></div>
+      <span class="stamp rv" ${at(25.8)}>Saved · case 8F2A</span>
+    </div>
+    <div class="side">
+      <div class="card chip rv" ${at(26.4)}><span class="ico">cal</span><span>Add the visit to a calendar<small>One tap, from the chat</small></span></div>
+      <div class="card chip rv" ${at(26.9)}><span class="ico">QR</span><span>Move the case to another phone<small>Scan a code within 15 minutes</small></span></div>
+      <div class="later rv" ${at(28.0)}>Used later: if the final bill is $400 or more over this estimate, Maya can dispute it under the No Surprises Act.</div>
+    </div>
+  </div>`,
+visit: `
+  <div class="vq rv" ${at(31.8)}>“they did an <u>X-ray</u> and put on a <u>splint</u>”</div>
+  <div class="card ledger">
+    <div class="row rv" ${at(32.2)}><code>EST</code><span>Good Faith Estimate</span><span class="m">$240</span></div>
+    ${[['73560','X-ray knee, 1–2 views','x-ray',253],['73562','X-ray knee, 3 views','x-ray',287],['29505','Application of long leg splint','splint',267],['L1830','Knee immobilizer','splint',197]]
+      .map(([c,d,w,p],i)=>`<div class="row rv" ${at(33.0+i*.45)}><code>${c}</code><span>${d}<span class="w">from “${w}”</span></span><span class="m">$${p}</span></div>`).join('')}
+    <div class="tot"><span class="eyebrow">Running estimate</span><strong data-count data-from="240" data-to="1245" data-at="33.0" data-dur="2.0">$240</strong></div>
+  </div>
+  <div class="vnote rv" ${at(36.0)}>Each word maps to likely billing codes. Prices are local medians from past price data (synthetic).</div>`,
+read: `
+  <div class="reader">
+    <div class="paper rv" ${at(39.6)}>
+      <h4>Westwood Urgent Care (demo)</h4>
+      <div class="sub">Statement · Patient: Maya (synthetic) · NPI 1999999901 · 10/17/2026</div>
+      <table>
+        <tr><td>99214</td><td>Office visit, moderate</td><td>390.00</td></tr>
+        <tr><td>73560</td><td>X-ray knee, 1-2 views</td><td>340.00</td></tr>
+        <tr><td>73560</td><td>X-ray knee, 1-2 views</td><td>340.00</td></tr>
+        <tr><td>L1830</td><td>Knee immobilizer (splint)</td><td>750.00</td></tr>
+        <tr><td>29505</td><td>Application of long leg splint</td><td>320.00</td></tr>
+      </table>
+      <div class="ptot"><span>AMOUNT DUE</span><span>$2,140.00</span></div>
+      <div class="scanbar" data-prog data-at="41.0" data-dur="3.2"></div>
+    </div>
+    <div>
+      <div class="card ext">
+        <div class="card-h"><span>Lines read from the photo</span><span>5 lines</span></div>
+        ${[['99214','Office visit, moderate','390.00'],['73560','X-ray knee, 1–2 views','340.00'],['73560','X-ray knee, 1–2 views','340.00'],['L1830','Knee immobilizer (splint)','750.00'],['29505','Long leg splint, applied','320.00']]
+          .map(([c,d,m],i)=>`<div class="row rv" ${at(41.7+i*.55)}><span class="ln mono">${i+1}</span><span class="mono">${c}</span><span>${d}</span><span class="m">$${m}</span></div>`).join('')}
+        <div class="row rv total" ${at(44.6)}><span></span><span></span><span>Lines add up to</span><span class="m">$2,140.00</span></div>
+      </div>
+      <div class="facts">
+        <span class="pill gold rv" ${at(45.0)}>read with OCR first</span>
+        <span class="pill ok rv" ${at(45.4)}>matches printed total</span>
+        <span class="pill ok rv" ${at(45.8)}>same clinic as the estimate</span>
+        <span class="pill grey rv" ${at(46.2)}>photo deleted after reading</span>
+      </div>
+    </div>
+  </div>`,
+audit: `
+  <div class="card aud">
+    <div class="card-h"><span>rules check + price check</span><span>every flag cites a rule</span></div>
+    ${[['99214','Office visit, moderate','$390','<span class="pill ok">looks fine</span>'],
+       ['73560','X-ray knee, 1–2 views','$340','<span class="pill ok">looks fine</span>'],
+       ['73560','X-ray knee, 1–2 views','$340','<span class="pill bad">dispute · duplicate</span><small>billed 2 times on the same day; both checks agree</small>'],
+       ['L1830','Knee immobilizer','$750','<span class="pill ask">ask hospital · high price</span><small>above 90% of local prices; rules check found nothing</small>'],
+       ['29505','Long leg splint, applied','$320','<span class="pill ok">looks fine</span>']]
+      .map(([c,d,m,v],i)=>`<div class="row"><span class="mono">${c}</span><span>${d}</span><span class="m">${m}</span><span class="v rv" ${at(50.2+i*.8)}>${v}</span></div>`).join('')}
+    <div class="row gfe-row rv" ${at(55.4)}><span class="mono">TOTAL</span><span>Bill vs. Good Faith Estimate</span><span class="m">$2,140</span><span class="v"><span class="pill bad">dispute · over estimate</span><small>$1,900 over the $240 estimate (limit $400, 120 days to dispute)</small></span></div>
+    <div class="sum rv" ${at(57.2)}>
+      <div><span class="mono">Pay now</span><strong>$240</strong></div>
+      <div><span class="mono">In dispute</span><strong style="color:#a8402c">$1,900</strong></div>
+      <div><span class="mono">Flags</span><strong>3</strong></div>
+    </div>
+  </div>`,
+benefits: `
+  <div class="ben">
+    <div class="card named rv" ${at(60.9)}><span class="eyebrow">Coverage Maya named</span><div class="big">HSA</div><span style="color:#7d7979">Health savings account</span></div>
+    <div class="card path rv" ${at(62.2)}>
+      <span class="pill ask">possible · not confirmed</span>
+      <b>HSA self-reimbursement</b>
+      <p>Needed: receipt and proof of payment.</p>
+      <p>Billo attaches this path to the Westwood visit. The HSA administrator decides eligibility.</p>
+    </div>
+    <div class="others rv" ${at(63.4)}><span>Not named, so not checked:</span>
+      ${['FSA','HRA','out-of-network plan','employer','school','travel','accident'].map(x=>`<span class="pill grey">${x}</span>`).join('')}</div>
+  </div>`,
+payment: `
+  <div class="pay">
+    <div class="card qrbox rv" ${at(67.9)}>
+      <canvas width="25" height="25" data-qr></canvas>
+      <span class="mono">WESTWOOD URGENT CARE (DEMO)<br>USD 240.00 · INVOICE BILLO-DEMO</span>
+    </div>
+    <div>
+      <div class="card checks">
+        <div class="card-h"><span>Clinic QR check</span><span>no money moves yet</span></div>
+        ${['QR checksum is valid','Payment network is recognized','Clinic matches the care provider','Currency is USD','Amount equals the reviewed bill · $240.00']
+          .map((x,i)=>`<div class="row rv" ${at(69.6+i*.55)}><span>${x}</span><span class="pill ok">pass</span></div>`).join('')}
+      </div>
+      <div class="verified rv" ${at(72.6)}>Verified. A QR for any other amount or clinic is rejected.</div>
+      <div class="sim rv" ${at(75.9)}>Simulation recorded<br>explicit approval · recorded once<br>no real money moved</div>
+    </div>
+  </div>`,
+summary: `
+  <div class="sumg">
+    <div class="card flow rv" ${at(79.0)}>
+      <div class="card-h"><span>Case 8F2A · the money</span><span>Westwood</span></div>
+      <div class="row"><span class="lbl">Expected<small>Good Faith Estimate</small></span><strong>$240</strong></div>
+      <div class="row"><span class="lbl">Billed<small>final bill, 5 lines</small></span><strong>$2,140</strong></div>
+      <div class="row"><span class="lbl">Paid<small>reviewed amount (demo)</small></span><strong>$240</strong></div>
+      <div class="row"><span class="lbl">In dispute<small>over the estimate</small></span><strong style="color:#a8402c">$1,900</strong></div>
+    </div>
+    <div class="card todo">
+      <div class="card-h"><span>Next steps</span><span>tracked in the case</span></div>
+      <div class="row rv" ${at(81.0)}><span class="box ck"></span><span>Pay the $240 estimate<small>Done, with explicit approval</small></span></div>
+      <div class="row rv" ${at(81.6)}><span class="box"></span><span>Send the dispute letter<small>Duplicate X-ray and the $1,900 overage · within 120 days</small></span></div>
+      <div class="row rv" ${at(82.2)}><span class="box"></span><span>Ask the hospital about the $750 brace<small>Only the price check flagged it</small></span></div>
+      <div class="row rv" ${at(82.8)}><span class="box"></span><span>Submit the receipt to the HSA<small>Possible, not confirmed</small></span></div>
+    </div>
+  </div>`,
+};
+
+/* ---------------- build DOM ---------------- */
+const $ = id => document.getElementById(id);
+const stage = $('stage'), panel = $('panel'), chat = $('chat'), steps = $('steps'), fill = $('fill');
+CH.forEach(c => {
+  if (!SCENES[c.id]) return;
+  const d = document.createElement('div');
+  d.className = 'scene'; d.dataset.ch = c.id; d.innerHTML = SCENES[c.id];
+  panel.appendChild(d);
+});
+let prevBot = false;
+CHAT.forEach(m => {
+  if (!m.me && !prevBot) { const f = document.createElement('div'); f.className = 'from'; f.dataset.at = m.t; f.textContent = 'Billo'; chat.appendChild(f); }
+  prevBot = !m.me;
+  const b = document.createElement('div');
+  b.className = 'msg ' + (m.me ? 'me' : 'bot'); b.dataset.at = m.t; b.innerHTML = m.h;
+  chat.appendChild(b);
+});
+const typing = document.createElement('div');
+typing.className = 'typing'; typing.hidden = true; typing.innerHTML = '<i></i><i></i><i></i>';
+chat.appendChild(typing);
+const stepEls = STEP_CH.map((c, i) => {
+  const s = document.createElement('div'); s.className = 'step';
+  s.innerHTML = `<span class="c">${i + 1}</span><span>${c.short}</span>`;
+  steps.appendChild(s); return s;
+});
+$('introCard').innerHTML = `<div class="word">${LOGO('#b68235','#201f1d')}<span>billo</span></div><div class="tagline">Make every care dollar count.</div><div class="meta">One case, from “my knee hurts” to a bill that adds up</div>`;
+$('endCard').innerHTML = `<div class="word">${LOGO('#b68235','#201f1d')}<span>billo</span></div><div class="tagline">Before care: a price. After care: a bill that adds up.</div><div class="meta">heybillo.tech · LA Hacks 2026<br>all data in this demo is synthetic</div>`;
+$('introCard').dataset.at = 0; $('introCard').dataset.until = 5;
+$('endCard').dataset.at = 87; $('endCard').dataset.until = 999;
+
+function drawQR(cv) {
+  const N = 25, x = cv.getContext('2d'); let s = 0x8f2a;
+  const rnd = () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  x.fillStyle = '#fff'; x.fillRect(0, 0, N, N); x.fillStyle = '#201f1d';
+  const finder = (ox, oy) => { for (let i = 0; i < 7; i++) for (let j = 0; j < 7; j++) { const e = i === 0 || j === 0 || i === 6 || j === 6, c = i >= 2 && i <= 4 && j >= 2 && j <= 4; if (e || c) x.fillRect(ox + i, oy + j, 1, 1); } };
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    const inF = (i < 8 && j < 8) || (i > N - 9 && j < 8) || (i < 8 && j > N - 9);
+    if (!inF && rnd() > .52) x.fillRect(i, j, 1, 1);
+  }
+  finder(0, 0); finder(N - 7, 0); finder(0, N - 7);
+  x.fillStyle = '#b68235'; x.fillRect(11, 11, 3, 3);
+}
+document.querySelectorAll('canvas[data-qr]').forEach(drawQR);
+
+const timed = [...stage.querySelectorAll('[data-at]')].map(el => ({ el, a: +el.dataset.at, u: el.dataset.until ? +el.dataset.until : Infinity, chat: el.parentElement === chat }));
+const counters = [...stage.querySelectorAll('[data-count]')];
+const progs = [...stage.querySelectorAll('[data-prog]')];
+const botTimes = CHAT.filter(m => !m.me).map(m => m.t);
+const money = v => '$' + Math.round(v).toLocaleString('en-US');
+
+/* ---------------- controls ---------------- */
+const scrub = $('scrub'); scrub.max = DUR;
+STEP_CH.forEach(c => { const i = document.createElement('i'); i.style.left = `calc(${(c.s / DUR) * 100}% - 1px)`; $('ticks').appendChild(i); });
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+let t = 0, playing = false, speed = 1, last = 0, curCh = null, lastChatCount = -1;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function render(animate) {
+  const ch = CH.find(c => t >= c.s && t < c.e) || CH[CH.length - 1];
+  if (ch !== curCh) {
+    curCh = ch;
+    panel.querySelectorAll('.scene').forEach(s => s.classList.toggle('cur', s.dataset.ch === ch.id));
+    $('eyebrow').innerHTML = ch.n ? `Step ${+ch.n} <span class="of">of 9</span> · ${ch.label}` : '';
+    $('htitle').textContent = ch.title;
+    const h = $('head'); h.classList.remove('swap'); void h.offsetWidth; if (animate) h.classList.add('swap');
+    $('chname').textContent = ch.n ? `${+ch.n}. ${ch.label}` : ch.label;
+    const idx = STEP_CH.indexOf(ch);
+    stepEls.forEach((el, i) => { el.classList.toggle('cur', i === idx); el.classList.toggle('done', idx > -1 && i < idx); });
+    const frac = idx > 0 ? idx / (STEP_CH.length - 1) : 0;
+    const tall = stage.classList.contains('tall');
+    fill.style.width = tall ? '' : `calc((100% - 86px) * ${frac})`;
+    fill.style.height = tall ? `calc((100% - 58px) * ${frac})` : '';
+  }
+  let chatCount = 0;
+  for (const o of timed) {
+    const on = t >= o.a && t < o.u;
+    if (on !== o.el.classList.contains('on')) {
+      o.el.classList.toggle('on', on);
+      if (o.chat) o.el.classList.toggle('pop', on && animate);
+    }
+    if (o.chat && on) chatCount++;
+  }
+  for (const el of counters) {
+    const p = Math.min(1, Math.max(0, (t - +el.dataset.at) / +el.dataset.dur)); const e = 1 - Math.pow(1 - p, 3);
+    el.textContent = money(+el.dataset.from + (+el.dataset.to - +el.dataset.from) * e);
+  }
+  for (const el of progs) el.style.setProperty('--p', Math.min(1, Math.max(0, (t - +el.dataset.at) / +el.dataset.dur)));
+  const ty = botTimes.some(bt => t >= bt - 1.1 && t < bt);
+  if (typing.hidden === ty) typing.hidden = !ty;
+  if (chatCount !== lastChatCount || ty) { chat.scrollTop = chat.scrollHeight; lastChatCount = chatCount; }
+  const c = CAPS.find(([a, b]) => t >= a && t < b);
+  const ct = c ? c[2] : ''; if ($('cap').textContent !== ct) $('cap').textContent = ct;
+  scrub.value = t; scrub.style.setProperty('--pct', (t / DUR * 100) + '%');
+  $('time').textContent = `${fmt(t)} / ${fmt(DUR)}`;
+}
+
+function frame(now) {
+  if (!playing) return;
+  const dt = Math.min(.1, (now - last) / 1000); last = now;
+  t += dt * speed;
+  if (t >= DUR) { t = DUR; pause(); render(true); return; }
+  render(true);
+  requestAnimationFrame(frame);
+}
+function setBtn() {
+  const end = t >= DUR;
+  $('playBtn').innerHTML = playing ? ICON.pause : end ? ICON.replay : ICON.play;
+  $('playBtn').setAttribute('aria-label', playing ? 'Pause' : end ? 'Replay' : 'Play');
+}
+function play() {
+  if (t >= DUR - .05) t = 0;
+  playing = true; last = performance.now();
+  $('player').classList.add('playing'); setBtn();
+  requestAnimationFrame(frame);
+}
+function pause() { playing = false; $('player').classList.remove('playing'); setBtn(); }
+function seek(v) { t = Math.max(0, Math.min(DUR, v)); render(false); setBtn(); }
+const toggle = () => playing ? pause() : play();
+
+$('playBtn').addEventListener('click', toggle);
+$('viewport').addEventListener('click', toggle);
+scrub.addEventListener('input', () => seek(+scrub.value));
+$('ccBtn').addEventListener('click', e => { const on = e.currentTarget.getAttribute('aria-pressed') !== 'true'; e.currentTarget.setAttribute('aria-pressed', on); stage.classList.toggle('nocc', !on); });
+$('speedBtn').addEventListener('click', e => { speed = speed === 1 ? 1.5 : speed === 1.5 ? .75 : 1; e.currentTarget.querySelector('.spd').textContent = speed + '×'; });
+$('fsBtn').addEventListener('click', () => {
+  const p = $('player');
+  try { if (document.fullscreenElement) document.exitFullscreen(); else if (p.requestFullscreen) p.requestFullscreen().catch(() => {}); } catch (e) {}
+});
+document.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,button') && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  if (e.key === ' ' || e.key === 'k') { e.preventDefault(); toggle(); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); seek(t + 5); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); seek(t - 5); }
+});
+
+/* ---------------- fit stage ---------------- */
+const vp = $('viewport');
+function fit() {
+  const p = $('player'); const fs = document.fullscreenElement === p;
+  const tall = p.clientWidth < 640 && !fs;
+  const changed = stage.classList.contains('tall') !== tall;
+  stage.classList.toggle('tall', tall);
+  const W = tall ? 600 : 1280, H = tall ? 1060 : 720;
+  let s, ox = 0;
+  if (fs) {
+    const chH = p.querySelector('.controls').offsetHeight;
+    s = Math.min(window.innerWidth / W, (window.innerHeight - chH) / H);
+    vp.style.height = H * s + 'px'; ox = (window.innerWidth - W * s) / 2;
+  } else { s = vp.clientWidth / W; vp.style.height = H * s + 'px'; }
+  stage.style.transform = `translate(${ox}px,0) scale(${s})`;
+  if (changed) { curCh = null; render(false); }
+  chat.scrollTop = chat.scrollHeight;
+}
+new ResizeObserver(fit).observe($('player'));
+document.addEventListener('fullscreenchange', fit);
+fit();
+render(false);
+setBtn();
+if (!reduce) setTimeout(play, 600);
+})();
+</script>
