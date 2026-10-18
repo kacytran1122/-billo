@@ -128,7 +128,14 @@ async function handle(space: Space, message: Message) {
   const rawText = ev.text.trim();
   const text = stripBilloMention(rawText);
   const rawUpper = rawText.toUpperCase();
+  const tagged = hasBilloMention(rawText);
+  const chatKind = isGroup ? "group" : "private";
   Sentry.getActiveSpan()?.setAttributes({ "chat.group": isGroup, "chat.has_file": Boolean(ev.att) });
+
+  // Transport-level receipt without logging message content or a full sender identifier.
+  console.log(
+    `[bridge] inbound ${chatKind} from ${mask(ev.sender)} (${rawText.length} chars${ev.att ? ", attachment" : ""}, tagged=${tagged})`,
+  );
 
   // STOP is always available as a universal opt-out, with or without a mention.
   if (["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"].includes(rawUpper)) {
@@ -138,10 +145,9 @@ async function handle(space: Space, message: Message) {
   }
 
   // A visible mention is mandatory. Untagged chat content is never forwarded or read further.
-  if (!hasBilloMention(rawText)) return;
+  if (!tagged) return;
 
-  const chatKind = isGroup ? "group" : "private";
-  console.log(`[bridge] ${chatKind} mention from ${mask(ev.sender)} (${text.length} chars${ev.att ? ", attachment" : ""})`);
+  console.log(`[bridge] accepted ${chatKind} mention (${text.length} workflow chars)`);
   if (!text && !ev.att) {
     await space.send("@Billo is here. Tell me what happened or attach a bill or receipt in this chat.");
     return;
