@@ -19,6 +19,8 @@ test("the first hero shows only the iMessage phone", () => {
   assert.match(homeSource, /heroPhones="iMessage only"/);
   assert.match(landingSource, /data-single/);
   assert.match(landingStyles, /heroPhones\[data-single="true"\]/);
+  assert.match(landingStyles, /block-size: 548px/);
+  assert.match(landingStyles, /transform: translateX\(-50%\) scale\(\.86\)/);
 });
 
 test("responsive navigation is CSS-driven without hydration-sensitive width state", () => {
@@ -53,6 +55,7 @@ test("phone previews become smaller beside the headline on compact screens", () 
   assert.match(landingStyles, /@media \(max-width: 699px\)[\s\S]*grid-template-columns: minmax\(0, 1fr\) clamp\(124px, 36vw, 180px\)/);
   assert.match(landingStyles, /@media \(max-width: 699px\)[\s\S]*\.heroPhones[\s\S]*grid-column: 2/);
   assert.match(landingStyles, /@media \(max-width: 390px\)[\s\S]*grid-template-columns: minmax\(0, 1fr\) 112px/);
+  assert.match(landingStyles, /@media \(max-width: 390px\)[\s\S]*block-size: 266px/);
 });
 
 test("navigation section state is synchronized efficiently while scrolling", () => {

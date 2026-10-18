@@ -46,7 +46,24 @@
   transform: scale(.86);
   transform-origin: top left;
 }
-.heroPhones[data-single="true"] .phoneIMessage { transform: rotate(1.5deg) !important; }
+.heroPhones[data-single="true"] .phoneIMessage {
+  position: relative;
+  inline-size: 250px;
+  block-size: 548px;
+  transform: none !important;
+}
+.heroPhones[data-single="true"] .phoneFrame {
+  position: absolute;
+  inset: 0 auto auto 50%;
+  margin: 0;
+  transform: translateX(-50%) scale(.86);
+  transform-origin: top center;
+}
+.heroPhones[data-single="true"] .phoneIMessage > span {
+  position: absolute;
+  inset: auto 0 0;
+  text-align: center;
+}
 
 @media (max-width: 1180px) {
   .headerInner { padding-inline: 20px !important; }
@@ -125,9 +142,9 @@
   .phoneIMessage > span { font-size: 15px !important; }
   .heroPhones[data-single="true"] .phoneIMessage { inline-size: 210px; }
   .heroPhones[data-single="true"] .phoneFrame {
-    margin-bottom: -192px;
-    transform: scale(.68);
+    transform: translateX(-50%) scale(.68);
   }
+  .heroPhones[data-single="true"] .phoneIMessage { block-size: 430px; }
 }
 
 @media (min-width: 901px) and (max-width: 1099px) {
@@ -207,10 +224,12 @@
     flex-wrap: nowrap !important;
     margin-top: 0 !important;
   }
-  .heroPhones[data-single="true"] .phoneIMessage { inline-size: clamp(124px, 36vw, 180px); }
+  .heroPhones[data-single="true"] .phoneIMessage {
+    inline-size: clamp(124px, 36vw, 180px);
+    block-size: 352px;
+  }
   .heroPhones[data-single="true"] .phoneFrame {
-    margin-bottom: -270px;
-    transform: scale(.55);
+    transform: translateX(-50%) scale(.55);
   }
   .heroPhones[data-single="true"] .phoneIMessage > span { font-size: 13px !important; text-align: center; }
 }
@@ -225,10 +244,12 @@
   .heroSubtitle { font-size: 13px !important; }
   .heroActions { align-items: stretch; flex-direction: column; }
   .heroActions a { justify-content: center; width: 100%; box-sizing: border-box; }
-  .heroPhones[data-single="true"] .phoneIMessage { inline-size: 112px; }
+  .heroPhones[data-single="true"] .phoneIMessage {
+    inline-size: 112px;
+    block-size: 266px;
+  }
   .heroPhones[data-single="true"] .phoneFrame {
-    margin-bottom: -360px;
-    transform: scale(.4);
+    transform: translateX(-50%) scale(.4);
   }
   .heroPhones[data-single="true"] .phoneIMessage > span { font-size: 11px !important; }
   .balancedSection { padding-inline: 14px !important; }
