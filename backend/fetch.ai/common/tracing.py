@@ -1,7 +1,7 @@
 """Sentry helpers for every agent: 1 case = 1 trace, no health data.
 
 The privacy policy itself (what is collected, what is scrubbed) lives in
-``observability/sentry.py`` and is shared with the Core API.
+``backend/observability/sentry.py`` and is shared with the Core API.
 
 Usage:
     init_sentry("coordinator")
@@ -18,10 +18,10 @@ from typing import Iterator
 import httpx
 import sentry_sdk
 
-from .config import ROOT
+from .config import BACKEND_ROOT
 
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+if str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))
 
 from observability.sentry import case_hash, metric, tag_case, task_span  # noqa: E402
 from observability.sentry import init_sentry as _init  # noqa: E402

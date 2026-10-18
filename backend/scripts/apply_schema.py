@@ -6,8 +6,9 @@ import psycopg
 from dotenv import load_dotenv
 
 
-ROOT = Path(__file__).resolve().parents[1]
-load_dotenv(ROOT / ".env")
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(REPO_ROOT / ".env")
 
 
 def main() -> None:
@@ -15,7 +16,7 @@ def main() -> None:
     if not database_url or "PASSWORD@HOST" in database_url:
         raise SystemExit("Set DATABASE_URL in .env before running make db.")
     with psycopg.connect(database_url, autocommit=True) as connection:
-        connection.execute((ROOT / "db" / "schema.sql").read_text())
+        connection.execute((BACKEND_ROOT / "database" / "schema.sql").read_text())
     print("Tiger Data schema applied.")
 
 

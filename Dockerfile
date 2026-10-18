@@ -11,14 +11,10 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY core/requirements.txt /tmp/core-requirements.txt
+COPY backend/api/requirements.txt /tmp/core-requirements.txt
 RUN pip install --no-cache-dir -r /tmp/core-requirements.txt
 
-COPY core ./core
-COPY ocr ./ocr
-COPY observability ./observability
-COPY data ./data
-COPY rules ./rules
+COPY backend ./backend
 
 RUN useradd --create-home --uid 10001 billo \
     && mkdir -p /tmp/billo-uploads \
@@ -28,4 +24,4 @@ USER billo
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "uvicorn core.app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${WEB_CONCURRENCY:-1}"]
+CMD ["sh", "-c", "uvicorn backend.api.app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${WEB_CONCURRENCY:-1}"]

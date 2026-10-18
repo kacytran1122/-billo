@@ -4,8 +4,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-ROOT = Path(__file__).resolve().parents[2]
-load_dotenv(ROOT / ".env")
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
+load_dotenv(REPO_ROOT / ".env")
 
 
 def env(name: str, default: str = "") -> str:
@@ -53,7 +54,7 @@ ADDR = {
     "case_medic": env("ADDR_CASE_MEDIC"),
 }
 
-READMES = ROOT / "fetch.ai" / "readmes"
+READMES = BACKEND_ROOT / "fetch.ai" / "readmes"
 
 
 def require_seed(key: str) -> str:

@@ -10,8 +10,8 @@ from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[2]
-RULES = yaml.safe_load((ROOT / "rules" / "bill_audit.yaml").read_text())
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+RULES = yaml.safe_load((BACKEND_ROOT / "rules" / "bill_audit.yaml").read_text())
 
 
 def rules_check(line: dict, all_lines: list[dict], visit_codes: set[str] | None) -> list[tuple[str, str]]:

@@ -1,10 +1,10 @@
 """Load price rows into Tiger Data.
 
-  python scripts/load_prices.py                       # the synthetic demo CSV
-  python scripts/load_prices.py path/to/cms_file.csv  # your cleaned CMS extract with the same columns:
+  python backend/scripts/load_prices.py                       # the synthetic demo CSV
+  python backend/scripts/load_prices.py path/to/cms_file.csv  # your cleaned CMS extract with the same columns:
                                                       # posted_at,hospital_npi,kind,region,code,price
 Real CMS price-transparency files are huge and differ per hospital: clean 3-5 LA hospitals and ~50 codes
-into this CSV shape first (task D2 in AGENTS.md).
+into this CSV shape first.
 """
 import csv
 import os
@@ -14,9 +14,10 @@ from pathlib import Path
 import psycopg
 from dotenv import load_dotenv
 
-ROOT = Path(__file__).resolve().parents[1]
-load_dotenv(ROOT / ".env")
-path = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "data" / "synthetic" / "prices.csv"
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(REPO_ROOT / ".env")
+path = Path(sys.argv[1]) if len(sys.argv) > 1 else BACKEND_ROOT / "data" / "synthetic" / "prices.csv"
 
 with psycopg.connect(os.environ["DATABASE_URL"], autocommit=True) as conn, open(path) as f:
     rows = list(csv.DictReader(f))

@@ -67,7 +67,7 @@ Every path is labeled **possible, not confirmed**. Billo lists the likely docume
 | iMessage Gateway | Thin Photon adapter |
 | Case Medic | Uses Sentry alerts to retry or preserve a record for review |
 
-The After-Care Organizer retains the historical source filename `fetch.ai/bill_auditor.py` and `SEED_BILL_AUDITOR` configuration key. Keeping the seed preserves its Agentverse address while the published name and behavior change.
+The After-Care Organizer retains the historical source filename `backend/fetch.ai/bill_auditor.py` and `SEED_BILL_AUDITOR` configuration key. Keeping the seed preserves its Agentverse address while the published name and behavior change.
 
 ## Typed workflow
 

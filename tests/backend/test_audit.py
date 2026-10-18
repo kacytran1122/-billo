@@ -1,10 +1,11 @@
-"""Run: cd just && pytest -q tests   (no database, no keys needed)"""
+"""Run from the repository root with pytest -q tests/backend."""
 import os
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "core"))
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "backend"))
+sys.path.insert(0, str(ROOT / "backend" / "api"))
 # Unit tests must be deterministic even when the developer's local .env points
 # at production-like services. load_dotenv() will not override these values.
 os.environ["BILLO_MODE"] = "demo"
@@ -45,7 +46,7 @@ def test_demo_bill_has_the_three_expected_flags():
 
 def test_red_flag_never_shops():
     import yaml
-    rules = yaml.safe_load((ROOT / "rules" / "red_flags.yaml").read_text())["rules"]
+    rules = yaml.safe_load((ROOT / "backend" / "rules" / "red_flags.yaml").read_text())["rules"]
     assert any("chest pain" in r["any"] for r in rules)
 
 

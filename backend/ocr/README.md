@@ -43,20 +43,20 @@ units, charge, service_date`), plus:
 | `fallback_reason` | Why OCR was not used (e.g. "lines do not add up to the printed total") |
 | `needs_review` | Vision only. Line numbers ChatGPT returned that OCR could not confirm |
 
-If your rules engine (`core/app/rules.py`) rejects unknown keys, strip the extra fields before
+If your rules engine (`backend/api/app/rules.py`) rejects unknown keys, strip the extra fields before
 auditing. They are additive and safe to ignore.
 
 ## Integration
 
-This package is wired into `core/app/reader.py`; `/reader/extract` and the After-Care Organizer keep the
-same interface. OCR dependencies are included in `core/requirements.txt`, so the normal
+This package is wired into `backend/api/app/reader.py`; `/reader/extract` and the After-Care Organizer keep the
+same interface. OCR dependencies are included in `backend/api/requirements.txt`, so the normal
 `make setup` installs them. Run all project and OCR tests from the repo root:
 
 ```bash
 make test
 ```
 
-The real-OCR test runs on `ocr/tests/fixtures/synthetic_bill.png`, a generated bill with no real
+The real-OCR test runs on `tests/backend/ocr/fixtures/synthetic_bill.png`, a generated bill with no real
 patient data, and is skipped if RapidOCR is not installed.
 
 ## Settings (optional, in `.env`)
@@ -66,8 +66,8 @@ patient data, and is skipped if RapidOCR is not installed.
 | `OCR_MIN_CONFIDENCE` | `0.6` | Below this average OCR confidence, fall back to ChatGPT |
 | `OCR_MIN_LINES` | `1` | Minimum coded lines for OCR to count as usable |
 | `VISION_API_KEY`, `VISION_MODEL`, `VISION_BASE_URL` | unchanged | ChatGPT fallback, same as before |
-| `BILLO_UPLOADS_DIR` | `core/uploads` | Where iMessage uploads land (`file:` URLs) |
-| `BILLO_DEMO_BILL` | `data/synthetic/maya_bill.json` | Demo bill |
+| `BILLO_UPLOADS_DIR` | `backend/api/uploads` | Where iMessage uploads land (`file:` URLs) |
+| `BILLO_DEMO_BILL` | `backend/data/synthetic/maya_bill.json` | Demo bill |
 
 ## Sentry
 

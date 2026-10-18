@@ -1,5 +1,5 @@
 -- Billo · Tiger Data [MLH] schema (TimescaleDB on Tiger Cloud)
--- Run:  psql "$DATABASE_URL" -f db/schema.sql
+-- Run:  psql "$DATABASE_URL" -f backend/database/schema.sql
 -- Needs TimescaleDB 2.13+ (by_range) and timescaledb_toolkit (percentile_agg). Both are on Tiger Cloud.
 
 CREATE EXTENSION IF NOT EXISTS timescaledb;

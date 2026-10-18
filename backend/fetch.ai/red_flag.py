@@ -9,12 +9,12 @@ from uagents import Agent, Context, Protocol
 from uagents_core.contrib.protocols.chat import ChatAcknowledgement, ChatMessage, chat_protocol_spec
 
 from common.chat import ack, say, text_of
-from common.config import PORTS, READMES, ROOT, require_seed
+from common.config import BACKEND_ROOT, PORTS, READMES, require_seed
 from common.models import ScreenRequest, ScreenResult
 from common.tracing import carry, case_span, init_sentry
 
 init_sentry("red_flag")
-RULES = yaml.safe_load((ROOT / "rules" / "red_flags.yaml").read_text())["rules"]
+RULES = yaml.safe_load((BACKEND_ROOT / "rules" / "red_flags.yaml").read_text())["rules"]
 
 agent = Agent(
     name="billo-red-flag-screener",

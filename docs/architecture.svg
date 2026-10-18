@@ -110,7 +110,7 @@
 
   <rect x="470" y="1275" width="480" height="265" rx="22" fill="#fff6ee" stroke="#f97316" stroke-width="3"/>
   <text x="498" y="1315" class="label" fill="#c6530c">TIGER DATA · DURABLE STATE</text>
-  <text x="500" y="1360" class="body ink">Price history + percentiles</text><text x="500" y="1395" class="body ink">Estimates + live visit log</text><text x="500" y="1430" class="body ink">After-care records + benefit checks</text><text x="500" y="1465" class="body ink">Settlement simulation audit records</text><text x="500" y="1500" class="small muted">Schema applied through scripts/apply_schema.py.</text>
+  <text x="500" y="1360" class="body ink">Price history + percentiles</text><text x="500" y="1395" class="body ink">Estimates + live visit log</text><text x="500" y="1430" class="body ink">After-care records + benefit checks</text><text x="500" y="1465" class="body ink">Settlement simulation audit records</text><text x="500" y="1500" class="small muted">Schema applied through backend/scripts/apply_schema.py.</text>
 
   <rect x="990" y="1275" width="550" height="265" rx="22" fill="#eef1ff" stroke="#29358c" stroke-width="3"/>
   <text x="1018" y="1315" class="label" fill="#29358c">VISA · EXPLICIT SIMULATION BOUNDARY</text>

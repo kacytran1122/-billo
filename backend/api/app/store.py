@@ -10,8 +10,8 @@ import statistics
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-SYN = ROOT / "data" / "synthetic"
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+SYN = BACKEND_ROOT / "data" / "synthetic"
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
 _mem: dict[str, dict] = {

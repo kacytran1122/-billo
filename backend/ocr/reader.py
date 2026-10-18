@@ -1,6 +1,6 @@
 """Billo bill reader: OCR first, ChatGPT vision as the fallback.
 
-Same call and same output shape as core/app/reader.py `read_bill`, so it is a
+Same call and same output shape as backend/api/app/reader.py `read_bill`, so it is a
 drop-in replacement. Each result also says which reader produced it:
 
     reader = "ocr"            OCR read the bill and the lines add up
@@ -26,7 +26,8 @@ from . import engine
 from .parse import parse_bill
 from .verify import verify_lines
 
-REPO = Path(__file__).resolve().parents[1]
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _repo_path(env_name: str, default: Path) -> Path:
@@ -34,11 +35,11 @@ def _repo_path(env_name: str, default: Path) -> Path:
     if not configured:
         return default
     path = Path(configured)
-    return path if path.is_absolute() else REPO / path
+    return path if path.is_absolute() else REPO_ROOT / path
 
 
-UPLOADS = _repo_path("BILLO_UPLOADS_DIR", REPO / "core" / "uploads")
-DEMO_BILL = _repo_path("BILLO_DEMO_BILL", REPO / "data" / "synthetic" / "maya_bill.json")
+UPLOADS = _repo_path("BILLO_UPLOADS_DIR", BACKEND_ROOT / "api" / "uploads")
+DEMO_BILL = _repo_path("BILLO_DEMO_BILL", BACKEND_ROOT / "data" / "synthetic" / "maya_bill.json")
 MAX_IMAGE_BYTES = int(os.getenv("OCR_MAX_IMAGE_BYTES", str(20 * 1024 * 1024)))
 
 MIN_CONF = float(os.getenv("OCR_MIN_CONFIDENCE", "0.6"))

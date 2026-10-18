@@ -49,4 +49,4 @@ make test
 cd bridge && npm run typecheck
 ```
 
-`tests/test_sentry.py` inspects the exact outbound envelopes. A release is blocked if those tests find health data or identity fields.
+`tests/backend/test_sentry.py` inspects the exact outbound envelopes. A release is blocked if those tests find health data or identity fields.

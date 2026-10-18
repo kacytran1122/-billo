@@ -1,6 +1,6 @@
 """Billo Core API (FastAPI): the shared tools every agent uses.
 
-Run:  cd core && uvicorn app.main:app --reload --port 8000
+Run:  cd backend/api && uvicorn app.main:app --reload --port 8000
 Docs: http://localhost:8000/docs
 """
 from __future__ import annotations
@@ -17,11 +17,12 @@ from urllib.parse import quote
 
 from dotenv import load_dotenv
 
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))
 
-load_dotenv(ROOT / ".env")  # must run before the imports below read env
+load_dotenv(REPO_ROOT / ".env")  # must run before the imports below read env
 
 import httpx  # noqa: E402
 import sentry_sdk  # noqa: E402
@@ -155,9 +156,9 @@ def visit_event(body: VisitIn, x_internal_token: str | None = Header(None)):
 def _uploads_dir() -> Path:
     configured = os.getenv("BILLO_UPLOADS_DIR", "").strip()
     if not configured:
-        return Path(__file__).resolve().parents[1] / "uploads"
+        return BACKEND_ROOT / "api" / "uploads"
     path = Path(configured)
-    return path if path.is_absolute() else Path(__file__).resolve().parents[2] / path
+    return path if path.is_absolute() else REPO_ROOT / path
 
 
 UPLOADS = _uploads_dir()

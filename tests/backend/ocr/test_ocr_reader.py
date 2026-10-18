@@ -1,8 +1,12 @@
-"""Tests for the OCR bill reader. Run from the repo root: pytest ocr/tests -q"""
+"""Tests for the OCR bill reader. Run from the repo root: pytest tests/backend/ocr -q"""
 import json
+import sys
 from pathlib import Path
 
 import pytest
+
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "backend"))
 
 from ocr import engine, reader
 from ocr.engine import Box

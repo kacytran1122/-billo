@@ -1,4 +1,4 @@
-"""Sentry privacy and Case Medic routing. Run: pytest -q tests  (no keys, no network).
+"""Sentry privacy and Case Medic routing. Run: pytest -q tests/backend.
 
 The end-to-end tests start a real Sentry client with an in-memory transport and
 check the exact envelopes that would leave the process.
@@ -11,10 +11,10 @@ import sys
 from contextlib import contextmanager
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "core"))
-sys.path.insert(0, str(ROOT / "fetch.ai"))
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "backend"))
+sys.path.insert(0, str(ROOT / "backend" / "api"))
+sys.path.insert(0, str(ROOT / "backend" / "fetch.ai"))
 os.environ["BILLO_MODE"] = "demo"
 os.environ["DATABASE_URL"] = ""
 os.environ["SENTRY_DSN"] = ""

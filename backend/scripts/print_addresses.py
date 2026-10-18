@@ -1,6 +1,6 @@
 """Print every agent's address WITHOUT starting it, so you can paste them into .env.
 
-  cd fetch.ai && python ../scripts/print_addresses.py
+  cd backend/fetch.ai && python ../scripts/print_addresses.py
 The address comes from the seed: same seed = same address, forever.
 """
 import sys
