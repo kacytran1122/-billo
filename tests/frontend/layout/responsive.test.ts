@@ -33,10 +33,15 @@ test("responsive navigation is CSS-driven without hydration-sensitive width stat
 test("phone, tablet, laptop, and wide layouts have explicit balance rules", () => {
   assert.match(landingStyles, /@media \(max-width: 390px\)/);
   assert.match(landingStyles, /@media \(min-width: 700px\) and \(max-width: 1099px\)/);
-  assert.match(landingStyles, /@media \(min-width: 901px\) and \(max-width: 1099px\)/);
+  assert.match(landingStyles, /@media \(min-width: 901px\)/);
   assert.match(landingStyles, /@media \(max-width: 1180px\)/);
-  assert.match(landingStyles, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(landingStyles, /grid-template-columns: 1fr/);
+});
+
+test("the ASI One to iMessage handoff arrows follow the layout direction", () => {
+  assert.match(landingStyles, /@media \(min-width: 901px\)[\s\S]*\.caseFlow > svg \{ align-self: center; rotate: 0deg; \}/);
+  assert.match(landingStyles, /@media \(max-width: 900px\)[\s\S]*\.caseFlow > svg \{ align-self: center; rotate: 90deg; \}/);
+  assert.match(landingStyles, /grid-template-columns: minmax\(220px, 300px\) 36px auto 36px minmax\(220px, 300px\)/);
 });
 
 test("desktop navigation and hero use centered and side-by-side placement", () => {
