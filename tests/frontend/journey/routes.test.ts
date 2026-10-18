@@ -21,8 +21,14 @@ test("journey cards open dedicated full-screen stages", () => {
   }
 });
 
-test("full-screen journey preserves ordered before-to-after navigation", () => {
+test("full-screen stage set preserves the before-to-after order", () => {
   assert.match(journey, /JOURNEY_STAGES = \["booked", "during", "verified", "payment"\]/);
   assert.match(journeyStyles, /min-height: 100svh/);
   assert.doesNotMatch(journey, /phoneFrame/);
+});
+
+test("each stage screen is isolated from the other stage screens", () => {
+  assert.doesNotMatch(journey, /stageNav/);
+  assert.doesNotMatch(journey, /href=\{`\/journey\/\$\{/);
+  assert.match(journey, /Back to before, during, after/);
 });

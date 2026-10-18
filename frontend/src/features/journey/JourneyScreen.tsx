@@ -11,32 +11,24 @@ const STAGE_COPY: Record<JourneyStage, {
   title: string;
   description: string;
   status: string;
-  next?: JourneyStage;
-  nextLabel?: string;
 }> = {
   booked: {
     eyebrow: "Before care",
     title: "You’re booked.",
     description: "Your appointment, expected price, directions, and reminders are together in one place.",
     status: "Appointment confirmed",
-    next: "during",
-    nextLabel: "Start visit mode",
   },
   during: {
     eyebrow: "During care",
     title: "Keep a live visit record.",
     description: "Log tests and services as they happen. Billo keeps the expected total visible before the bill arrives.",
     status: "Visit in progress",
-    next: "verified",
-    nextLabel: "Review the bill",
   },
   verified: {
     eyebrow: "After care",
     title: "Your bill matches the visit.",
     description: "Every charge is matched to the care you recorded, with differences called out before payment.",
     status: "Record verified",
-    next: "payment",
-    nextLabel: "Review payment",
   },
   payment: {
     eyebrow: "After care",
@@ -131,7 +123,6 @@ function StageDetails({ stage }: { stage: JourneyStage }) {
 
 export default function JourneyScreen({ stage }: { stage: JourneyStage }) {
   const copy = STAGE_COPY[stage];
-  const stageIndex = JOURNEY_STAGES.indexOf(stage);
 
   return (
     <main className={`${hv.page} ${hv[stage]}`}>
@@ -142,15 +133,6 @@ export default function JourneyScreen({ stage }: { stage: JourneyStage }) {
         </Link>
         <Link className={hv.close} href="/#pages" aria-label="Return to the Billo journey">×</Link>
       </header>
-
-      <nav className={hv.stageNav} aria-label="Care journey">
-        {JOURNEY_STAGES.map((item, index) => (
-          <Link key={item} href={`/journey/${item}`} aria-current={item === stage ? "step" : undefined}>
-            <span>{index + 1}</span>
-            {item === "booked" ? "Booked" : item === "during" ? "During" : item === "verified" ? "Verified" : "Payment"}
-          </Link>
-        ))}
-      </nav>
 
       <section className={hv.hero}>
         <div>
@@ -166,8 +148,7 @@ export default function JourneyScreen({ stage }: { stage: JourneyStage }) {
       </section>
 
       <footer className={hv.footer}>
-        <Link href={stageIndex === 0 ? "/#pages" : `/journey/${JOURNEY_STAGES[stageIndex - 1]}`}>← Back</Link>
-        {copy.next && <Link className={hv.next} href={`/journey/${copy.next}`}>{copy.nextLabel} →</Link>}
+        <Link href="/#pages">← Back to before, during, after</Link>
       </footer>
     </main>
   );
