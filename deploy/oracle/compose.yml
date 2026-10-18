@@ -76,7 +76,9 @@ services:
       CORE_URL: http://core:8000
       GATEWAY_URL: http://imessage-gateway:8006
       BRIDGE_PORT: "3000"
-      PHOTON_CHANNELS: imessage,whatsapp_business
+      # Keep existing projects on iMessage unless WhatsApp Business has been
+      # enabled in Photon and explicitly selected in the host environment.
+      PHOTON_CHANNELS: ${PHOTON_CHANNELS:-imessage}
     restart: unless-stopped
     depends_on:
       core:
