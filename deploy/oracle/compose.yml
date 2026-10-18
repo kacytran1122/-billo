@@ -76,6 +76,7 @@ services:
       CORE_URL: http://core:8000
       GATEWAY_URL: http://imessage-gateway:8006
       BRIDGE_PORT: "3000"
+      PHOTON_CHANNELS: imessage,whatsapp_business
     restart: unless-stopped
     depends_on:
       core:

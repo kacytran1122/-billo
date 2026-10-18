@@ -300,7 +300,7 @@ async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_g
             ctx,
             case,
             "Tell me what happened, or send a final bill or paid receipt. For an unpaid bill I can verify a clinic Visa QR; for a paid receipt I can route an approved reimbursement. Text STOP to stop messages.",
-            photon_text="👋 Tag @Billo to:\n• compare care prices\n• read a bill or receipt\n• check benefits or a clinic QR\nText STOP anytime.",
+            photon_text="👋 Your care companion\n\nPay less for care. Explore money-back options.\n\nTry one:\n@Billo find care near [ZIP]\n@Billo check this receipt + photo\n@Billo check my benefits\n\nClinic QR payments are simulated.\nText STOP to stop reminders.",
         )
     else:
         await step_symptoms(ctx, case, text, group_safe=is_group)

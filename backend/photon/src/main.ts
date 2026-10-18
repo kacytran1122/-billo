@@ -20,8 +20,11 @@ import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { Spectrum, type Message, type Space } from "spectrum-ts";
 import { imessage } from "spectrum-ts/providers/imessage";
+import { whatsappBusiness } from "spectrum-ts/providers/whatsapp-business";
 import { config as loadEnv } from "dotenv";
 import { hasBilloMention, stripBilloMention } from "./routing.ts";
+import { configuredChannels, destination, destinationKey } from "./channels.ts";
+import { presentMessage } from "./presentation.ts";
 
 loadEnv({ path: new URL("../../.env", import.meta.url).pathname });
 
@@ -116,15 +119,17 @@ async function upload(att: Att): Promise<string> {
 }
 
 async function handle(space: Space, message: Message) {
-  if (seen.has(message.id)) return; // same result every time: a resent message never runs twice
-  seen.add(message.id);
+  const messageKey = `${space.__platform}:${space.id}:${message.id}`;
+  if (seen.has(messageKey)) return; // provider IDs need not be unique across channels
+  seen.add(messageKey);
   if (seen.size > 5000) seen.clear();
 
   const ev = parse(message);
   if (!ev) return;
-  spaces.set(space.id, space);
+  const spaceKey = destinationKey(space.__platform, space.id);
+  spaces.set(spaceKey, space);
   const isGroup = (space as unknown as { type?: string }).type === "group";
-  const handleHash = hashHandle(ev.sender);
+  const handleHash = hashHandle(destinationKey(space.__platform, ev.sender));
   const rawText = ev.text.trim();
   const text = stripBilloMention(rawText);
   const rawUpper = rawText.toUpperCase();
@@ -149,13 +154,13 @@ async function handle(space: Space, message: Message) {
 
   console.log(`[bridge] accepted ${chatKind} mention (${text.length} workflow chars)`);
   if (!text && !ev.att) {
-    await space.send("👋 @Billo is ready.\nTell me what happened—or attach a bill or receipt.");
+    await space.send(presentMessage("👋 Meet Billo\n\nMake every care dollar count.\n\nTell me what happened, or attach a bill or receipt.\nTry: @Billo help", space.__platform));
     return;
   }
   await typing(space, true);
   await forward({
     handle_hash: handleHash,
-    space_id: space.id,
+    space_id: spaceKey,
     text,
     is_group: isGroup,
     attachment_url: ev.att ? await upload(ev.att) : "",
@@ -164,10 +169,11 @@ async function handle(space: Space, message: Message) {
 }
 
 async function main() {
+  const channels = configuredChannels(env("PHOTON_CHANNELS", "imessage"));
   const app = await Spectrum({
     projectId: env("SPECTRUM_PROJECT_ID"),
     projectSecret: env("SPECTRUM_PROJECT_SECRET"),
-    providers: [imessage.config()],
+    providers: channels.map((channel) => channel === "imessage" ? imessage.config() : whatsappBusiness.config()),
     options: { flattenGroups: true },
   });
 
@@ -179,12 +185,15 @@ async function main() {
     let body = "";
     for await (const chunk of req) body += chunk;
     const { space_id, text } = JSON.parse(body) as { space_id: string; text: string };
-    const space = spaces.get(space_id) ?? (await imessage(app).space.get(space_id).catch(() => undefined));
+    const target = destination(space_id);
+    const space = spaces.get(space_id) ?? (channels.includes(target.channel)
+      ? await (target.channel === "whatsapp_business" ? whatsappBusiness(app) : imessage(app)).space.get(target.id).catch(() => undefined)
+      : undefined);
     if (!space) return void res.writeHead(404).end("unknown space");
     await typing(space, false);
     try {
       // the http integration already continued the Gateway's trace for this request
-      await observedSpan({ op: "bridge.outbound", name: "imessage-send" }, 3000, () => space.send(text));
+      await observedSpan({ op: "bridge.outbound", name: `${target.channel}-send` }, 3000, () => space.send(presentMessage(text, target.channel)));
       res.end(JSON.stringify({ ok: true }));
     } catch (e) {
       Sentry.withScope((scope) => {
@@ -195,7 +204,7 @@ async function main() {
     }
   }).listen(PORT, () => console.log(`[bridge] /send listening on :${PORT}`));
 
-  console.log("[bridge] listening for iMessage...");
+  console.log(`[bridge] listening for ${channels.join(", ")}...`);
   for await (const [space, message] of app.messages) {
     // one isolation scope + one root span per inbound iMessage: the start of the case trace
     void Sentry.withIsolationScope(() =>
