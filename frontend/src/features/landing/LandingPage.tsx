@@ -654,22 +654,22 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
           <em>after.</em>
         </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: "16px", margin: "56px auto 0", maxWidth: "820px" }}>
-          <Link className={hv.hover4} href="/prototype" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", background: "oklch(0.90 0.06 50)", borderRadius: "36px", padding: "30px 40px", color: "var(--color-text)", textDecoration: "none", fontSize: "clamp(20px,2.4vw,28px)" }}>
+          <Link className={hv.hover4} href="/journey/booked" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", background: "oklch(0.90 0.06 50)", borderRadius: "36px", padding: "30px 40px", color: "var(--color-text)", textDecoration: "none", fontSize: "clamp(20px,2.4vw,28px)" }}>
             <span>Just booked</span>
             <span style={{ fontSize: "1.2em" }}>→</span>
           </Link>
           {" "}
-          <Link className={hv.hover4} href="/prototype" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", background: "oklch(0.91 0.06 300)", borderRadius: "36px", padding: "30px 40px", color: "var(--color-text)", textDecoration: "none", fontSize: "clamp(20px,2.4vw,28px)" }}>
+          <Link className={hv.hover4} href="/journey/during" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", background: "oklch(0.91 0.06 300)", borderRadius: "36px", padding: "30px 40px", color: "var(--color-text)", textDecoration: "none", fontSize: "clamp(20px,2.4vw,28px)" }}>
             <span>During the visit</span>
             <span style={{ fontSize: "1.2em" }}>→</span>
           </Link>
           {" "}
-          <Link className={hv.hover4} href="/prototype" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", background: "oklch(0.92 0.06 165)", borderRadius: "36px", padding: "30px 40px", color: "var(--color-text)", textDecoration: "none", fontSize: "clamp(20px,2.4vw,28px)" }}>
+          <Link className={hv.hover4} href="/journey/verified" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", background: "oklch(0.92 0.06 165)", borderRadius: "36px", padding: "30px 40px", color: "var(--color-text)", textDecoration: "none", fontSize: "clamp(20px,2.4vw,28px)" }}>
             <span>Verified record</span>
             <span style={{ fontSize: "1.2em" }}>→</span>
           </Link>
           {" "}
-          <Link className={hv.hover4} href="/prototype" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", background: "oklch(0.94 0.08 95)", borderRadius: "36px", padding: "30px 40px", color: "var(--color-text)", textDecoration: "none", fontSize: "clamp(20px,2.4vw,28px)" }}>
+          <Link className={hv.hover4} href="/journey/payment" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", background: "oklch(0.94 0.08 95)", borderRadius: "36px", padding: "30px 40px", color: "var(--color-text)", textDecoration: "none", fontSize: "clamp(20px,2.4vw,28px)" }}>
             <span>Pay, safely</span>
             <span style={{ fontSize: "1.2em" }}>→</span>
           </Link>
