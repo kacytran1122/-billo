@@ -84,11 +84,15 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
   const [active, setActive] = useState<SectionId>("top");
   const [chooser, setChooser] = useState(false);
   const activeRef = useRef<SectionId>("top");
+  const progressRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     let frame = 0;
     const updateActiveSection = () => {
       const marker = Math.min(window.innerHeight * 0.38, 220);
+      const scrollRange = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = scrollRange > 0 ? Math.min(1, Math.max(0, window.scrollY / scrollRange)) : 0;
+      if (progressRef.current) progressRef.current.style.transform = `scaleX(${progress})`;
       let a: SectionId = "top";
       for (const [id] of SECTIONS.slice(1)) {
         const el = document.getElementById(id);
@@ -149,6 +153,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
     active: active === id,
     inactive: active !== id,
   }));
+  const activeLabel = SECTIONS.find(([id]) => id === active)?.[1] ?? "Home";
   const showAsi = heroPhones !== "iMessage only";
   const showIMessage = heroPhones !== "ASI:One only";
   const qr = QR;
@@ -164,6 +169,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
               <span style={{ display: "inline-flex", alignItems: "baseline" }}>billo</span>
             </span>
           </a>
+          <span className={hv.mobileSectionLabel} aria-live="polite">{activeLabel}</span>
           <div className={hv.desktopNavigation}>
               <nav aria-label="Main" style={{ display: "flex", gap: "4px", alignItems: "center", fontSize: "15px", background: "var(--color-neutral-100)", borderRadius: "99px", padding: "4px", boxShadow: "var(--shadow-sm)" }}>
                 {links.map((l, lIndex) => (
@@ -216,6 +222,9 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
             <button onClick={openChooser} style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "54px", borderRadius: "99px", background: "var(--color-text)", color: "var(--color-neutral-100)", border: "0", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: "17px", marginTop: "4px" }}>Get started →</button>
           </nav>
         )}
+        <div className={hv.scrollProgress} aria-hidden="true">
+          <span ref={progressRef} />
+        </div>
       </header>
       {chooserOpen && (
         <div onClick={closeChooser} style={{ position: "fixed", inset: "0", zIndex: "100", background: "color-mix(in oklch, var(--color-text) 45%, transparent)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>

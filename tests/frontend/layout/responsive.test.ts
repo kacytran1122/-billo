@@ -43,6 +43,9 @@ test("navigation section state is synchronized efficiently while scrolling", () 
   assert.match(landingSource, /requestAnimationFrame\(updateActiveSection\)/);
   assert.match(landingSource, /getBoundingClientRect\(\)\.top <= marker/);
   assert.match(landingSource, /window\.addEventListener\("scroll", onScroll/);
+  assert.match(landingSource, /progressRef\.current\.style\.transform/);
+  assert.match(landingStyles, /\.scrollProgress > span/);
+  assert.match(landingSource, /mobileSectionLabel/);
 });
 
 test("below-the-fold sections use browser-native lazy rendering", () => {

@@ -19,7 +19,24 @@
 }
 .desktopNavigation > button { margin-left: auto; }
 .mobileMenuButton,
-.mobileNavigation { display: none; }
+.mobileNavigation,
+.mobileSectionLabel { display: none; }
+.scrollProgress {
+  position: absolute;
+  inset: auto 0 -1px;
+  block-size: 3px;
+  overflow: hidden;
+  background: color-mix(in oklch, var(--color-text) 10%, transparent);
+}
+.scrollProgress > span {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  background: var(--color-accent-700);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 80ms linear;
+}
 .balancedSection { inline-size: min(100%, 1400px); }
 .phoneAsi,
 .phoneIMessage { inline-size: 250px; }
@@ -96,6 +113,18 @@
   .desktopNavigation { display: none; }
   .mobileMenuButton { display: flex; }
   .mobileNavigation { display: flex; }
+  .mobileSectionLabel {
+    display: block;
+    position: absolute;
+    left: 50%;
+    max-inline-size: 42%;
+    overflow: hidden;
+    color: var(--color-neutral-800);
+    font-size: 14px;
+    text-overflow: ellipsis;
+    translate: -50% 0;
+    white-space: nowrap;
+  }
   .heroInner { padding: 36px 18px 72px !important; }
   .heroTitle { font-size: clamp(50px, 15vw, 68px) !important; }
   .heroPhones {
