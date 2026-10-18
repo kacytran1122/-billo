@@ -5,7 +5,7 @@
  * Sticky pill navigation with scroll-spy, a "where do you want to chat?"
  * chooser dialog, two hero phone mockups and scroll-reveal animations.
  */
-import { Fragment, useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { BilloLogo } from "@/components/BilloLogo";
 import { BilloWord } from "@/components/BilloWord";
@@ -160,18 +160,6 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
   const showAsi = heroPhones !== "iMessage only";
   const showIMessage = heroPhones !== "ASI:One only";
   const qr = QR;
-  const featureCard = (step: FeatureStep) => ({
-    role: "button" as const,
-    tabIndex: 0,
-    "aria-pressed": featureStep === step,
-    onClick: () => setFeatureStep(step),
-    onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
-      if (event.key !== "Enter" && event.key !== " ") return;
-      event.preventDefault();
-      setFeatureStep(step);
-    },
-  });
-  const featureHint = (step: FeatureStep) => <span className={hv.simulateHint}>{featureStep === step ? "Showing above ✓" : "Show simulation ↑"}</span>;
 
   return (
     <div className="page page--neutral-100">
@@ -506,172 +494,6 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
           .
         </h2>
         <FeatureSimulation step={featureStep} onStepChange={setFeatureStep} />
-        <div className={hv.featureGrid} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,max(calc((100% - 60px) / 4),min(calc((100% - 20px) / 2),calc((270px - (100% - 60px) / 4) * 9999)))),1fr))", gridAutoRows: "1fr", gap: "20px", marginTop: "64px" }}>
-          <div {...featureCard("safety")} className={hv.featureCard} style={{ background: "oklch(0.92 0.06 165)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>Safety first</div>
-            <div style={{ marginTop: "auto", background: "var(--color-neutral-100)", borderRadius: "18px", padding: "16px", boxShadow: "var(--shadow-sm)", display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>Chest pain</span>
-                <span style={{ color: "var(--color-neutral-600)" }}>{featureStep === "safety" ? "Checked" : "No"}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>Trouble breathing</span>
-                <span style={{ color: "var(--color-neutral-600)" }}>{featureStep === "safety" ? "Checked" : "No"}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--color-divider)", paddingTop: "10px", fontWeight: "600" }}>
-                <span>Emergency signs</span>
-                <span>{featureStep === "safety" ? "Clear ✓" : "Clear"}</span>
-              </div>
-            </div>
-            {featureHint("safety")}
-          </div>
-          <div {...featureCard("prices")} className={hv.featureCard} style={{ background: "oklch(0.94 0.08 95)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>{featureStep === "prices" ? "Best price found" : "3 real prices"}</div>
-            <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
-              <div style={{ background: featureStep === "prices" ? "var(--color-neutral-100)" : "transparent", borderRadius: "12px", padding: featureStep === "prices" ? "8px" : "0" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", fontSize: "12.5px" }}>
-                  <span>Campus Health</span>
-                  <span style={{ fontVariantNumeric: "tabular-nums" }}>$120–$180</span>
-                </div>
-                <div style={{ position: "relative", height: "9px", borderRadius: "99px", background: "var(--color-neutral-100)", marginTop: "4px" }}>
-                  <div style={{ position: "absolute", left: "6.67%", width: "3.33%", minWidth: "9px", top: "0", bottom: "0", borderRadius: "99px", background: "var(--color-text)" }} />
-                </div>
-              </div>
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", fontSize: "12.5px" }}>
-                  <span>Westwood Urgent</span>
-                  <span style={{ fontVariantNumeric: "tabular-nums" }}>$180–$240</span>
-                </div>
-                <div style={{ position: "relative", height: "9px", borderRadius: "99px", background: "var(--color-neutral-100)", marginTop: "4px" }}>
-                  <div style={{ position: "absolute", left: "10%", width: "3.33%", minWidth: "9px", top: "0", bottom: "0", borderRadius: "99px", background: "var(--color-text)" }} />
-                </div>
-              </div>
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", fontSize: "12.5px" }}>
-                  <span>Santa Monica ER</span>
-                  <span style={{ fontVariantNumeric: "tabular-nums" }}>$1,200–$1,800</span>
-                </div>
-                <div style={{ position: "relative", height: "9px", borderRadius: "99px", background: "var(--color-neutral-100)", marginTop: "4px" }}>
-                  <div style={{ position: "absolute", left: "66.67%", width: "33.33%", minWidth: "9px", top: "0", bottom: "0", borderRadius: "99px", background: "var(--color-text)" }} />
-                </div>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "var(--color-neutral-700)", fontVariantNumeric: "tabular-nums" }}>
-                <span>$0</span>
-                <span>low → typical, public price files</span>
-                <span>$1,800</span>
-              </div>
-            </div>
-            {featureHint("prices")}
-          </div>
-          <div {...featureCard("estimate")} className={hv.featureCard} style={{ background: "oklch(0.90 0.06 50)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>{featureStep === "estimate" ? "Estimate saved ✓" : "Expected price"}</div>
-            <div style={{ marginTop: "auto", background: "var(--color-neutral-100)", borderRadius: "18px", padding: "18px", boxShadow: "var(--shadow-sm)" }}>
-              <div style={{ fontFamily: "var(--font-heading)", fontSize: "52px", lineHeight: "1", fontVariantNumeric: "tabular-nums" }}>$240.00</div>
-              <div style={{ display: "flex", gap: "6px", marginTop: "12px", flexWrap: "wrap" }}>
-                <span style={{ display: "inline-flex", gap: "5px", alignItems: "center", background: "oklch(0.91 0.05 235)", padding: "4px 10px", borderRadius: "99px", fontSize: "11px" }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="18" height="18" x="3" y="4" rx="2" />
-                    <path d="M16 2v4M8 2v4M3 10h18" />
-                  </svg>
-                  Tue 3:30 PM
-                </span>
-                {" "}
-                <span style={{ background: "oklch(0.92 0.06 165)", padding: "4px 10px", borderRadius: "99px", fontSize: "11px" }}>Westwood</span>
-              </div>
-            </div>
-            {featureHint("estimate")}
-          </div>
-          <div {...featureCard("visit")} className={hv.featureCard} style={{ background: "oklch(0.91 0.06 300)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>Log the visit</div>
-            <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px" }}>
-              <div style={{ flexShrink: "0", alignSelf: "flex-end", background: "var(--color-text)", color: "var(--color-neutral-100)", padding: "8px 14px", borderRadius: "16px 16px 4px 16px" }}>
-                <BilloWord />
-                {" "}{featureStep === "visit" ? "they did an x-ray" : "tap to log a service"}
-              </div>
-              <div style={{ flexShrink: "0", alignSelf: "flex-start", background: "var(--color-neutral-100)", padding: "8px 14px", borderRadius: "16px 16px 16px 4px" }}>{featureStep === "visit" ? "Logged, about $120" : "Waiting for your update"}</div>
-              <div style={{ flexShrink: "0", alignSelf: "flex-start", display: "flex", gap: "8px", alignItems: "baseline", background: "var(--color-neutral-100)", padding: "8px 14px", borderRadius: "16px" }}>
-                <span>Expected</span>
-                <span style={{ fontFamily: "var(--font-heading)", fontSize: "24px" }}>{featureStep === "visit" ? "≈ $360" : "$240"}</span>
-              </div>
-            </div>
-            {featureHint("visit")}
-          </div>
-          <div {...featureCard("scan")} className={hv.featureCard} style={{ background: "oklch(0.91 0.05 235)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>{featureStep === "scan" ? "Bill read ✓" : "Snap the bill"}</div>
-            <div style={{ marginTop: "auto", display: "flex", justifyContent: "center" }}>
-              <div style={{ position: "relative", width: "170px", background: "var(--color-neutral-100)", borderRadius: "12px", padding: "16px", boxShadow: "var(--shadow-md)", transform: "rotate(-4deg)" }}>
-                <div style={{ fontSize: "10px", fontWeight: "600", letterSpacing: ".06em" }}>WESTWOOD URGENT CARE</div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginTop: "10px" }}>
-                  <span>Office visit</span>
-                  <span>240.00</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginTop: "4px" }}>
-                  <span>X-ray, knee</span>
-                  <span>120.00</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", fontWeight: "600", marginTop: "8px", borderTop: "1px dashed var(--color-neutral-400)", paddingTop: "6px" }}>
-                  <span>Total</span>
-                  <span>$360.00</span>
-                </div>
-                <div style={{ position: "absolute", left: "-8px", right: "-8px", top: "46%", height: "2px", background: "var(--color-accent)" }} />
-                <div style={{ position: "absolute", inset: "-8px", border: "2px solid var(--color-text)", borderRadius: "16px", clipPath: "polygon(0 0,22% 0,22% 3px,3px 3px,3px 22%,0 22%,0 78%,3px 78%,3px calc(100% - 3px),22% calc(100% - 3px),22% 100%,78% 100%,78% calc(100% - 3px),calc(100% - 3px) calc(100% - 3px),calc(100% - 3px) 78%,100% 78%,100% 22%,calc(100% - 3px) 22%,calc(100% - 3px) 3px,78% 3px,78% 0,100% 0,100% 100%,0 100%)" }} />
-              </div>
-            </div>
-            {featureHint("scan")}
-          </div>
-          <div {...featureCard("match")} className={hv.featureCard} style={{ background: "var(--color-text)", color: "var(--color-neutral-100)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>
-              Matched{" "}
-              &amp;
-              <em style={{ color: "var(--color-accent-300)" }}>explained</em>
-            </div>
-            <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", fontFamily: "var(--font-heading)", fontVariantNumeric: "tabular-nums" }}>
-              <span style={{ background: "oklch(0.90 0.06 50)", color: "var(--color-text)", borderRadius: "14px", padding: "8px 12px", fontSize: "28px" }}>$240</span>
-              {" "}
-              <span style={{ fontSize: "26px" }}>+</span>
-              {" "}
-              <span style={{ background: "oklch(0.91 0.06 300)", color: "var(--color-text)", borderRadius: "14px", padding: "8px 12px", fontSize: "28px" }}>{featureStep === "match" ? "$120" : "?"}</span>
-              {" "}
-              <span style={{ fontSize: "26px" }}>=</span>
-              {" "}
-              <span style={{ background: "oklch(0.92 0.06 165)", color: "var(--color-text)", borderRadius: "14px", padding: "8px 12px", fontSize: "28px" }}>{featureStep === "match" ? "$360" : "?"}</span>
-            </div>
-            <div style={{ fontSize: "13px", color: "var(--color-neutral-300)" }}>{featureStep === "match" ? "All lines verified ✓" : "Tap to match the bill to the visit"}</div>
-            {featureHint("match")}
-          </div>
-          <div {...featureCard("payment")} className={hv.featureCard} style={{ background: "oklch(0.92 0.06 165)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>{featureStep === "payment" ? "Payment simulation ready" : "Pay the right clinic"}</div>
-            <div style={{ marginTop: "auto", display: "flex", gap: "16px", alignItems: "center" }}>
-              <div style={{ width: "96px", height: "96px", padding: "8px", background: "var(--color-neutral-100)", borderRadius: "14px", boxSizing: "border-box", display: "grid", gridTemplateColumns: "repeat(21,1fr)", gap: "0", flex: "none" }}>
-                <QRCells cells={qr} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px" }}>
-                <span>{featureStep === "payment" ? "✓ Right clinic" : "○ Check clinic"}</span>
-                <span>{featureStep === "payment" ? "✓ Right amount" : "○ Check amount"}</span>
-                <span>{featureStep === "payment" ? "✓ Right bill" : "○ Check bill"}</span>
-                <span style={{ fontWeight: "600" }}>{featureStep === "payment" ? "Ready for your approval" : "You say yes first"}</span>
-              </div>
-            </div>
-            {featureHint("payment")}
-          </div>
-          <div {...featureCard("benefits")} className={hv.featureCard} style={{ background: "oklch(0.94 0.08 95)", borderRadius: "28px", padding: "24px", display: "flex", flexDirection: "column", gap: "22px", minHeight: "300px", minWidth: "0" }}>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: "30px", lineHeight: "1" }}>{featureStep === "benefits" ? "HSA path found" : "Can you get money back?"}</div>
-            <div style={{ marginTop: "auto", display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              <span style={{ background: featureStep === "benefits" ? "var(--color-text)" : "var(--color-neutral-100)", color: featureStep === "benefits" ? "var(--color-neutral-100)" : "var(--color-text)", padding: "7px 14px", borderRadius: "99px", fontSize: "13px" }}>HSA</span>
-              {" "}
-              <span style={{ background: "var(--color-neutral-100)", padding: "7px 14px", borderRadius: "99px", fontSize: "13px" }}>FSA</span>
-              {" "}
-              <span style={{ background: "var(--color-neutral-100)", padding: "7px 14px", borderRadius: "99px", fontSize: "13px" }}>Work plan</span>
-              {" "}
-              <span style={{ background: "var(--color-neutral-100)", padding: "7px 14px", borderRadius: "99px", fontSize: "13px" }}>School plan</span>
-              {" "}
-              <span style={{ background: "var(--color-neutral-100)", padding: "7px 14px", borderRadius: "99px", fontSize: "13px" }}>Travel insurance</span>
-              {" "}
-              <span style={{ border: "1px dashed var(--color-text)", padding: "6px 13px", borderRadius: "99px", fontSize: "13px", fontStyle: "italic" }}>{featureStep === "benefits" ? "Possible · review eligibility" : "Billo helps you check"}</span>
-            </div>
-            {featureHint("benefits")}
-          </div>
-        </div>
       </section>
       <section id="pages" className={hv.balancedSection} style={{ scrollMarginTop: "80px", padding: "110px 24px 120px" }}>
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "clamp(44px,6vw,76px)", lineHeight: ".95", margin: "0", textAlign: "center", letterSpacing: "-.015em" }}>

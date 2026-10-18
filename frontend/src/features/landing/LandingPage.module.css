@@ -3,11 +3,6 @@
 .hover2:hover { background: var(--color-neutral-800) !important; }
 .hover3:hover { background: var(--color-neutral-200) !important; }
 .hover4:hover { transform: translateY(-2px) !important; box-shadow: var(--shadow-md) !important; }
-.featureCard { cursor: pointer; transition: transform 180ms ease, box-shadow 180ms ease; }
-.featureCard:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-.featureCard[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--color-text), var(--shadow-md); }
-.featureCard:focus-visible { outline: 3px solid var(--color-text); outline-offset: 4px; }
-.simulateHint { margin-top: auto; padding-top: 10px; border-top: 1px solid color-mix(in oklch, currentColor 18%, transparent); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 
 /* The landing page keeps one balanced content rail at every viewport size. */
 .headerSpacer { height: 71px; }
@@ -198,6 +193,4 @@
 
 @media (prefers-reduced-motion: reduce) {
   .hover4:hover { transform: none !important; }
-  .featureCard { transition: none; }
-  .featureCard:hover { transform: none; }
 }

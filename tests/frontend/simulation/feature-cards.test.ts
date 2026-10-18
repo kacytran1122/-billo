@@ -15,23 +15,17 @@ const modalStyles = readFileSync(
   "utf8",
 );
 
-test("each original feature card selects its inline simulation", () => {
-  for (const step of ["safety", "prices", "estimate", "visit", "scan", "match", "payment", "benefits"]) {
-    assert.match(landing, new RegExp(`featureCard\\("${step}"\\)`));
-  }
+test("all eight workflows are available in the inline simulation", () => {
   assert.match(landing, /FeatureSimulation step=\{featureStep\}/);
-  assert.match(landing, /aria-pressed/);
+  for (const step of ["safety", "prices", "estimate", "visit", "scan", "match", "payment", "benefits"]) {
+    assert.match(modal, new RegExp(`\\[\"${step}\"`));
+  }
 });
 
-test("feature simulations support mouse and keyboard interaction", () => {
-  assert.match(landing, /role: "button"/);
-  assert.match(landing, /event\.key !== "Enter" && event\.key !== " "/);
-  assert.match(landing, /setFeatureStep/);
-});
-
-test("the original card grid remains below the embedded simulation", () => {
-  assert.doesNotMatch(landing, /BilloSimulation/);
-  assert.match(landing, /className=\{hv\.featureGrid\}/);
+test("the old static feature cards are removed", () => {
+  assert.doesNotMatch(landing, /className=\{hv\.featureGrid\}/);
+  assert.doesNotMatch(landing, /Safety first/);
+  assert.doesNotMatch(landing, /Show simulation/);
 });
 
 test("simulation matches the full case-workspace reference", () => {
@@ -48,4 +42,11 @@ test("simulation can switch steps complete and reset inline", () => {
   assert.match(modal, /setComplete\(false\)/);
   assert.match(modal, /onStepChange/);
   assert.match(modal, /Simulation steps/);
+});
+
+test("simulation uses live care search and keeps payment QR", () => {
+  assert.match(modal, /fetch\(`\/api\/care\/search/);
+  assert.match(modal, /normalizePlaces/);
+  assert.match(modal, /QRCells cells=\{PAYMENT_QR\}/);
+  assert.match(modal, /Choose a bill to scan/);
 });
