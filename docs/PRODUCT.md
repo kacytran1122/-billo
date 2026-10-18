@@ -108,7 +108,7 @@ The complete journey runs inside one ASI:One conversation using Agent Chat Proto
 
 ### Photon Spectrum
 
-Photon provides the iMessage door. Private chats support booking, receipt upload and benefit checks. Group chats respond only to `@Billo` and only with general before-care information. Sensitive after-care material never enters a group.
+Photon provides the iMessage door. Private chats support `@Billo` or ordinary messages for booking, receipt upload and benefit checks. Group chats require a visible `@Billo` mention and return only general before-care information. Sensitive after-care material never enters a group.
 
 ### Visa
 

@@ -15,12 +15,13 @@
  *
  * Spectrum usage follows News Next Door (a past Photon winner), spectrum-ts 12.10.1.
  */
-import { observedSpan, Sentry, traceHeaders } from "./sentry.ts"; // first: Sentry must start before anything else
+import { observedSpan, scrubText, Sentry, traceHeaders } from "./sentry.ts"; // first: Sentry must start before anything else
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { Spectrum, type Message, type Space } from "spectrum-ts";
 import { imessage } from "spectrum-ts/providers/imessage";
 import { config as loadEnv } from "dotenv";
+import { hasBilloMention, isPrivateOnlyGroupRequest, stripBilloMention } from "./routing.ts";
 
 loadEnv({ path: new URL("../../.env", import.meta.url).pathname });
 
@@ -30,9 +31,6 @@ const GATEWAY = env("GATEWAY_URL", "http://localhost:8006"); // the iMessage Gat
 const TOKEN = env("INTERNAL_TOKEN", "dev-token");
 const PORT = Number(env("BRIDGE_PORT", "3000"));
 const CODE_RE = /\bBILLO-\d{4}\b/i;
-const MENTION_RE = /@billo\b/i;
-const BILL_WORDS = /\b(bill|invoice|statement|owe|charged|pay|card)\b/i;
-
 const hashHandle = (h: string) => createHash("sha256").update(`${TOKEN}:${h}`).digest("hex").slice(0, 16);
 const mask = (h: string) => (h.length > 4 ? `***${h.slice(-4)}` : "***");
 
@@ -128,23 +126,33 @@ async function handle(space: Space, message: Message) {
   spaces.set(space.id, space);
   const isGroup = (space as unknown as { type?: string }).type === "group";
   const handleHash = hashHandle(ev.sender);
-  const text = ev.text.trim();
+  const rawText = ev.text.trim();
+  const text = stripBilloMention(rawText);
   Sentry.getActiveSpan()?.setAttributes({ "chat.group": isGroup, "chat.has_file": Boolean(ev.att) });
 
   // ---- 2. @Billo filter + 3. privacy router (groups) ----
   if (isGroup) {
-    if (!MENTION_RE.test(text)) return; // never read (or log) the rest of the group's chat
+    if (!hasBilloMention(rawText)) return; // never read (or log) the rest of the group's chat
     console.log(`[bridge] group mention from ${mask(ev.sender)} (${text.length} chars)`);
-    if (ev.att || BILL_WORDS.test(text)) { // a bill in a group is never read
-      await space.send("Bills and payments are private. Please send them to me in a private chat.");
+    if (ev.att || isPrivateOnlyGroupRequest(text)) { // private workflows never run in a group
+      await space.send("Bills, benefits, and payments are private. Please message Billo in a private chat.");
+      return;
+    }
+    if (!text) {
+      await space.send("@Billo is here. Tell me what kind of care you are looking for and your general area.");
       return;
     }
     await typing(space, true);
-    await forward({ handle_hash: handleHash, space_id: space.id, text: text.replace(MENTION_RE, "").trim(), is_group: true, message_id: message.id });
+    await forward({ handle_hash: handleHash, space_id: space.id, text, is_group: true, message_id: message.id });
     return;
   }
 
   console.log(`[bridge] dm from ${mask(ev.sender)} (${text.length} chars${ev.att ? ", attachment" : ""})`);
+
+  if (!text && !ev.att) {
+    await space.send("@Billo is here. Tell me what happened or send a bill or receipt privately.");
+    return;
+  }
 
   // ---- 1. STOP / HELP / follow code (private chat) ----
   const upper = text.toUpperCase();
@@ -221,7 +229,7 @@ async function main() {
 }
 
 main().catch(async (e) => {
-  console.error("[bridge] fatal", e instanceof Error ? e.name : "unknown");
+  console.error("[bridge] fatal", e instanceof Error ? `${e.name}: ${scrubText(e.message)}` : "unknown");
   Sentry.captureException(e);
   await Sentry.flush(2000);
   process.exit(1);

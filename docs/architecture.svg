@@ -34,7 +34,7 @@
 
   <!-- Doors -->
   <rect x="260" y="390" width="380" height="110" rx="22" fill="#effcf9" stroke="#0f9f8e" stroke-width="3"/>
-  <text x="450" y="430" text-anchor="middle" class="h ink">iMessage · Photon</text><text x="450" y="462" text-anchor="middle" class="body muted">private after-care · group-safe before-care</text>
+  <text x="450" y="430" text-anchor="middle" class="h ink">iMessage · Photon</text><text x="450" y="462" text-anchor="middle" class="body muted">@Billo groups · full private workflow</text>
   <rect x="710" y="390" width="380" height="110" rx="22" fill="#eef2f7" stroke="#526075" stroke-width="3"/>
   <text x="900" y="430" text-anchor="middle" class="h ink">Patient</text><text x="900" y="462" text-anchor="middle" class="body muted">uses either conversation door</text>
   <rect x="1160" y="390" width="380" height="110" rx="22" fill="#f3f0ff" stroke="#7547f3" stroke-width="3"/>

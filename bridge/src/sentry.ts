@@ -108,6 +108,9 @@ if (DSN) {
       frameContextLines: 3,
     },
     tracesSampleRate: Number(env("SENTRY_TRACES_SAMPLE_RATE", "1.0")),
+    // Static traces keep beforeSendTransaction active, so the final PHI scrubber
+    // runs over the complete transaction and every child span before upload.
+    traceLifecycle: "static",
     tracePropagationTargets: ["localhost", "127.0.0.1", ...OWN_SERVICES],
     integrations: [
       Sentry.httpIntegration({
