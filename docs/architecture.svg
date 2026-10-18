@@ -9,7 +9,7 @@
 
   <rect class="bg" width="1800" height="1640"/>
   <text x="55" y="70" class="title ink">Billo · System Architecture</text>
-  <text x="58" y="105" class="sub muted">Plan care before the visit. Organize records and guarded settlement simulations after care.</text>
+  <text x="58" y="105" class="sub muted">Make every care dollar count.</text>
 
   <!-- Patient journey -->
   <rect x="50" y="135" width="1700" height="210" rx="26" fill="#fffaf0" stroke="#f59e0b" stroke-width="3"/>

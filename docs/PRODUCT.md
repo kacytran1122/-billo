@@ -2,7 +2,7 @@
 
 ## Product promise
 
-> Plan the care. Organize what comes next.
+> Make every care dollar count.
 
 Billo connects the decision made before care with the records, benefits, guarded settlement simulation and follow-up after care. It is not a generic medical-bill auditing or dispute product.
 
