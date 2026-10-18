@@ -41,6 +41,18 @@ test("landing actions open the channel connection experience", () => {
   }
 });
 
+test("each channel action opens only its own connection window", () => {
+  assert.match(connect, /const channel = initialChannel/);
+  assert.doesNotMatch(connect, /CHANNELS\.map/);
+  assert.doesNotMatch(connect, /setChannel/);
+});
+
+test("connection instructions use professional language", () => {
+  assert.match(connect, /Secure channel access/);
+  assert.match(connect, /Scan the QR code on another device or continue securely on this one\./);
+  assert.doesNotMatch(connect, /Choose a live door/i);
+});
+
 test("the original walkthrough is preserved as future development", () => {
   const walkthrough = new URL("../../../Future Development/billo-walkthrough.html", import.meta.url);
   assert.equal(existsSync(walkthrough), true);

@@ -13,11 +13,11 @@ export const ASI_ONE_URL = "https://asi1.ai/ai/agent1qdral3yqhqaa28czja8ddwf7kzg
 export const IMESSAGE_URL = buildSmsUrl("+17739371364", "@Billo start");
 export const WHATSAPP_URL = process.env.NEXT_PUBLIC_BILLO_WHATSAPP_URL?.trim() ?? "";
 
-const CHANNELS: ReadonlyArray<{ id: ConnectChannel; label: string; status: string }> = [
-  { id: "asi", label: "ASI:One", status: "Live agent" },
-  { id: "imessage", label: "iMessage", status: "Live via Photon" },
-  { id: "whatsapp", label: "WhatsApp", status: WHATSAPP_URL ? "Live" : "Future connection" },
-];
+const CHANNELS: Readonly<Record<ConnectChannel, { label: string; status: string }>> = {
+  asi: { label: "ASI:One", status: "Live agent" },
+  imessage: { label: "iMessage", status: "Live via Photon" },
+  whatsapp: { label: "WhatsApp", status: WHATSAPP_URL ? "Live" : "Future connection" },
+};
 
 function useQr(destination: string) {
   const [src, setSrc] = useState("");
@@ -83,11 +83,10 @@ export function ChannelConnect({
   initialChannel: ConnectChannel;
   onClose: () => void;
 }) {
-  const [channel, setChannel] = useState<ConnectChannel>(initialChannel);
+  const channel = initialChannel;
   const destination = channel === "asi" ? ASI_ONE_URL : channel === "imessage" ? IMESSAGE_URL : WHATSAPP_URL;
   const qr = useQr(destination);
 
-  useEffect(() => setChannel(initialChannel), [initialChannel, open]);
   useEffect(() => {
     if (!open) return;
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -99,32 +98,24 @@ export function ChannelConnect({
 
   if (!open) return null;
   const stop = (event: MouseEvent) => event.stopPropagation();
-  const current = CHANNELS.find((item) => item.id === channel) as (typeof CHANNELS)[number];
+  const current = CHANNELS[channel];
 
   return (
     <div className={styles.backdrop} onClick={onClose}>
       <section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="connect-title" onClick={stop}>
         <button className={styles.close} onClick={onClose} aria-label="Close connection options">×</button>
         <header className={styles.heading}>
-          <span className={styles.eyebrow}>Choose a live door</span>
+          <span className={styles.eyebrow}>Secure channel access</span>
           <h2 id="connect-title">Chat with <BilloWord />.</h2>
-          <p>Scan on another device or open the same destination directly.</p>
+          <p>Scan the QR code on another device or continue securely on this one.</p>
         </header>
-
-        <nav className={styles.tabs} aria-label="Billo chat channels">
-          {CHANNELS.map((item) => (
-            <button key={item.id} onClick={() => setChannel(item.id)} aria-pressed={channel === item.id}>
-              <span>{item.label}</span><small>{item.status}</small>
-            </button>
-          ))}
-        </nav>
 
         <div className={styles.body}>
           <ChannelPreview channel={channel} />
           <div className={styles.connectPanel}>
             <div className={styles.channelLine}>
               <span>{current.label}</span>
-              <b>{destination ? "READY" : "NEEDS SETUP"}</b>
+              <b>{destination ? current.status.toUpperCase() : "NEEDS SETUP"}</b>
             </div>
             {destination && qr && (
               <img className={styles.qr} src={qr} alt={`QR code to open Billo in ${current.label}`} />
