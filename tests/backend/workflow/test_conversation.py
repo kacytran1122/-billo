@@ -18,6 +18,7 @@ def test_greetings_and_help_have_immediate_informative_responses(text):
     result = quick_reply(text)
     assert "Billo" in result and "https://www.getbillo.us" in result
     assert "simulated" in result
+    assert "No tag is needed in one-to-one chats" in result
 
 
 @pytest.mark.parametrize("text", ["hi, I have chest pain", "hey I can't breathe", "thanks but I need an ER", "find care near UCLA", "approve clinic payment"])
@@ -199,3 +200,9 @@ def test_stop_cancels_reminders_on_both_coordinator_paths(channel):
     asyncio.run(env["route_text"](ctx, case, "STOP", []))
     assert case["stopped"] is True and case["followup_due"] == 0
     assert "Stopped" in delivered_reply(env, ctx, channel)
+
+
+def test_display_name_changes_without_changing_the_seed_configuration():
+    source = (ROOT / "backend/fetch.ai/coordinator.py").read_text()
+    assert 'name="Billo"' in source
+    assert 'seed=require_seed("coordinator")' in source

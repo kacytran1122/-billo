@@ -6,7 +6,7 @@
  *
  * The 7 bridge responsibilities:
  *  1 STOP handler                (same result every time per message id; typing dots)
- *  2 @Billo filter               (every request in every chat must tag @Billo)
+ *  2 Mention filter              (only group chats require @Billo)
  *  3 Chat router                 (private and group chats use the same workflow)
  *  4 Receipt/final bill upload    (attachments forwarded to the After-Care Organizer)
  *  5 Approve                     (patient's own tagged message in the chat)
@@ -22,7 +22,7 @@ import { Spectrum, type Message, type Space } from "spectrum-ts";
 import { imessage } from "spectrum-ts/providers/imessage";
 import { whatsappBusiness } from "spectrum-ts/providers/whatsapp-business";
 import { config as loadEnv } from "dotenv";
-import { hasBilloMention, stripBilloMention } from "./routing.ts";
+import { hasBilloMention, shouldRespond, stripBilloMention } from "./routing.ts";
 import { configuredChannels, destination, destinationKey } from "./channels.ts";
 import { presentMessage } from "./presentation.ts";
 
@@ -149,12 +149,12 @@ async function handle(space: Space, message: Message) {
     return;
   }
 
-  // A visible mention is mandatory. Untagged chat content is never forwarded or read further.
-  if (!tagged) return;
+  // Direct chats accept plain messages and attachments. Unaddressed group content stays ignored.
+  if (!shouldRespond(rawText, isGroup)) return;
 
-  console.log(`[bridge] accepted ${chatKind} mention (${text.length} workflow chars)`);
+  console.log(`[bridge] accepted ${chatKind} request (${text.length} workflow chars)`);
   if (!text && !ev.att) {
-    await space.send(presentMessage("👋 Meet Billo\n\nMake every care dollar count.\n\nTell me what happened, or attach a bill or receipt.\nTry: @Billo help", space.__platform));
+    await space.send(presentMessage("👋 Meet Billo\n\nMake every care dollar count.\n\nTell me what happened, or attach a bill or receipt.\nTry: help", space.__platform));
     return;
   }
   await typing(space, true);

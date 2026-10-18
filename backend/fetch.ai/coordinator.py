@@ -49,7 +49,7 @@ from common.tracing import carry, case_hash, case_scope, case_span, init_sentry,
 init_sentry("coordinator")
 
 agent = Agent(
-    name="billo-coordinator",
+    name="Billo",
     seed=require_seed("coordinator"),
     port=PORTS["coordinator"],
     mailbox=True,
@@ -279,7 +279,7 @@ async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_g
             ctx,
             case,
             "Stopped. I canceled queued reminders for this case. Send a new message whenever you want to continue.",
-            photon_text="✅ Stopped. Reminders canceled.\nTag @Billo whenever you want to restart.",
+            photon_text="✅ Stopped. Reminders canceled.\nSend a new request whenever you want to continue.",
         )
     elif immediate is not None:
         await reply(ctx, case, immediate)

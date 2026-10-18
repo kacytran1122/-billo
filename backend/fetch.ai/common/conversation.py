@@ -7,7 +7,7 @@ WELCOME = (
     "👋 Hi, I'm Billo\n\nMake every care dollar count.\n\n"
     "I can compare care prices, organize bills and receipts, and explore possible benefits.\n"
     "Try: find care near UCLA, or attach a receipt and say whether it is paid.\n\n"
-    "On WhatsApp, start each request with @Billo. Payments are simulated.\n"
+    "No tag is needed in one-to-one chats. In groups, mention @Billo. Payments are simulated.\n"
     "More about Billo\nhttps://www.getbillo.us"
 )
 
@@ -44,7 +44,7 @@ def quick_reply(text: str, *, has_files: bool = False, stage: str = "new", asked
     if clean in {"yes", "no", "y", "n"} and not (stage == "booked" and asked):
         return "What would you like to do next? You can find care, attach a receipt, or ask about a benefit."
     if clean in {"bill", "receipt", "unpaid bill", "paid receipt", "i have a bill", "i have a receipt", "upload bill", "upload receipt", "check my bill", "read my bill", "check this bill", "here is my bill", "check my receipt", "read my receipt", "check this receipt", "here is my receipt", "can you check my bill", "can you read my receipt"}:
-        return "Attach a clear bill or receipt photo or PDF. In the caption, say 'paid receipt' or 'unpaid bill'. On WhatsApp, include @Billo."
+        return "Attach a clear bill or receipt photo or PDF. In the caption, say 'paid receipt' or 'unpaid bill'. No tag is needed in one-to-one chats."
     if clean in {"pay", "pay bill", "pay my bill", "payment"}:
         return "Start by attaching the unpaid final bill. After it is organized, ask 'scan clinic QR'. Billo checks the clinic and amount before asking for explicit approval. Payments are simulated; no real money moves."
     if clean in {"reimburse", "reimbursement", "refund", "money back"}:
