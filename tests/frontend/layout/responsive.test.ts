@@ -51,13 +51,6 @@ test("navigation section state is synchronized efficiently while scrolling", () 
   assert.match(landingSource, /mobileSectionLabel/);
 });
 
-test("below-the-fold sections use browser-native lazy rendering", () => {
-  const deferredUses = landingSource.match(/hv\.deferredSection/g) ?? [];
-  assert.ok(deferredUses.length >= 3);
-  assert.match(landingStyles, /content-visibility: auto/);
-  assert.match(landingStyles, /contain-intrinsic-block-size: auto 760px/);
-});
-
 test("motion remains optional for users who request reduced motion", () => {
   assert.match(landingSource, /prefers-reduced-motion: reduce/);
   assert.match(landingStyles, /@media \(prefers-reduced-motion: reduce\)/);

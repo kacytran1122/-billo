@@ -47,13 +47,6 @@
   transform-origin: top left;
 }
 
-/* Native rendering deferral preserves server-rendered content and accessibility
-   while avoiding layout/paint work until a lower section nears the viewport. */
-.deferredSection {
-  content-visibility: auto;
-  contain-intrinsic-block-size: auto 760px;
-}
-
 @media (max-width: 1180px) {
   .headerInner { padding-inline: 20px !important; }
   .heroPhones { gap: 24px !important; }

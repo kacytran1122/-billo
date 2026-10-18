@@ -9,7 +9,7 @@ import { Fragment, useCallback, useEffect, useRef, useState, type MouseEvent } f
 import Link from "next/link";
 import { BilloLogo } from "@/components/BilloLogo";
 import { BilloWord } from "@/components/BilloWord";
-import { LazySection } from "@/components/lazy/LazySection";
+import { LandingIntro } from "@/components/loading/LandingIntro";
 import { QRCells } from "@/components/QRCells";
 import { makeQR } from "@/lib/qr";
 import hv from "./LandingPage.module.css";
@@ -161,6 +161,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
 
   return (
     <div className="page page--neutral-100">
+      <LandingIntro />
       <div className={hv.headerSpacer} />
       <header style={{ position: "fixed", top: "0", left: "0", right: "0", zIndex: "50", background: "color-mix(in oklch, oklch(0.91 0.06 300) 88%, transparent)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: "1px solid oklch(0.84 0.07 300)" }}>
         <div className={hv.headerInner} style={{ maxWidth: "1240px", margin: "0 auto", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
@@ -484,7 +485,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
           <span style={{ background: "oklch(0.92 0.06 165)", borderRadius: "99px", padding: "8px 16px", fontSize: "14px" }}>Status</span>
         </div>
       </section>
-      <LazySection id="features" placeholderCards={4} placeholderHeight={720} className={`${hv.balancedSection} ${hv.deferredSection}`} style={{ scrollMarginTop: "80px", maxWidth: "1240px", margin: "0 auto", padding: "110px 24px 40px" }}>
+      <section id="features" className={hv.balancedSection} style={{ scrollMarginTop: "80px", maxWidth: "1240px", margin: "0 auto", padding: "110px 24px 40px" }}>
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "clamp(44px,6vw,76px)", lineHeight: ".95", margin: "0", textAlign: "center", letterSpacing: "-.015em" }}>
           All you need is{" "}
           <BilloWord />
@@ -648,8 +649,8 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
             </div>
           </div>
         </div>
-      </LazySection>
-      <LazySection id="pages" placeholderCards={3} placeholderHeight={520} className={`${hv.balancedSection} ${hv.deferredSection}`} style={{ scrollMarginTop: "80px", padding: "110px 24px 120px" }}>
+      </section>
+      <section id="pages" className={hv.balancedSection} style={{ scrollMarginTop: "80px", padding: "110px 24px 120px" }}>
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "clamp(44px,6vw,76px)", lineHeight: ".95", margin: "0", textAlign: "center", letterSpacing: "-.015em" }}>
           Before, during,{" "}
           <em>after.</em>
@@ -675,8 +676,8 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
             <span style={{ fontSize: "1.2em" }}>→</span>
           </Link>
         </div>
-      </LazySection>
-      <LazySection id="faq" placeholderCards={3} placeholderHeight={600} className={`${hv.balancedSection} ${hv.deferredSection}`} style={{ scrollMarginTop: "80px", maxWidth: "900px", margin: "0 auto", padding: "110px 24px 120px" }}>
+      </section>
+      <section id="faq" className={hv.balancedSection} style={{ scrollMarginTop: "80px", maxWidth: "900px", margin: "0 auto", padding: "110px 24px 120px" }}>
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "400", fontSize: "clamp(44px,6vw,76px)", lineHeight: ".95", margin: "0", textAlign: "center", letterSpacing: "-.015em" }}>
           Frequently Asked{" "}
           <em>Questions</em>
@@ -725,7 +726,7 @@ export default function LandingPage({ heroPhones = "Both" }: { heroPhones?: Hero
             <p style={{ margin: "0", padding: "0 0 26px", fontSize: "17px", lineHeight: "1.55", maxWidth: "640px" }}>Only you. Bills stay in your private chat and your private visit page.</p>
           </details>
         </div>
-      </LazySection>
+      </section>
       <section style={{ padding: "0 16px 16px" }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto", background: "oklch(0.90 0.06 50)", borderRadius: "40px", padding: "110px 24px", textAlign: "center", position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", width: "260px", height: "260px", borderRadius: "50%", background: "oklch(0.94 0.08 95)", left: "-60px", bottom: "-80px" }} />
