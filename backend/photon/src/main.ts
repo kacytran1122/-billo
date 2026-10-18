@@ -5,11 +5,11 @@
  * Coordinator -> Gateway -> POST {BRIDGE}/send -> THIS BRIDGE -> Spectrum -> iMessage
  *
  * The 7 bridge responsibilities:
- *  1 Code + STOP + HELP handler  (same result every time per message id; typing dots)
- *  2 @Billo filter               (every chat: reply only when someone writes @Billo)
- *  3 Privacy router              (bills, payments, approvals: private chat only)
+ *  1 STOP handler                (same result every time per message id; typing dots)
+ *  2 @Billo filter               (group chats only; every request must tag @Billo)
+ *  3 Group-only router           (DMs are ignored; the full workflow stays in one group)
  *  4 Receipt/final bill upload    (attachments forwarded to the After-Care Organizer)
- *  5 Approve                     (patient's own message in the private chat)
+ *  5 Approve                     (patient's own tagged message in the group)
  *  6 Billo texts first           (the Coordinator's 30-min check arrives via /send)
  *  7 Phone numbers masked        (we only ever log and forward a hash)
  *
@@ -21,7 +21,7 @@ import { createServer } from "node:http";
 import { Spectrum, type Message, type Space } from "spectrum-ts";
 import { imessage } from "spectrum-ts/providers/imessage";
 import { config as loadEnv } from "dotenv";
-import { hasBilloMention, isPrivateOnlyGroupRequest, stripBilloMention } from "./routing.ts";
+import { hasBilloMention, stripBilloMention } from "./routing.ts";
 
 loadEnv({ path: new URL("../../.env", import.meta.url).pathname });
 
@@ -30,7 +30,6 @@ const CORE = env("CORE_URL", "http://localhost:8000");
 const GATEWAY = env("GATEWAY_URL", "http://localhost:8006"); // the iMessage Gateway uAgent REST port
 const TOKEN = env("INTERNAL_TOKEN", "dev-token");
 const PORT = Number(env("BRIDGE_PORT", "3000"));
-const CODE_RE = /\bBILLO-\d{4}\b/i;
 const hashHandle = (h: string) => createHash("sha256").update(`${TOKEN}:${h}`).digest("hex").slice(0, 16);
 const mask = (h: string) => (h.length > 4 ? `***${h.slice(-4)}` : "***");
 
@@ -131,65 +130,33 @@ async function handle(space: Space, message: Message) {
   const rawUpper = rawText.toUpperCase();
   Sentry.getActiveSpan()?.setAttributes({ "chat.group": isGroup, "chat.has_file": Boolean(ev.att) });
 
-  // STOP is the sole mention exception: opting out must always work in a private chat.
+  // STOP remains available in a DM solely as a universal opt-out.
   if (!isGroup && ["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"].includes(rawUpper)) {
     await core("/link/stop", { handle_hash: handleHash });
     await space.send("You are unsubscribed. Billo will not text you again.");
     return;
   }
 
-  // One activation rule for DMs and groups. Untagged content is never forwarded or read further.
+  // Billo is group-only. DMs are never read or forwarded beyond the STOP check above.
+  if (!isGroup) return;
+
+  // A visible mention is mandatory. Untagged group content is never forwarded or read further.
   if (!hasBilloMention(rawText)) return;
 
-  // ---- 2. @Billo filter + 3. privacy router (groups) ----
-  if (isGroup) {
-    console.log(`[bridge] group mention from ${mask(ev.sender)} (${text.length} chars)`);
-    if (ev.att || isPrivateOnlyGroupRequest(text)) { // private workflows never run in a group
-      await space.send("Bills, benefits, and payments are private. Please message Billo in a private chat.");
-      return;
-    }
-    if (!text) {
-      await space.send("@Billo is here. Tell me what kind of care you are looking for and your general area.");
-      return;
-    }
-    await typing(space, true);
-    await forward({ handle_hash: handleHash, space_id: space.id, text, is_group: true, message_id: message.id });
-    return;
-  }
-
-  console.log(`[bridge] dm from ${mask(ev.sender)} (${text.length} chars${ev.att ? ", attachment" : ""})`);
-
+  console.log(`[bridge] group mention from ${mask(ev.sender)} (${text.length} chars${ev.att ? ", attachment" : ""})`);
   if (!text && !ev.att) {
-    await space.send("@Billo is here. Tell me what happened or attach a bill or receipt.");
+    await space.send("@Billo is here. Tell me what happened or attach a bill or receipt in this group.");
     return;
   }
-
-  // ---- 1. STOP / HELP / follow code (private chat) ----
-  const upper = text.toUpperCase();
-  if (["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"].includes(upper)) {
-    await core("/link/stop", { handle_hash: handleHash });
-    await space.send("You are unsubscribed. Billo will not text you again.");
-    return;
-  }
-  if (upper === "HELP") {
-    await space.send("Billo checks medical bills and finds fair prices. Send a photo of a bill, or tell me what happened. Text STOP to stop. In an emergency call 911.");
-    return;
-  }
-  let caseId = "";
-  const code = text.match(CODE_RE)?.[0];
-  if (code) {
-    const res = await core("/link/claim", { code, handle_hash: handleHash, space_id: space.id });
-    if (res.status === "expired") return void (await space.send("That code expired. Ask Billo in ASI:One for a new one."));
-    if (res.status !== "linked") return void (await space.send("I do not know that code. Please check it and try again."));
-    caseId = res.case_id;
-    await space.send("Linked. Your case continues here. You can text me what happens at your visit, and send your bill photo when it comes.");
-  } else {
-    caseId = (await core(`/link/resolve?handle_hash=${handleHash}`)).case_id ?? "";
-  }
-
-  // ---- 4/5. everything else goes to the agents ----
   await typing(space, true);
-  await forward({ handle_hash: handleHash, space_id: space.id, text: code ? "" : text, is_group: false, case_id: caseId, attachment_url: ev.att ? await upload(ev.att) : "", message_id: message.id });
+  await forward({
+    handle_hash: handleHash,
+    space_id: space.id,
+    text,
+    is_group: true,
+    attachment_url: ev.att ? await upload(ev.att) : "",
+    message_id: message.id,
+  });
 }
 
 async function main() {

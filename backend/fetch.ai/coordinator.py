@@ -245,12 +245,6 @@ async def step_reimburse(ctx: Context, case: dict, text: str) -> None:
 
 async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_group: bool = False) -> None:
     low = text.lower().strip()
-    if is_group:  # group chat: before care only, general words, nothing private
-        if files or any(w in low for w in BILL_WORDS):
-            await reply(ctx, case, "Bills are private. Please send it to me in a private chat.")
-            return
-        await step_symptoms(ctx, case, text, group_safe=True)
-        return
     m = re.match(r"^(book|pick|choose)\s*#?\s*(\d)", low)
     if m and case["places"]:
         await step_book(ctx, case, int(m.group(2)))
