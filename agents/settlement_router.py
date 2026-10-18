@@ -5,7 +5,7 @@ from uagents import Agent, Context
 from common.config import PORTS, READMES, require_seed
 from common.core import core_post
 from common.models import SettlementRequest, SettlementResult
-from common.tracing import carry, case_span, init_sentry
+from common.tracing import carry, case_span, init_sentry, metric
 
 init_sentry("settlement_router")
 
@@ -58,6 +58,8 @@ async def route(ctx: Context, sender: str, req: SettlementRequest):
             except ValueError:
                 pass
         result.error = detail
+    metric("count", "billo.settlement.result", action=req.action,
+           result=result.status or ("ok" if result.ok else "blocked"), mode=result.mode or "simulate")
     await ctx.send(reply_to, result)
 
 

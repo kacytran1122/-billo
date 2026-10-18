@@ -8,7 +8,9 @@ from uagents import Agent, Context
 
 from common.config import ADDR, BRIDGE_URL, INTERNAL_TOKEN, PORTS, READMES, require_seed
 from common.models import Ack, InboundText, OutboundText
-from common.tracing import init_sentry
+import sentry_sdk
+
+from common.tracing import carry, case_scope, case_span, init_sentry
 
 init_sentry("gateway")
 
@@ -30,7 +32,13 @@ async def from_bridge(ctx: Context, req: InboundText) -> Ack:
     if not ADDR["coordinator"]:
         return Ack(ok=False, detail="ADDR_COORDINATOR not set")
     req.token = ""  # never forward secrets
-    await ctx.send(ADDR["coordinator"], req)
+    with case_scope(channel="imessage"):
+        tx = sentry_sdk.continue_trace(req.trace or {}, op="gateway.inbound", name="imessage -> coordinator")
+        with sentry_sdk.start_transaction(tx) as span:
+            span.set_data("group", req.is_group)
+            span.set_data("has_file", bool(req.attachment_url))
+            req.trace = carry()  # the Coordinator continues from this hop
+            await ctx.send(ADDR["coordinator"], req)
     return Ack(ok=True)
 
 
@@ -39,9 +47,13 @@ async def to_bridge(ctx: Context, sender: str, msg: OutboundText):
     if sender != ADDR["coordinator"]:
         ctx.logger.warning("ignored OutboundText from unknown sender")
         return
-    async with httpx.AsyncClient(timeout=15) as c:
-        await c.post(f"{BRIDGE_URL}/send", json={"space_id": msg.space_id, "text": msg.text},
-                     headers={"x-internal-token": INTERNAL_TOKEN})
+    with case_span(msg, op="gateway.outbound", name="coordinator -> imessage"):
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.post(f"{BRIDGE_URL}/send", json={"space_id": msg.space_id, "text": msg.text},
+                             headers={"x-internal-token": INTERNAL_TOKEN, **carry()})
+        if r.status_code >= 400:
+            sentry_sdk.set_tag("check", "workflow")
+            sentry_sdk.capture_message(f"bridge refused outbound message ({r.status_code})", level="error")
 
 
 if __name__ == "__main__":

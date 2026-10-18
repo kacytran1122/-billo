@@ -12,7 +12,7 @@ from uagents import Agent, Context
 from common.config import PORTS, READMES, require_seed
 from common.core import core_post
 from common.models import AfterCareRequest, AfterCareResult, BillLine
-from common.tracing import carry, case_span, init_sentry
+from common.tracing import carry, case_span, check, init_sentry, metric
 
 init_sentry("bill_auditor")
 
@@ -31,15 +31,20 @@ agent = Agent(
 async def on_after_care(ctx: Context, sender: str, req: AfterCareRequest):
     reply_to = req.reply_to or sender
     with case_span(req, op="agent.after_care", name="organize receipt"):
-        with sentry_sdk.start_span(op="document.reader", name="read bill"):
+        with check("bill_reader", alert_on_4xx=True), sentry_sdk.start_span(op="document.reader", name="read bill") as span:
             bill = await core_post("/reader/extract", {"case_id": req.case_id, "file_url": req.file_url, "demo": req.demo})
+            span.set_data("reader", bill.get("reader", "unknown"))
+            span.set_data("needs_review", len(bill.get("needs_review", [])))
+        metric("count", "billo.reader.path", reader=bill.get("reader", "unknown"), agent="bill_auditor")
         lines = [BillLine(**l) for l in bill["lines"]]
         npi = bill.get("hospital_npi") or req.hospital_npi
-        with sentry_sdk.start_span(op="after_care.reconcile", name="match care record"):
+        with check("workflow"), sentry_sdk.start_span(op="after_care.reconcile", name="match care record") as span:
             organized = await core_post("/after-care/organize", {
                 "case_id": req.case_id, "lines": bill["lines"], "hospital_npi": npi,
                 "payment_status": req.payment_status,
             })
+            span.set_data("provider_match", bool(organized["provider_match"]))
+            span.set_data("payment_status", req.payment_status)
         result = AfterCareResult(
             case_id=req.case_id, lines=lines, total=organized["total"],
             hospital_npi=npi, payment_status=req.payment_status,

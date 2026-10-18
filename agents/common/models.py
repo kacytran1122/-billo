@@ -128,9 +128,10 @@ class InboundText(Model):
     case_id: str = ""
     attachment_url: str = ""
     message_id: str = ""
+    trace: Dict[str, str] = {}  # sentry-trace + baggage from the Photon bridge
 
 
-class OutboundText(Model):
+class OutboundText(Traced):
     """Coordinator -> Gateway -> Bridge."""
     space_id: str
     text: str
@@ -146,9 +147,11 @@ class Ack(Model):
 class Alert(Model):
     """Core API -> Case Medic (REST), built from a Sentry alert webhook."""
     token: str = ""
-    check: str  # bill_reader | workflow
-    case_id: str = ""
+    check: str  # bill_reader | workflow | npi
+    case_id: str = ""  # hashed case tag, never the raw id
     trace_id: str = ""
+    span_id: str = ""  # span that failed, so the fix joins the same trace
+    issue_id: str = ""
     title: str = ""
 
 

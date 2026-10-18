@@ -8,20 +8,24 @@ Sentry alert webhook -> Core API /sentry/webhook -> POST /alert here.
 3. Tell the Coordinator, which applies it and texts the patient.
 4. Record the action as a span on the same trace.
 """
+import uuid
+
 import httpx
 import sentry_sdk
 from uagents import Agent, Context
 
 from common.config import ADDR, INTERNAL_TOKEN, PORTS, READMES, env, require_seed
 from common.models import Ack, Alert, MedicAction
-from common.tracing import carry, init_sentry
+from common.tracing import carry, case_scope, init_sentry, metric
 
 init_sentry("case_medic")
 
 ACTIONS = {
     "bill_reader": ("retry_reader", "I am reading your bill again more carefully. One moment."),
+    "npi": ("review_record", "I could not confirm the provider right now. I kept your record open and did not guess."),
     "workflow": ("review_record", "One check needs review. I kept your record open and did not infer a result."),
 }
+SENTRY_API = env("SENTRY_API_URL", "https://sentry.io").rstrip("/")
 
 agent = Agent(
     name="billo-case-medic",
@@ -35,13 +39,26 @@ agent = Agent(
 
 
 async def read_trace(trace_id: str) -> int:
+    """How many transactions the failing case trace has (shown on the Case Medic span)."""
     token, org = env("SENTRY_AUTH_TOKEN"), env("SENTRY_ORG")
     if not (token and org and trace_id):
         return 0
-    url = f"https://sentry.io/api/0/organizations/{org}/events-trace/{trace_id}/"
-    async with httpx.AsyncClient(timeout=10) as c:
-        r = await c.get(url, headers={"Authorization": f"Bearer {token}"})
-    return len(r.json().get("transactions", [])) if r.status_code == 200 else 0
+    url = f"{SENTRY_API}/api/0/organizations/{org}/events-trace/{trace_id}/"
+    try:
+        async with httpx.AsyncClient(timeout=10) as c:
+            r = await c.get(url, headers={"Authorization": f"Bearer {token}"})
+        body = r.json() if r.status_code == 200 else {}
+    except (httpx.HTTPError, ValueError):
+        return 0
+    return len(body.get("transactions", [])) if isinstance(body, dict) else 0
+
+
+def trace_headers(alert: Alert) -> dict:
+    """Join the failing case's trace. Use the failed span as parent when Sentry gave it to us."""
+    if not alert.trace_id:
+        return {}
+    parent = alert.span_id or uuid.uuid4().hex[:16]
+    return {"sentry-trace": f"{alert.trace_id}-{parent}-1"}
 
 
 @agent.on_rest_post("/alert", Alert, Ack)
@@ -49,15 +66,22 @@ async def on_alert(ctx: Context, alert: Alert) -> Ack:
     if alert.token != INTERNAL_TOKEN:
         return Ack(ok=False, detail="bad token")
     action, patient_text = ACTIONS.get(alert.check, ACTIONS["workflow"])
-    headers = {"sentry-trace": f"{alert.trace_id}-0000000000000000"} if alert.trace_id else {}
-    tx = sentry_sdk.continue_trace(headers, op="case_medic.action", name=action)
-    with sentry_sdk.start_transaction(tx):
-        spans = await read_trace(alert.trace_id)
+    with case_scope(channel="sentry"):
+        if alert.case_id:  # already the keyed hash; never re-hash it
+            sentry_sdk.set_tag("case", alert.case_id)
+        sentry_sdk.set_tag("check", alert.check)
         sentry_sdk.set_tag("medic.action", action)
-        ctx.logger.info(f"alert check={alert.check} trace_spans={spans} -> {action}")
-        if ADDR["coordinator"]:  # empty case_id -> Coordinator heals the latest open case
-            await ctx.send(ADDR["coordinator"], MedicAction(
-                case_id=alert.case_id, action=action, patient_text=patient_text, trace=carry()))
+        tx = sentry_sdk.continue_trace(trace_headers(alert), op="case_medic.action", name=action)
+        with sentry_sdk.start_transaction(tx) as span:
+            with sentry_sdk.start_span(op="sentry.api", name="read case trace"):
+                transactions = await read_trace(alert.trace_id)
+            span.set_data("trace.transactions", transactions)
+            span.set_data("issue_id", alert.issue_id)
+            ctx.logger.info(f"alert check={alert.check} trace_transactions={transactions} -> {action}")
+            metric("count", "billo.medic.alert", check=alert.check, action=action)
+            if ADDR["coordinator"]:  # empty case_id -> Coordinator heals the latest open case
+                await ctx.send(ADDR["coordinator"], MedicAction(
+                    case_id=alert.case_id, action=action, patient_text=patient_text, trace=carry()))
     return Ack(ok=True, detail=action)
 
 

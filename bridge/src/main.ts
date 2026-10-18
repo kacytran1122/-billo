@@ -15,6 +15,7 @@
  *
  * Spectrum usage follows News Next Door (a past Photon winner), spectrum-ts 12.10.1.
  */
+import { Sentry, traceHeaders } from "./sentry.ts"; // first: Sentry must start before anything else
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { Spectrum, type Message, type Space } from "spectrum-ts";
@@ -52,9 +53,16 @@ async function forward(payload: Record<string, unknown>) {
   const r = await fetch(`${GATEWAY}/imessage`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ token: TOKEN, ...payload }),
+    // the trace rides inside the body: the Gateway is a uAgents REST handler and cannot read headers
+    body: JSON.stringify({ token: TOKEN, ...payload, trace: traceHeaders() }),
   });
-  if (!r.ok) console.error("[bridge] gateway refused", r.status, await r.text());
+  if (!r.ok) {
+    console.error("[bridge] gateway refused", r.status);
+    Sentry.withScope((scope) => {
+      scope.setTag("check", "workflow");
+      Sentry.captureMessage(`gateway refused inbound message (${r.status})`, "error");
+    });
+  }
 }
 
 async function typing(space: Space, on: boolean) {
@@ -90,13 +98,23 @@ function parse(message: Message): { sender: string; text: string; att?: Att } | 
 /** Upload a receipt/final-bill image to the Core API for immediate extraction. */
 async function upload(att: Att): Promise<string> {
   if (!att.mimeType.startsWith("image/") && att.mimeType !== "application/pdf") return "";
-  const buf = await att.read();
-  const r = await fetch(`${CORE}/files`, {
-    method: "POST",
-    headers: { "content-type": att.mimeType, "x-internal-token": TOKEN },
-    body: buf,
+  return Sentry.startSpan({ op: "bridge.upload", name: "bill photo -> core", attributes: { "file.mime": att.mimeType } }, async (span) => {
+    const buf = await att.read();
+    span.setAttribute("file.bytes", buf.length);
+    const r = await fetch(`${CORE}/files`, {
+      method: "POST",
+      headers: { "content-type": att.mimeType, "x-internal-token": TOKEN },
+      body: buf,
+    });
+    if (!r.ok) {
+      Sentry.withScope((scope) => {
+        scope.setTag("check", "bill_reader");
+        Sentry.captureMessage(`bill upload failed (${r.status})`, "error");
+      });
+      return "";
+    }
+    return ((await r.json()) as { file_url: string }).file_url;
   });
-  return ((await r.json()) as { file_url: string }).file_url;
 }
 
 async function handle(space: Space, message: Message) {
@@ -110,11 +128,12 @@ async function handle(space: Space, message: Message) {
   const isGroup = (space as unknown as { type?: string }).type === "group";
   const handleHash = hashHandle(ev.sender);
   const text = ev.text.trim();
-  console.log(`[bridge] ${isGroup ? "group" : "dm"} from ${mask(ev.sender)}: ${text.slice(0, 40)}`);
+  Sentry.getActiveSpan()?.setAttributes({ "chat.group": isGroup, "chat.has_file": Boolean(ev.att) });
 
   // ---- 2. @Billo filter + 3. privacy router (groups) ----
   if (isGroup) {
-    if (!MENTION_RE.test(text)) return; // never read the rest of the group's chat
+    if (!MENTION_RE.test(text)) return; // never read (or log) the rest of the group's chat
+    console.log(`[bridge] group mention from ${mask(ev.sender)} (${text.length} chars)`);
     if (ev.att || BILL_WORDS.test(text)) { // a bill in a group is never read
       await space.send("Bills and payments are private. Please send them to me in a private chat.");
       return;
@@ -123,6 +142,8 @@ async function handle(space: Space, message: Message) {
     await forward({ handle_hash: handleHash, space_id: space.id, text: text.replace(MENTION_RE, "").trim(), is_group: true, message_id: message.id });
     return;
   }
+
+  console.log(`[bridge] dm from ${mask(ev.sender)} (${text.length} chars${ev.att ? ", attachment" : ""})`);
 
   // ---- 1. STOP / HELP / follow code (private chat) ----
   const upper = text.toUpperCase();
@@ -171,17 +192,36 @@ async function main() {
     const space = spaces.get(space_id) ?? (await imessage(app).space.get(space_id).catch(() => undefined));
     if (!space) return void res.writeHead(404).end("unknown space");
     await typing(space, false);
-    await space.send(text);
-    res.end(JSON.stringify({ ok: true }));
+    try {
+      // the http integration already continued the Gateway's trace for this request
+      await Sentry.startSpan({ op: "bridge.outbound", name: "send iMessage" }, () => space.send(text));
+      res.end(JSON.stringify({ ok: true }));
+    } catch (e) {
+      Sentry.withScope((scope) => {
+        scope.setTag("check", "workflow");
+        Sentry.captureException(e);
+      });
+      res.writeHead(502).end(JSON.stringify({ ok: false }));
+    }
   }).listen(PORT, () => console.log(`[bridge] /send listening on :${PORT}`));
 
   console.log("[bridge] listening for iMessage...");
   for await (const [space, message] of app.messages) {
-    handle(space, message).catch((e) => console.error("[bridge] handler error", e));
+    // one isolation scope + one root span per inbound iMessage: the start of the case trace
+    void Sentry.withIsolationScope(() =>
+      Sentry.startSpan({ op: "bridge.inbound", name: "imessage inbound", forceTransaction: true }, () =>
+        handle(space, message).catch((e) => {
+          console.error("[bridge] handler error", e instanceof Error ? e.name : "unknown");
+          Sentry.captureException(e);
+        }),
+      ),
+    );
   }
 }
 
-main().catch((e) => {
-  console.error("[bridge] fatal", e);
+main().catch(async (e) => {
+  console.error("[bridge] fatal", e instanceof Error ? e.name : "unknown");
+  Sentry.captureException(e);
+  await Sentry.flush(2000);
   process.exit(1);
 });

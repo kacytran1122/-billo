@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir -r /tmp/core-requirements.txt
 
 COPY core ./core
 COPY ocr ./ocr
+COPY observability ./observability
 COPY data ./data
 COPY rules ./rules
 

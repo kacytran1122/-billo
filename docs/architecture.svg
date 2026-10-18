@@ -93,10 +93,11 @@
   <text x="1665" y="590" text-anchor="middle" class="label" fill="#ad1d5a">SENTRY</text>
   <rect x="1600" y="620" width="130" height="120" rx="16" fill="#ad1d5a"/>
   <text x="1665" y="660" text-anchor="middle" class="boxh" fill="#fff">Observe</text><text x="1665" y="690" text-anchor="middle" class="small" fill="#fff">one case</text><text x="1665" y="716" text-anchor="middle" class="small" fill="#fff">one trace</text>
-  <text x="1605" y="790" class="boxh ink">Tracing</text><text x="1605" y="820" class="small muted">all agents + Core</text>
-  <text x="1605" y="875" class="boxh ink">Crons</text><text x="1605" y="905" class="small muted">follow-up checks</text>
-  <text x="1605" y="960" class="boxh ink">Alerts</text><text x="1605" y="990" class="small muted">wake Case Medic</text>
-  <text x="1605" y="1045" class="boxh ink">Privacy</text><text x="1605" y="1075" class="small muted">hashed case IDs</text><text x="1605" y="1100" class="small muted">no health data</text>
+  <text x="1605" y="775" class="boxh ink">Tracing</text><text x="1605" y="802" class="small muted">bridge → agents</text><text x="1605" y="825" class="small muted">→ Core → reply</text>
+  <text x="1605" y="865" class="boxh ink">Metrics</text><text x="1605" y="892" class="small muted">OCR · stages</text><text x="1605" y="915" class="small muted">settlement results</text>
+  <text x="1605" y="955" class="boxh ink">Crons</text><text x="1605" y="982" class="small muted">follow-up checks</text>
+  <text x="1605" y="1022" class="boxh ink">Alerts</text><text x="1605" y="1049" class="small muted">signed webhook</text><text x="1605" y="1072" class="small muted">wakes Case Medic</text>
+  <text x="1605" y="1112" class="boxh ink">Privacy</text><text x="1605" y="1139" class="small muted">no bodies or PHI</text><text x="1605" y="1162" class="small muted">hashed case IDs</text>
   <path d="M1580 700 H1508" class="dash"/><path d="M1580 1085 H1508" class="dash"/>
 
   <!-- Bottom services -->
@@ -119,6 +120,28 @@
   <path d="M925 1165 V1270" class="arrow"/>
   <path d="M1315 1165 V1270" class="arrow"/>
 
+  <!-- Explicit arrowheads remain visible in PNG renderers that omit SVG markers. -->
+  <g fill="#1f2b3d">
+    <polygon points="645,445 665,434 665,456"/><polygon points="1155,445 1135,434 1135,456"/>
+    <polygon points="450,545 438,523 462,523"/><polygon points="1350,545 1338,523 1362,523"/>
+    <polygon points="1115,925 1102,901 1128,901"/>
+    <polygon points="710,1270 697,1246 723,1246"/><polygon points="925,1270 912,1246 938,1246"/>
+    <polygon points="1315,1270 1302,1246 1328,1246"/>
+  </g>
+  <g fill="#ad1d5a">
+    <polygon points="1508,700 1529,688 1529,712"/><polygon points="1508,1085 1529,1073 1529,1097"/>
+  </g>
+
+  <!-- Numbered flow labels -->
+  <g>
+    <circle cx="675" cy="420" r="17" fill="#f59e0b"/><text x="675" y="426" text-anchor="middle" class="num">1</text>
+    <circle cx="1120" cy="525" r="17" fill="#f59e0b"/><text x="1120" y="531" text-anchor="middle" class="num">2</text>
+    <circle cx="1080" cy="905" r="17" fill="#f59e0b"/><text x="1080" y="911" text-anchor="middle" class="num">3</text>
+    <circle cx="900" cy="1245" r="17" fill="#f59e0b"/><text x="900" y="1251" text-anchor="middle" class="num">4</text>
+    <circle cx="1550" cy="680" r="17" fill="#f59e0b"/><text x="1550" y="686" text-anchor="middle" class="num">5</text>
+    <circle cx="1285" cy="1245" r="17" fill="#f59e0b"/><text x="1285" y="1251" text-anchor="middle" class="num">6</text>
+  </g>
+
   <!-- Legend -->
   <rect x="50" y="1570" width="1700" height="48" rx="14" fill="#eef2f7"/>
   <circle cx="85" cy="1594" r="10" fill="#5747e8"/><text x="105" y="1601" class="small ink">Fetch.ai agents</text>
@@ -127,5 +150,5 @@
   <circle cx="575" cy="1594" r="10" fill="#f97316"/><text x="595" y="1601" class="small ink">Tiger Data</text>
   <circle cx="755" cy="1594" r="10" fill="#29358c"/><text x="775" y="1601" class="small ink">Visa simulation</text>
   <circle cx="960" cy="1594" r="10" fill="#ad1d5a"/><text x="980" y="1601" class="small ink">Sentry</text>
-  <text x="1190" y="1601" class="small muted">Solid arrows = work flow · dashed arrows = monitoring</text>
+  <text x="1070" y="1601" class="small muted">1 enter · 2 route · 3 use tools · 4 persist · 5 observe/heal · 6 simulate settlement</text>
 </svg>

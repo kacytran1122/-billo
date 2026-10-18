@@ -6,16 +6,22 @@ Docs: http://localhost:8000/docs
 from __future__ import annotations
 
 import io
+import json
 import os
 import random
 import re
+import sys
 import time
 from pathlib import Path
 from urllib.parse import quote
 
 from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).resolve().parents[2] / ".env")  # must run before the imports below read env
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+load_dotenv(ROOT / ".env")  # must run before the imports below read env
 
 import httpx  # noqa: E402
 import sentry_sdk  # noqa: E402
@@ -23,16 +29,19 @@ from fastapi import FastAPI, Header, HTTPException, Request  # noqa: E402
 from fastapi.responses import HTMLResponse, PlainTextResponse, Response  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
 
+from sentry_sdk.integrations.fastapi import FastApiIntegration  # noqa: E402
+from sentry_sdk.integrations.starlette import StarletteIntegration  # noqa: E402
+
 from . import reader, rules, store, visa  # noqa: E402
 
-if os.getenv("SENTRY_DSN"):
-    sentry_sdk.init(
-        dsn=os.getenv("SENTRY_DSN"),
-        traces_sample_rate=1.0,
-        data_collection={"user_info": False},
-        environment=os.getenv("SENTRY_ENVIRONMENT", "hackathon"),
-        enable_logs=True,
-    )
+from observability.sentry import case_hash, init_sentry, metric, tag_case, verify_webhook  # noqa: E402
+
+# Privacy-safe Sentry (see observability/sentry.py): no bodies, no query strings, no locals,
+# scrubbed events/spans/logs. 4xx responses are guards doing their job, so only 5xx are issues.
+init_sentry("core", integrations=[
+    StarletteIntegration(transaction_style="url", failed_request_status_codes={*range(500, 600)}),
+    FastApiIntegration(transaction_style="url", failed_request_status_codes={*range(500, 600)}),
+])
 
 app = FastAPI(title="Billo Core API", version="0.1.0")
 TOKEN = os.getenv("INTERNAL_TOKEN", "dev-token")
@@ -40,9 +49,13 @@ PUBLIC = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/")
 LINE = os.getenv("PHOTON_LINE_ADDRESS", "")
 DEMO = os.getenv("BILLO_MODE", "demo") == "demo"
 MAX_IMAGE_BYTES = int(os.getenv("OCR_MAX_IMAGE_BYTES", str(20 * 1024 * 1024)))
+CASE_MEDIC_URL = os.getenv("CASE_MEDIC_URL", "http://localhost:8007").rstrip("/")
+SENTRY_WEBHOOK_SECRET = os.getenv("SENTRY_WEBHOOK_SECRET", "").strip()
 
 if not DEMO and TOKEN == "dev-token":
     raise RuntimeError("INTERNAL_TOKEN must be set to a strong secret when BILLO_MODE=live")
+if not DEMO and os.getenv("SENTRY_DSN") and not SENTRY_WEBHOOK_SECRET:
+    raise RuntimeError("SENTRY_WEBHOOK_SECRET must be set when BILLO_MODE=live so /sentry/webhook is signed")
 
 
 def auth(token: str | None) -> None:
@@ -178,10 +191,22 @@ class ExtractIn(BaseModel):
 def extract(body: ExtractIn, x_internal_token: str | None = Header(None)):
     auth(x_internal_token)
     uploaded = UPLOADS / Path(body.file_url[5:]).name if body.file_url.startswith("file:") else None
+    tag_case(body.case_id)
+    started = time.perf_counter()
     try:
-        with sentry_sdk.start_span(op="document.reader", name="bill photo -> typed lines"):
-            return reader.read_bill(body.file_url, body.demo or (DEMO and not body.file_url), body.strict)
+        with sentry_sdk.start_span(op="document.reader", name="bill photo -> typed lines") as span:
+            bill = reader.read_bill(body.file_url, body.demo or (DEMO and not body.file_url), body.strict)
+            path = bill.get("reader", "unknown")
+            span.set_data("reader", path)
+            span.set_data("lines", len(bill.get("lines", [])))  # a count, never the lines
+            span.set_data("needs_review", len(bill.get("needs_review", [])))
+        metric("distribution", "billo.reader.duration", (time.perf_counter() - started) * 1000,
+               unit="millisecond", reader=path)
+        metric("count", "billo.reader.path", reader=path, agent="core")
+        return bill
     except (FileNotFoundError, ValueError) as exc:
+        metric("count", "billo.reader.unreadable", reader="none", agent="core")
+        sentry_sdk.set_tag("check", "bill_reader")
         raise HTTPException(422, str(exc)) from exc
     finally:
         # Uploaded bills can contain health information. Remove them as soon as
@@ -201,6 +226,7 @@ class AfterCareIn(BaseModel):
 def organize_after_care(body: AfterCareIn, x_internal_token: str | None = Header(None)):
     """Create a factual care record. This does not decide that any benefit is available."""
     auth(x_internal_token)
+    tag_case(body.case_id)
     if body.payment_status not in {"paid", "unpaid", "unknown"}:
         raise HTTPException(422, "payment_status must be paid, unpaid, or unknown")
     total = round(sum(float(line.get("charge", 0)) * int(line.get("units", 1)) for line in body.lines), 2)
@@ -506,21 +532,57 @@ def allowed(case_id: str, x_internal_token: str | None = Header(None)):
 
 
 # ------------------------------------------------------------------ Sentry -> Case Medic
+def _sentry_alert(payload: dict) -> dict:
+    """Turn a Sentry webhook (event alert, issue or error resource) into a small Case Medic alert.
+    The check comes from the event's `check` tag; the title is only a fallback."""
+    data = payload.get("data", {}) or {}
+    event = data.get("event") or data.get("error") or {}
+    issue = data.get("issue") or {}
+    raw_tags = event.get("tags") or issue.get("tags") or []
+    tags: dict[str, str] = {}
+    for t in raw_tags:
+        if isinstance(t, (list, tuple)) and len(t) == 2:
+            tags[str(t[0])] = str(t[1])
+        elif isinstance(t, dict) and "key" in t:
+            tags[str(t["key"])] = str(t.get("value", ""))
+    title = (event.get("title") or issue.get("title") or payload.get("message") or "").lower()
+    check = tags.get("check") or (
+        "bill_reader" if any(w in title for w in ("reader", "json", "ocr")) else
+        "npi" if "npi" in title else "workflow")
+    trace = (event.get("contexts", {}) or {}).get("trace", {}) or {}
+    return {"token": TOKEN, "check": check, "case_id": tags.get("case", ""),
+            "trace_id": trace.get("trace_id", ""), "span_id": trace.get("span_id", ""),
+            "issue_id": str(event.get("issue_id") or issue.get("id") or ""), "title": title[:120]}
+
+
 @app.post("/sentry/webhook")
 async def sentry_webhook(request: Request):
-    """Sentry alert webhook (Settings > Integrations > Webhooks, or an Internal Integration).
-    We forward a SMALL alert to Case Medic: which check failed + case tag + trace id."""
-    payload = await request.json()
-    data = payload.get("data", {})
-    event = data.get("event", {}) or data.get("issue", {}) or {}
-    tags = {t[0]: t[1] for t in event.get("tags", []) if isinstance(t, list) and len(t) == 2}
-    title = (event.get("title") or payload.get("message") or "").lower()
-    check = "bill_reader" if ("reader" in title or "json" in title or "ocr" in title) else "workflow"
-    trace_id = (event.get("contexts", {}).get("trace", {}) or {}).get("trace_id", "")
-    alert = {"token": TOKEN, "check": check, "case_id": tags.get("case", ""), "trace_id": trace_id, "title": title[:120]}
-    async with httpx.AsyncClient(timeout=10) as c:
-        await c.post("http://localhost:8007/alert", json=alert)
-    return {"forwarded": check}
+    """Sentry alert webhook (Internal Integration with alert-rule action, or a webhook rule).
+    Verifies Sentry-Hook-Signature, then forwards a SMALL alert to Case Medic:
+    which check failed + hashed case tag + trace/span ids."""
+    raw = await request.body()
+    if SENTRY_WEBHOOK_SECRET and not verify_webhook(
+            SENTRY_WEBHOOK_SECRET, raw, request.headers.get("sentry-hook-signature", "")):
+        raise HTTPException(401, "bad sentry signature")
+    resource = request.headers.get("sentry-hook-resource", "event_alert")
+    if resource == "installation":
+        return {"forwarded": None}
+    try:
+        payload = json.loads(raw or b"{}")
+    except ValueError as exc:
+        raise HTTPException(400, "invalid json") from exc
+    alert = _sentry_alert(payload)
+    if payload.get("action") == "resolved":
+        return {"forwarded": None}
+    with sentry_sdk.start_span(op="case_medic.forward", name=alert["check"]):
+        try:
+            async with httpx.AsyncClient(timeout=10) as c:
+                await c.post(f"{CASE_MEDIC_URL}/alert", json=alert)
+        except httpx.HTTPError as exc:
+            sentry_sdk.capture_exception(exc)
+            raise HTTPException(502, "case medic unreachable") from exc
+    metric("count", "billo.sentry.webhook", check=alert["check"])
+    return {"forwarded": alert["check"]}
 
 
 @app.post("/demo/break-npi")
@@ -529,9 +591,19 @@ async def break_npi(body: dict, x_internal_token: str | None = Header(None)):
     If Sentry is slow, this also calls Case Medic directly (the backup path for the stage)."""
     auth(x_internal_token)
     case_id = body.get("case_id", "")
+    hashed = case_hash(case_id) if case_id else ""
     with sentry_sdk.new_scope() as scope:
         scope.set_tag("check", "npi")
-        sentry_sdk.capture_message("NPI lookup failed (demo)", level="error")
-    async with httpx.AsyncClient(timeout=10) as c:
-        await c.post("http://localhost:8007/alert", json={"token": TOKEN, "check": "npi", "case_id": case_id, "title": "npi demo"})
-    return {"ok": True}
+        if hashed:
+            scope.set_tag("case", hashed)
+        scope.fingerprint = ["billo", "npi-lookup", "demo"]
+        event_id = sentry_sdk.capture_message("NPI lookup failed (demo)", level="error")
+    span = sentry_sdk.get_current_span()
+    alert = {"token": TOKEN, "check": "npi", "case_id": hashed, "title": "npi demo",
+             "trace_id": getattr(span, "trace_id", "") or "", "span_id": getattr(span, "span_id", "") or ""}
+    try:
+        async with httpx.AsyncClient(timeout=10) as c:
+            await c.post(f"{CASE_MEDIC_URL}/alert", json=alert)
+    except httpx.HTTPError:
+        pass  # the Sentry alert -> webhook path still runs
+    return {"ok": True, "event_id": event_id}

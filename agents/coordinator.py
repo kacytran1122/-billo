@@ -39,7 +39,7 @@ from common.models import (
     SettlementResult,
     dump,
 )
-from common.tracing import carry, case_hash, init_sentry
+from common.tracing import carry, case_hash, case_scope, case_span, init_sentry, metric
 
 init_sentry("coordinator")
 
@@ -88,7 +88,24 @@ def load(ctx: Context, case_id: str) -> dict | None:
     return case
 
 
+# Stages that are safe to count in Sentry. "emergency" is health data, so it is never a metric.
+METRIC_STAGES = {"new", "choosing", "booked", "organizing", "organized", "settled"}
+
+# Sentry Crons: the follow-up timer must check in every minute or Sentry raises an issue.
+FOLLOWUP_MONITOR = {
+    "schedule": {"type": "interval", "value": 1, "unit": "minute"},
+    "checkin_margin": 2,          # minutes late before "missed"
+    "max_runtime": 1,             # minutes before "timed out"
+    "failure_issue_threshold": 2,
+    "recovery_threshold": 1,
+}
+
+
 def save(ctx: Context, case: dict) -> None:
+    if case.get("stage") != case.get("_metric_stage"):
+        case["_metric_stage"] = case.get("stage")
+        if case.get("stage") in METRIC_STAGES:
+            metric("count", "billo.case.stage", stage=case["stage"], channel=case.get("channel", ""))
     ctx.storage.set(f"case:{case['id']}", case)
     ctx.storage.set(f"hash:{case_hash(case['id'])}", case["id"])
     ids = set(ctx.storage.get("case_ids") or [])
@@ -101,7 +118,7 @@ async def reply(ctx: Context, case: dict, text: str) -> None:
     if case["channel"] == "asi1":
         await say(ctx, case["who"], text)
     elif case["channel"] == "imessage" and ADDR["gateway"]:
-        await ctx.send(ADDR["gateway"], OutboundText(space_id=case["who"], text=text, case_id=case["id"]))
+        await ctx.send(ADDR["gateway"], OutboundText(space_id=case["who"], text=text, case_id=case["id"], trace=carry()))
 
 
 # ------------------------------------------------------------------ steps
@@ -272,12 +289,15 @@ chat = Protocol(spec=chat_protocol_spec)
 async def on_chat(ctx: Context, sender: str, msg: ChatMessage):
     await ack(ctx, sender, msg)
     case = get_case(ctx, "asi1", sender)
-    sentry_sdk.set_tag("case", case_hash(case["id"]))
-    with sentry_sdk.start_transaction(op="billo.case", name="asi1 message"):
+    with case_scope(case["id"], channel="asi1"), \
+            sentry_sdk.start_transaction(op="billo.case", name="asi1 message") as tx:
+        tx.set_data("case", case_hash(case["id"]))
+        tx.set_data("stage.before", case["stage"] if case["stage"] in METRIC_STAGES else "other")
         try:
             await route_text(ctx, case, text_of(msg), resources_of(msg))
         except Exception as exc:  # never leave the patient without an answer
             sentry_sdk.capture_exception(exc)
+            tx.set_status("internal_error")
             await say(ctx, sender, "Something went wrong on my side. I am fixing it. Please try again in a minute.")
 
 
@@ -304,8 +324,18 @@ async def on_imessage(ctx: Context, sender: str, msg: InboundText):
     files = [msg.attachment_url] if msg.attachment_url else []
     if not msg.text.strip() and not files:  # e.g. the QR code text: the bridge already said "Linked"
         return
-    with sentry_sdk.start_transaction(op="billo.case", name="imessage"):
-        await route_text(ctx, case, msg.text, files, is_group=msg.is_group)
+    # Continue the trace the Photon bridge started, so iMessage -> bridge -> agents is one trace.
+    with case_scope(case["id"], channel="imessage"):
+        tx = sentry_sdk.continue_trace(msg.trace or {}, op="billo.case", name="imessage")
+        with sentry_sdk.start_transaction(tx):
+            tx.set_data("group", msg.is_group)
+            tx.set_data("has_file", bool(files))
+            try:
+                await route_text(ctx, case, msg.text, files, is_group=msg.is_group)
+            except Exception as exc:
+                sentry_sdk.capture_exception(exc)
+                tx.set_status("internal_error")
+                await reply(ctx, case, "Something went wrong on my side. I am fixing it. Please try again in a minute.")
 
 
 # ------------------------------------------------------------------ after-care result
@@ -395,6 +425,12 @@ async def on_medic(ctx: Context, sender: str, act: MedicAction):
     case = load(ctx, act.case_id) or _latest_case(ctx)
     if not case:
         return
+    with case_span(act, op="coordinator.heal", name=act.action, case_id=case["id"]):
+        await _apply_medic(ctx, case, act)
+        metric("count", "billo.medic.applied", action=act.action)
+
+
+async def _apply_medic(ctx: Context, case: dict, act: MedicAction) -> None:
     case["flags"][act.action] = True
     save(ctx, case)
     await reply(ctx, case, act.patient_text)
@@ -403,10 +439,10 @@ async def on_medic(ctx: Context, sender: str, act: MedicAction):
 
 
 # ------------------------------------------------------------------ "Did you go?" follow-up
-@agent.on_interval(period=30.0)
+@agent.on_interval(period=60.0)
 async def followups(ctx: Context):
     now = time.time()
-    with monitor(monitor_slug="visit-followup"):
+    with monitor(monitor_slug="visit-followup", monitor_config=FOLLOWUP_MONITOR):
         for cid in ctx.storage.get("case_ids") or []:
             case = load(ctx, cid)
             if not case or case["stage"] != "booked" or case.get("asked") or not case.get("followup_due"):
