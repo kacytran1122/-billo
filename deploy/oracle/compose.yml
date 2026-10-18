@@ -26,6 +26,8 @@ services:
       CASE_MEDIC_URL: http://case-medic:8007
       BILLO_UPLOADS_DIR: /tmp/billo-uploads
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
       interval: 15s
