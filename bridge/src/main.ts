@@ -4,7 +4,7 @@
  * iMessage -> Photon Spectrum -> THIS BRIDGE -> POST {GATEWAY}/imessage -> Coordinator (Fetch.ai)
  * Coordinator -> Gateway -> POST {BRIDGE}/send -> THIS BRIDGE -> Spectrum -> iMessage
  *
- * The 7 parts (see docs/photon-system.png):
+ * The 7 bridge responsibilities:
  *  1 Code + STOP + HELP handler  (same result every time per message id; typing dots)
  *  2 @Billo filter               (groups: reply only when someone writes @Billo)
  *  3 Privacy router              (bills, payments, approvals: private chat only)
