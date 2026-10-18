@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1800" viewBox="0 0 1800 1800">
   <defs>
     <style>
-      .bg{fill:#f8fafc}.ink{fill:#13233b}.muted{fill:#5d6b7f}.title{font:700 44px Arial,sans-serif}.sub{font:20px Arial,sans-serif}.section{font:700 17px Arial,sans-serif;letter-spacing:1.5px}.h{font:700 23px Arial,sans-serif}.boxh{font:700 19px Arial,sans-serif}.body{font:17px Arial,sans-serif}.small{font:15px Arial,sans-serif}.tiny{font:14px Arial,sans-serif}.flow{stroke:#243247;stroke-width:4;fill:none;marker-end:url(#flowArrow)}.bus{stroke:#243247;stroke-width:4;fill:none}.observe{stroke:#b51f5d;stroke-width:3;stroke-dasharray:10 8;fill:none;marker-end:url(#observeArrow)}.recover{stroke:#b51f5d;stroke-width:4;fill:none;marker-end:url(#recoverArrow)}.edge{stroke:#d6dde8;stroke-width:2}.labelbg{fill:#f8fafc}.step{font:700 15px Arial,sans-serif;fill:#fff}
+      .bg{fill:#f8fafc}.ink{fill:#13233b}.muted{fill:#5d6b7f}.title{font:700 44px Arial,sans-serif}.sub{font:20px Arial,sans-serif}.section{font:700 17px Arial,sans-serif;letter-spacing:1.5px}.h{font:700 23px Arial,sans-serif}.boxh{font:700 19px Arial,sans-serif}.body{font:17px Arial,sans-serif}.small{font:15px Arial,sans-serif}.tiny{font:14px Arial,sans-serif}.flow{stroke:#243247;stroke-width:4;fill:none;marker-end:url(#flowArrow)}.bus{stroke:#243247;stroke-width:4;fill:none}.observe{stroke:#b51f5d;stroke-width:4;stroke-dasharray:10 8;fill:none;marker-end:url(#observeArrow)}.recover{stroke:#b51f5d;stroke-width:4;fill:none;marker-end:url(#recoverArrow)}.edge{stroke:#d6dde8;stroke-width:2}.labelbg{fill:#f8fafc}.step{font:700 15px Arial,sans-serif;fill:#fff}
     </style>
-    <marker id="flowArrow" markerWidth="12" markerHeight="12" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0 0 L10 5 L0 10 Z" fill="#243247"/></marker>
-    <marker id="observeArrow" markerWidth="12" markerHeight="12" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0 0 L10 5 L0 10 Z" fill="#b51f5d"/></marker>
-    <marker id="recoverArrow" markerWidth="12" markerHeight="12" refX="10" refY="5" orient="auto" markerUnits="strokeWidth"><path d="M0 0 L10 5 L0 10 Z" fill="#b51f5d"/></marker>
+    <marker id="flowArrow" markerWidth="18" markerHeight="18" refX="17" refY="9" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L18 9 L0 18 Z" fill="#243247"/></marker>
+    <marker id="observeArrow" markerWidth="18" markerHeight="18" refX="17" refY="9" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L18 9 L0 18 Z" fill="#b51f5d"/></marker>
+    <marker id="recoverArrow" markerWidth="18" markerHeight="18" refX="17" refY="9" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L18 9 L0 18 Z" fill="#b51f5d"/></marker>
   </defs>
 
   <rect class="bg" width="1800" height="1800"/>
