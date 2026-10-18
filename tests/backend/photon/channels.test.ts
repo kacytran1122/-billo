@@ -9,6 +9,11 @@ test("WhatsApp can be enabled alone or alongside iMessage", () => {
   assert.deepEqual(configuredChannels("whatsapp_business"), ["whatsapp_business"]);
   assert.deepEqual(configuredChannels("imessage, whatsapp_business,imessage"), ["imessage", "whatsapp_business"]);
 });
+test("SMS is available only through explicit channel configuration", () => {
+  assert.deepEqual(configuredChannels("sms"), ["sms"]);
+  assert.deepEqual(configuredChannels("imessage, sms,sms"), ["imessage", "sms"]);
+  assert.equal(configuredChannels().includes("sms"), false);
+});
 test("invalid or empty channel settings fail explicitly", () => {
   for (const value of ["", "telegram", "imessage,typo"]) assert.throws(() => configuredChannels(value));
 });
@@ -20,4 +25,13 @@ test("WhatsApp destinations round trip without colliding with iMessage", () => {
   const key = destinationKey("whatsapp_business", "chat:123");
   assert.notEqual(key, destinationKey("imessage", "chat:123"));
   assert.deepEqual(destination(key), { channel: "whatsapp_business", id: "chat:123" });
+});
+test("SMS destinations and sender identities do not collide with other channels", () => {
+  for (const id of ["pho_spc_shared", "pho_usr_patient", "chat:123"]) {
+    const key = destinationKey("sms", id);
+    assert.equal(key, `sms:${id}`);
+    assert.notEqual(key, destinationKey("imessage", id));
+    assert.notEqual(key, destinationKey("whatsapp_business", id));
+    assert.deepEqual(destination(key), { channel: "sms", id });
+  }
 });

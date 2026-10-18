@@ -183,6 +183,7 @@ async function handle(space: Space, message: Message) {
 
 /** The legacy SDK is large. Do not load it in the Photon 2.0 process. */
 async function legacyTransport(channels: Channel[]) {
+  if (channels.includes("sms")) throw new Error("Photon SMS requires PHOTON_API_VERSION=beta");
   const [{ Spectrum }, { imessage }, { whatsappBusiness }] = await Promise.all([
     import("spectrum-ts"), import("spectrum-ts/providers/imessage"), import("spectrum-ts/providers/whatsapp-business"),
   ]);
@@ -203,8 +204,8 @@ async function main() {
   const channels = configuredChannels(env("PHOTON_CHANNELS", "imessage"));
   const beta = env("PHOTON_API_VERSION") === "beta" ? new BetaTransport(
     env("PHOTON_PROJECT_ID"), env("PHOTON_API_KEY"), env("PHOTON_STATE_FILE", "/data/photon-beta.json"),
+    channels,
   ) : undefined;
-  if (beta && channels.some(channel => channel !== "imessage")) throw new Error("Photon Beta is configured for iMessage only");
   const legacy = beta ? undefined : await legacyTransport(channels);
 
   // ---- outbound: Gateway -> /send -> iMessage ----
@@ -227,9 +228,11 @@ async function main() {
     const { space_id, text } = JSON.parse(body) as { space_id: string; text: string };
     if (typeof space_id !== "string" || typeof text !== "string" || !text.trim()) return void res.writeHead(400).end();
     const target = destination(space_id);
-    if (beta && target.channel !== "imessage") return void res.writeHead(404).end();
-    const space = spaces.get(space_id) ?? (beta ? await beta.getSpace(target.id) : await legacy?.getSpace(target.channel, target.id));
-    if (!space) return void res.writeHead(404).end("unknown space");
+    if (!channels.includes(target.channel)) return void res.writeHead(404).end();
+    const cached = spaces.get(space_id);
+    const space = cached?.__platform === target.channel ? cached
+      : (beta ? await beta.getSpace(target.id, target.channel) : await legacy?.getSpace(target.channel, target.id));
+    if (!space || space.__platform !== target.channel) return void res.writeHead(404).end("unknown space");
     await typing(space, false);
     try {
       // the http integration already continued the Gateway's trace for this request
@@ -251,7 +254,7 @@ async function main() {
   console.log(`[bridge] listening for ${channels.join(", ")}...`);
   if (beta) {
     await beta.start((space, message) => Sentry.withIsolationScope(() =>
-      Sentry.startSpan({ op: "bridge.inbound", name: "imessage inbound", forceTransaction: true }, () => handle(space, message))));
+      Sentry.startSpan({ op: "bridge.inbound", name: `${space.__platform} inbound`, forceTransaction: true }, () => handle(space, message))));
     return;
   }
   for await (const [space, message] of legacy!.messages) {

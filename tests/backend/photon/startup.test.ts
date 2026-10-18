@@ -16,3 +16,15 @@ test("bridge readiness requires the live Photon event subscription", () => {
 test("gateway and core requests have bounded timeouts", () => {
   assert.equal(source.match(/signal: AbortSignal\.timeout\(15_000\)/g)?.length, 2);
 });
+test("SMS configuration fails before the legacy SDK can choose a provider", () => {
+  const legacy = source.slice(source.indexOf("async function legacyTransport"), source.indexOf("async function main"));
+  assert.match(legacy, /if \(channels\.includes\("sms"\)\) throw new Error\("Photon SMS requires PHOTON_API_VERSION=beta"\)/);
+  assert.ok(legacy.indexOf("channels.includes") < legacy.indexOf('import("spectrum-ts")'));
+});
+test("Beta receives the explicit channel selection and outbound caches cannot cross channels", () => {
+  assert.match(source, /new BetaTransport\([\s\S]*?env\("PHOTON_STATE_FILE"[^\n]*\n\s*channels,/);
+  assert.match(source, /if \(!channels\.includes\(target\.channel\)\)/);
+  assert.match(source, /cached\?\.__platform === target\.channel \? cached/);
+  assert.match(source, /beta\.getSpace\(target\.id, target\.channel\)/);
+  assert.match(source, /if \(!space \|\| space\.__platform !== target\.channel\)/);
+});

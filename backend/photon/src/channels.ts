@@ -1,21 +1,22 @@
-export type Channel = "imessage" | "whatsapp_business";
+export type Channel = "imessage" | "sms" | "whatsapp_business";
 
 export function configuredChannels(value = "imessage"): Channel[] {
   const channels = [...new Set(value.split(",").map((item) => item.trim()).filter(Boolean))];
-  if (!channels.length || channels.some((channel) => !["imessage", "whatsapp_business"].includes(channel))) {
-    throw new Error("PHOTON_CHANNELS must contain imessage and/or whatsapp_business");
+  if (!channels.length || channels.some((channel) => !["imessage", "sms", "whatsapp_business"].includes(channel))) {
+    throw new Error("PHOTON_CHANNELS must contain imessage, sms and/or whatsapp_business");
   }
   return channels as Channel[];
 }
 
-// Keep existing iMessage case destinations compatible; namespace WhatsApp separately.
+// Keep existing iMessage case destinations compatible; isolate every other channel.
 export function destinationKey(channel: string, id: string): string {
-  return channel === "whatsapp_business" ? `whatsapp_business:${id}` : id;
+  return channel === "sms" || channel === "whatsapp_business" ? `${channel}:${id}` : id;
 }
 
 export function destination(value: string): { channel: Channel; id: string } {
-  const prefix = "whatsapp_business:";
-  return value.startsWith(prefix)
-    ? { channel: "whatsapp_business", id: value.slice(prefix.length) }
-    : { channel: "imessage", id: value };
+  for (const channel of ["sms", "whatsapp_business"] as const) {
+    const prefix = `${channel}:`;
+    if (value.startsWith(prefix)) return { channel, id: value.slice(prefix.length) };
+  }
+  return { channel: "imessage", id: value };
 }

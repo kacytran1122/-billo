@@ -4,6 +4,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { io } from "socket.io-client";
 import type { Message, Space } from "spectrum-ts";
+import type { Channel } from "./channels.ts";
 
 type Content = { type: string; text?: string; attachmentId?: string; parts?: Content[] };
 type Peer = { id: string; kind?: string };
@@ -17,12 +18,14 @@ type Route = { platform: string; senderId: string; kind: string };
 type State = { projectId: string; cursor: number; routes: Record<string, Route> };
 class DocumentError extends Error {}
 
-export function inboundBeta(event: Delivery, projectId: string): BetaMessage | undefined {
+export function inboundBeta(event: Delivery, projectId: string, channels: readonly Channel[] = ["imessage"]): BetaMessage | undefined {
   const message = event?.data?.object;
   if (event?.type !== "message.received" || event.data.projectId !== projectId ||
       message?.projectId !== projectId || message.status !== "received" ||
-      message.platform !== "imessage" || message.sentBy?.kind === "agent") return;
+      !["imessage", "sms"].includes(message.platform) ||
+      !channels.some(channel => channel === message.platform) || message.sentBy?.kind === "agent") return;
   if (!message.id || !message.space?.id || !message.sentBy?.id) return;
+  if (message.space.platform !== message.platform) return;
   if (!["text", "attachment", "group"].includes(message.content?.type)) return;
   return message;
 }
@@ -43,10 +46,15 @@ export class BetaTransport {
   private pending = 0;
   private queue = Promise.resolve();
 
-  constructor(private projectId: string, private apiKey: string, private stateFile: string) {
+  constructor(private projectId: string, private apiKey: string, private stateFile: string,
+    private channels: readonly Channel[] = ["imessage"]) {
     if (!/^pho_prj_[a-z0-9]+$/.test(projectId) || !apiKey.startsWith("pho_sk_")) {
       throw new Error("Photon Beta requires PHOTON_PROJECT_ID and PHOTON_API_KEY");
     }
+    if (!channels.length || channels.some(channel => !["imessage", "sms"].includes(channel))) {
+      throw new Error("Photon Beta supports only explicitly configured imessage and sms channels");
+    }
+    this.channels = [...new Set(channels)];
     this.state = { projectId, cursor: 0, routes: {} };
   }
 
@@ -72,10 +80,10 @@ export class BetaTransport {
     await rename(`${this.stateFile}.tmp`, this.stateFile);
   }
 
-  async getSpace(id: string): Promise<Space | undefined> {
+  async getSpace(id: string, channel: Channel = "imessage"): Promise<Space | undefined> {
     if (!/^pho_spc_[a-z0-9]+$/.test(id)) return;
     const route = this.state.routes[id];
-    if (!route || route.platform !== "imessage") return;
+    if (!route || route.platform !== channel || !this.channels.includes(channel)) return;
     return this.space(id, route);
   }
 
@@ -87,7 +95,7 @@ export class BetaTransport {
         spaceId: id, senderId: route.senderId, content: { type: "text", format: "plain", text },
       }, key);
     };
-    return { id, __platform: "imessage", type: route.kind, send } as unknown as Space;
+    return { id, __platform: route.platform, type: route.kind, send } as unknown as Space;
   }
 
   private async attachment(id: string) {
@@ -131,7 +139,7 @@ export class BetaTransport {
         (error: Error | null, result: { ok: boolean }) => {
           this.subscribed = !error && Boolean(result?.ok);
           if (!this.subscribed) { console.error("[photon-beta] subscription failed"); socket.io.engine.close(); }
-          else console.log("[photon-beta] subscribed; iMessage only");
+          else console.log(`[photon-beta] subscribed; enabled channels: ${this.channels.join(", ")}`);
         });
     });
     socket.on("disconnect", () => { this.connected = false; this.subscribed = false; this.epoch++; });
@@ -143,7 +151,7 @@ export class BetaTransport {
       if (++this.pending > 128) { this.pending--; this.epoch++; socket.io.engine.close(); return; }
       this.queue = this.queue.then(async () => {
         if (generation !== this.epoch || metadata.seq <= this.state.cursor) return;
-        const message = inboundBeta(event, this.projectId);
+        const message = inboundBeta(event, this.projectId, this.channels);
         if (message) {
           let receiver = message.receivedBy ?? message.addressedTo;
           if (!receiver || receiver.kind !== "agent") {
@@ -151,8 +159,8 @@ export class BetaTransport {
               .map(async id => (await (await this.request(`/users/${id}`)).json()) as Peer));
             receiver = candidates.find(peer => peer.kind === "agent");
           }
-          if (!receiver) throw new Error("No managed iMessage sender found");
-          const route = { platform: "imessage", senderId: receiver.id, kind: message.space.kind };
+          if (!receiver) throw new Error("No managed Photon sender found");
+          const route = { platform: message.platform, senderId: receiver.id, kind: message.space.kind };
           this.state.routes[message.space.id] = route;
           await this.persist(); // Save reply route before asynchronous coordinator handoff.
           const space = this.space(message.space.id, route, message.id);
