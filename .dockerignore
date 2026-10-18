@@ -6,8 +6,11 @@
 .logs
 **/__pycache__
 **/*.pyc
-bridge/node_modules
-core/uploads
-agents/*_data.json
+backend/photon/node_modules
+backend/api/uploads
+backend/fetch.ai/*_data.json
+frontend/node_modules
+frontend/.next
+deploy
 *.db
 .DS_Store
