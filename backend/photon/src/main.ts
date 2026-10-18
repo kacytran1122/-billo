@@ -24,6 +24,7 @@ import { hasBilloMention, shouldRespond, stripBilloMention } from "./routing.ts"
 import { configuredChannels, destination, destinationKey, type Channel } from "./channels.ts";
 import { presentMessage } from "./presentation.ts";
 import { BetaTransport } from "./beta.ts";
+import { parseInboundDocument, uploadDocument, type DocumentAttachment } from "./documents.ts";
 
 loadEnv({ path: new URL("../../.env", import.meta.url).pathname });
 
@@ -81,45 +82,19 @@ async function typing(space: Space, on: boolean) {
   }
 }
 
-type Att = { type: "attachment"; name: string; mimeType: string; read: () => Promise<Buffer> };
-type Content = { type: string; text?: string; items?: { content: Content }[] };
-
-/** Turn a Spectrum message into {sender, text, attachment}. Returns undefined for things we ignore. */
-function parse(message: Message): { sender: string; text: string; att?: Att } | undefined {
-  if (message.direction !== "inbound") return undefined;
-  const sender = message.sender?.id;
-  if (!sender) return undefined;
-  const c = message.content as unknown as Content;
-  if (c.type === "text") return { sender, text: String(c.text ?? "") };
-  if (c.type === "attachment") return { sender, text: "", att: c as unknown as Att };
-  if (c.type === "group") {
-    const items = c.items ?? [];
-    const text = items.map((i) => (i.content.type === "text" ? String(i.content.text) : "")).join(" ").trim();
-    const att = items.find((i) => i.content.type === "attachment")?.content as unknown as Att | undefined;
-    return { sender, text, att };
-  }
-  console.log(`[bridge] ignored content type ${c.type}`);
-  return undefined;
-}
-
-/** Upload a receipt/final-bill image to the Core API for immediate extraction. */
-async function upload(att: Att): Promise<string> {
-  if (!att.mimeType.startsWith("image/") && att.mimeType !== "application/pdf") return "";
-  return observedSpan({ op: "bridge.upload", name: "bill-upload", attributes: { "file.mime": att.mimeType } }, 10000, async () => {
-    const buf = await att.read();
-    const r = await fetch(`${CORE}/files`, {
-      method: "POST",
-      headers: { "content-type": att.mimeType, "x-internal-token": TOKEN },
-      body: buf,
-    });
-    if (!r.ok) {
+/** Normalize phone documents and upload within size/time limits before extraction. */
+async function upload(att: DocumentAttachment): Promise<string> {
+  return observedSpan({ op: "bridge.upload", name: "bill-upload" }, 10000, async () => {
+    try {
+      return await uploadDocument(att, { coreUrl: CORE, token: TOKEN });
+    } catch {
       Sentry.withScope((scope) => {
         scope.setTag("check", "bill_reader");
-        Sentry.captureMessage(`bill upload failed (${r.status})`, "error");
+        // SDK/network errors may contain private URLs. Record only a safe diagnostic.
+        Sentry.captureMessage("bill attachment could not be uploaded", "warning");
       });
       return "";
     }
-    return ((await r.json()) as { file_url: string }).file_url;
   });
 }
 
@@ -128,7 +103,7 @@ async function handle(space: Space, message: Message) {
   if (seen.has(messageKey)) return; // provider IDs need not be unique across channels
   if (seen.size > 5000) seen.clear();
 
-  const ev = parse(message);
+  const ev = parseInboundDocument(message);
   if (!ev) return;
   const spaceKey = destinationKey(space.__platform, space.id);
   spaces.set(spaceKey, space);
@@ -139,11 +114,12 @@ async function handle(space: Space, message: Message) {
   const rawUpper = text.toUpperCase();
   const tagged = hasBilloMention(rawText);
   const chatKind = isGroup ? "group" : "private";
-  Sentry.getActiveSpan()?.setAttributes({ "chat.group": isGroup, "chat.has_file": Boolean(ev.att) });
+  const hasAttachments = ev.attachments.length > 0;
+  Sentry.getActiveSpan()?.setAttributes({ "chat.group": isGroup, "chat.has_file": hasAttachments });
 
   // Transport-level receipt without logging message content or a full sender identifier.
   console.log(
-    `[bridge] inbound ${chatKind} from ${mask(ev.sender)} (${rawText.length} chars${ev.att ? ", attachment" : ""}, tagged=${tagged})`,
+    `[bridge] inbound ${chatKind} from ${mask(ev.sender)} (${rawText.length} chars${hasAttachments ? ", attachment" : ""}, tagged=${tagged})`,
   );
 
   // STOP is always available as a universal opt-out, with or without a mention.
@@ -159,23 +135,23 @@ async function handle(space: Space, message: Message) {
   if (!shouldRespond(rawText, isGroup)) return;
 
   console.log(`[bridge] accepted ${chatKind} request (${text.length} workflow chars)`);
-  if (!text && !ev.att) {
+  if (!text && !hasAttachments) {
     await space.send(presentMessage("👋 Meet Billo\n\nMake every care dollar count.\n\nTell me what happened, or attach a bill or receipt.\nTry: help", space.__platform));
-    return;
-  }
-  await typing(space, true);
-  const attachmentUrl = ev.att ? await upload(ev.att) : "";
-  if (ev.att && !attachmentUrl) {
-    await space.send("I couldn’t read that upload. Please send a clear bill or receipt as an image or PDF under 10 MB. No payment was approved.");
     seen.add(messageKey);
     return;
   }
+  await typing(space, true);
+  const attachmentUrl = ev.attachments.length === 1 ? await upload(ev.attachments[0]) : "";
+  const attachmentError = ev.attachments.length > 1 ? "multiple" : hasAttachments && !attachmentUrl ? "invalid" : "";
+  // Keep the caption so the coordinator can emergency-screen it first. An explicit
+  // attachment error prevents care/payment actions from using a missing document.
   await forward({
     handle_hash: handleHash,
     space_id: spaceKey,
     text,
     is_group: isGroup,
     attachment_url: attachmentUrl,
+    attachment_error: attachmentError,
     message_id: message.id,
   });
   seen.add(messageKey);

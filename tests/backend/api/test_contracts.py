@@ -1,4 +1,5 @@
 """Public and authenticated Core API contract tests."""
+import io
 import os
 import sys
 from pathlib import Path
@@ -85,12 +86,14 @@ def test_empty_upload_is_rejected_without_creating_a_file(tmp_path, monkeypatch)
 
 def test_upload_uses_allowlisted_extension_and_random_name(tmp_path, monkeypatch):
     monkeypatch.setattr(main, "UPLOADS", tmp_path)
-    response = client.post("/files", content=b"not-real-image", headers={**headers, "content-type": "image/png"})
+    image = (ROOT / "tests/backend/ocr/fixtures/synthetic_bill.png").read_bytes()
+    response = client.post("/files", content=image, headers={**headers, "content-type": "application/octet-stream"})
     assert response.status_code == 200
     file_name = response.json()["file_url"].removeprefix("file:")
     assert file_name.endswith(".png")
     assert "/" not in file_name and "\\" not in file_name
-    assert (tmp_path / file_name).read_bytes() == b"not-real-image"
+    assert (tmp_path / file_name).read_bytes() == image
+    assert (tmp_path / file_name).stat().st_mode & 0o777 == 0o600
 
 
 def test_after_care_rejects_unknown_payment_state():
@@ -126,3 +129,71 @@ def test_schema_validation_rejects_non_numeric_estimate():
         headers=headers,
     )
     assert response.status_code == 422
+
+
+def test_upload_rejects_fake_image_bytes_and_invalid_length(tmp_path, monkeypatch):
+    monkeypatch.setattr(main, "UPLOADS", tmp_path)
+    assert client.post("/files", content=b"not an image", headers={**headers, "content-type": "image/png"}).status_code == 415
+    assert client.post("/files", content=b"x", headers={**headers, "content-length": "invalid"}).status_code == 400
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_missing_document_is_not_implicitly_replaced_by_demo():
+    result = client.post("/reader/extract", json={"case_id": "missing-upload"}, headers=headers)
+    assert result.status_code == 422
+    assert "Attach a bill" in result.json()["detail"]
+
+
+def test_multi_unit_line_total_is_not_multiplied_twice():
+    result = client.post("/after-care/organize", json={"case_id": "quantity-total", "lines": [
+        {"line_no": 1, "code": "J1885", "description": "Medication", "units": 2, "charge": 77},
+        {"line_no": 2, "code": "", "description": "Uncoded supply", "units": 1, "charge": 23},
+    ]}, headers=headers)
+    assert result.status_code == 200
+    assert result.json()["total"] == 100
+    assert result.json()["payment_status"] == "unknown"
+
+
+def test_real_photo_upload_extract_organize_preserves_uncoded_lines(tmp_path, monkeypatch):
+    from ocr import engine, reader
+    if not engine.available():
+        import pytest
+        pytest.skip("RapidOCR is unavailable")
+    monkeypatch.setattr(main, "UPLOADS", tmp_path)
+    monkeypatch.setattr(reader, "UPLOADS", tmp_path)
+    monkeypatch.delenv("VISION_API_KEY", raising=False)
+    image = (ROOT / "tests/backend/ocr/fixtures/synthetic_bill.png").read_bytes()
+    uploaded = client.post("/files", content=image, headers={**headers, "content-type": "application/octet-stream"}).json()
+    result = client.post("/reader/extract", json={"case_id": "real-image", **uploaded}, headers=headers)
+    assert result.status_code == 200, result.text
+    bill = result.json()
+    assert bill["reader"] == "ocr"
+    assert len(bill["lines"]) == 5
+    assert len(bill["unreviewed_lines"]) == 1
+    assert bill["needs_review"]
+    assert list(tmp_path.iterdir()) == []
+    organized = client.post("/after-care/organize", json={"case_id": "real-image", "lines": bill["lines"]}, headers=headers)
+    assert organized.json()["total"] == 2807.75
+
+
+def test_real_pdf_upload_is_rendered_before_ocr(tmp_path, monkeypatch):
+    import pytest
+    from PIL import Image
+    from ocr import engine, reader
+    pytest.importorskip("pypdfium2")
+    if not engine.available():
+        pytest.skip("RapidOCR is unavailable")
+    monkeypatch.setattr(main, "UPLOADS", tmp_path)
+    monkeypatch.setattr(reader, "UPLOADS", tmp_path)
+    monkeypatch.delenv("VISION_API_KEY", raising=False)
+    output = io.BytesIO()
+    with Image.open(ROOT / "tests/backend/ocr/fixtures/synthetic_bill.png") as image:
+        image.convert("RGB").save(output, format="PDF")
+    uploaded = client.post("/files", content=output.getvalue(), headers={**headers, "content-type": "application/pdf"}).json()
+    result = client.post("/reader/extract", json={"case_id": "real-pdf", **uploaded}, headers=headers)
+    assert result.status_code == 200, result.text
+    bill = result.json()
+    assert bill["page_count"] == 1
+    assert bill["reader"] == "ocr"
+    assert bill["parsed_total"] == 2807.75
+    assert list(tmp_path.iterdir()) == []

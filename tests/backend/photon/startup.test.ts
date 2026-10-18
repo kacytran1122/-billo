@@ -28,3 +28,11 @@ test("Beta receives the explicit channel selection and outbound caches cannot cr
   assert.match(source, /beta\.getSpace\(target\.id, target\.channel\)/);
   assert.match(source, /if \(!space \|\| space\.__platform !== target\.channel\)/);
 });
+test("attachment failures preserve the caption and explicit error for emergency-first coordinator routing", () => {
+  assert.match(source, /const attachmentError = ev\.attachments\.length > 1 \? "multiple"/);
+  assert.match(source, /const attachmentUrl = ev\.attachments\.length === 1 \? await upload\(ev\.attachments\[0\]\) : ""/);
+  assert.match(source, /attachment_error: attachmentError/);
+  assert.match(source, /attachment_url: attachmentUrl/);
+  assert.ok(source.indexOf("if (!shouldRespond(rawText, isGroup)) return") < source.indexOf("const attachmentUrl ="));
+  assert.ok(source.indexOf('"STOP", "UNSUBSCRIBE"') < source.indexOf("const attachmentUrl ="));
+});

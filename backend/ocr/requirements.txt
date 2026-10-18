@@ -4,6 +4,7 @@ pillow>=10
 numpy
 # iPhone HEIC photos from iMessage (optional but recommended)
 pillow-heif
+pypdfium2>=4.30,<6
 # ChatGPT vision fallback (already in backend/api/requirements.txt)
 openai>=1.40
 # tests

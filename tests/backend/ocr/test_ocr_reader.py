@@ -91,7 +91,7 @@ def test_verify_without_ocr_is_unknown():
 @pytest.fixture
 def img(tmp_path, monkeypatch):
     p = tmp_path / "bill.png"
-    p.write_bytes(b"fake")
+    p.write_bytes(FIX.read_bytes())
     monkeypatch.setattr(reader, "UPLOADS", tmp_path)
     return "file:bill.png"
 

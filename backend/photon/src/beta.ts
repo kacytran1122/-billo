@@ -5,6 +5,7 @@ import { dirname } from "node:path";
 import { io } from "socket.io-client";
 import type { Message, Space } from "spectrum-ts";
 import type { Channel } from "./channels.ts";
+import { DocumentError, MAX_DOCUMENT_BYTES, type DocumentAttachment } from "./documents.ts";
 
 type Content = { type: string; text?: string; attachmentId?: string; parts?: Content[] };
 type Peer = { id: string; kind?: string };
@@ -16,7 +17,6 @@ export type BetaMessage = {
 type Delivery = { type: string; data: { projectId: string; object: BetaMessage } };
 type Route = { platform: string; senderId: string; kind: string };
 type State = { projectId: string; cursor: number; routes: Record<string, Route> };
-class DocumentError extends Error {}
 
 export function inboundBeta(event: Delivery, projectId: string, channels: readonly Channel[] = ["imessage"]): BetaMessage | undefined {
   const message = event?.data?.object;
@@ -31,11 +31,19 @@ export function inboundBeta(event: Delivery, projectId: string, channels: readon
 }
 
 export function contentParts(content: Content): { text: string; attachments: string[] } {
-  const parts = content.type === "group" ? content.parts ?? [] : [content];
-  return {
-    text: parts.filter(p => p.type === "text").map(p => p.text ?? "").join(" ").trim(),
-    attachments: parts.filter(p => p.type === "attachment" && p.attachmentId).map(p => p.attachmentId!),
+  const text: string[] = [];
+  const attachments: string[] = [];
+  const visited = new Set<object>();
+  const visit = (part: Content, depth = 0) => {
+    if (!part || typeof part !== "object" || visited.has(part) || depth > 8) return;
+    visited.add(part);
+    if (part.type === "group" && Array.isArray(part.parts)) {
+      for (const nested of part.parts) visit(nested, depth + 1);
+    } else if (part.type === "text" && typeof part.text === "string") text.push(part.text);
+    else if (part.type === "attachment") attachments.push(part.attachmentId ?? "");
   };
+  visit(content);
+  return { text: text.join(" ").trim(), attachments };
 }
 
 export class BetaTransport {
@@ -98,22 +106,22 @@ export class BetaTransport {
     return { id, __platform: route.platform, type: route.kind, send } as unknown as Space;
   }
 
-  private async attachment(id: string) {
-    if (!/^pho_att_[a-z0-9]+$/.test(id)) throw new Error("Invalid attachment ID");
-    const metadata = await (await this.request(`/attachments/${id}`)).json() as { contentType: string; sizeBytes: number; filename?: string };
-    if (metadata.sizeBytes > 10 * 1024 * 1024) throw new DocumentError("Attachment exceeds 10 MB");
-    const mimeType = metadata.contentType;
-    if (!mimeType?.startsWith("image/") && mimeType !== "application/pdf") throw new DocumentError("Unsupported document type");
+  private attachment(id: string): DocumentAttachment {
     return {
-      type: "attachment", mimeType, name: metadata.filename ?? "bill",
+      // Fetch only after the shared bridge has checked STOP, mentions and album
+      // count. Actual bytes, not a possibly generic declared MIME, determine type.
+      type: "attachment", mimeType: "application/octet-stream", name: "bill",
       read: async () => {
+        if (!/^pho_att_[a-z0-9]+$/.test(id)) throw new DocumentError("Invalid attachment ID");
+        const metadata = await (await this.request(`/attachments/${id}`)).json() as { sizeBytes?: number } | null;
+        if (typeof metadata?.sizeBytes === "number" && metadata.sizeBytes > MAX_DOCUMENT_BYTES) throw new DocumentError("Attachment exceeds 10 MB");
         const data = await this.request(`/attachments/${id}/content`);
         const chunks: Uint8Array[] = [];
         let size = 0;
         if (!data.body) throw new Error("Empty document");
         for await (const chunk of data.body) {
           size += chunk.length;
-          if (size > 10 * 1024 * 1024) throw new DocumentError("Attachment exceeds 10 MB");
+          if (size > MAX_DOCUMENT_BYTES) throw new DocumentError("Attachment exceeds 10 MB");
           chunks.push(chunk);
         }
         return Buffer.concat(chunks);
@@ -165,19 +173,12 @@ export class BetaTransport {
           await this.persist(); // Save reply route before asynchronous coordinator handoff.
           const space = this.space(message.space.id, route, message.id);
           const parts = contentParts(message.content);
-          if (parts.attachments.length > 1) {
-            await space.send("Please send one bill or receipt at a time so I can review every document accurately.");
-          } else {
-            try {
-              const attachment = parts.attachments[0] ? await this.attachment(parts.attachments[0]) : undefined;
-              const textContent = { type: "text", text: parts.text };
-              const content = attachment ? { type: "group", items: [{ content: textContent }, { content: attachment }] } : textContent;
-              await handler(space, { id: message.id, direction: "inbound", sender: { id: message.sentBy.id }, content } as unknown as Message);
-            } catch (error) {
-              if (!(error instanceof DocumentError)) throw error;
-              await space.send("Please send one clear bill or receipt as an image or PDF under 10 MB. That file could not be processed; no payment was approved.");
-            }
-          }
+          const textContent = { type: "text", text: parts.text };
+          const content = parts.attachments.length ? {
+            type: "group", items: [{ content: textContent },
+              ...parts.attachments.map(id => ({ content: this.attachment(id) }))],
+          } : textContent;
+          await handler(space, { id: message.id, direction: "inbound", sender: { id: message.sentBy.id }, content } as unknown as Message);
         }
         const previous = this.state.cursor;
         this.state.cursor = metadata.seq;

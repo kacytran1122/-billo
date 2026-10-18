@@ -10,6 +10,7 @@ import json
 import os
 import random
 import re
+import secrets
 import sys
 import time
 from pathlib import Path
@@ -34,6 +35,7 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration  # noqa: E402
 from sentry_sdk.integrations.starlette import StarletteIntegration  # noqa: E402
 
 from . import reader, rules, store, visa  # noqa: E402
+from ocr.documents import content_type  # noqa: E402
 
 from observability.sentry import (case_hash, diagnostics, init_sentry, metric, tag_case,
                                   task_span, verify_webhook)  # noqa: E402
@@ -170,19 +172,30 @@ UPLOADS = _uploads_dir()
 @app.post("/files")
 async def upload(request: Request, x_internal_token: str | None = Header(None)):
     auth(x_internal_token)
-    content_length = int(request.headers.get("content-length") or 0)
+    try:
+        content_length = int(request.headers.get("content-length") or 0)
+    except ValueError as exc:
+        raise HTTPException(400, "invalid content length") from exc
     if content_length > MAX_IMAGE_BYTES:
         raise HTTPException(413, "bill image is too large")
-    data = await request.body()
-    if len(data) > MAX_IMAGE_BYTES:
-        raise HTTPException(413, "bill image is too large")
+    data = bytearray()
+    async for chunk in request.stream():
+        if len(data) + len(chunk) > MAX_IMAGE_BYTES:
+            raise HTTPException(413, "bill image is too large")
+        data.extend(chunk)
     if not data:
         raise HTTPException(400, "bill image is empty")
+    try:
+        mime = content_type(bytes(data))
+    except ValueError as exc:
+        raise HTTPException(415, str(exc)) from exc
     UPLOADS.mkdir(parents=True, exist_ok=True)
-    ext = {"image/jpeg": "jpg", "image/png": "png", "image/heic": "heic", "application/pdf": "pdf"}.get(
-        request.headers.get("content-type", ""), "bin")
-    name = f"{random.getrandbits(64):016x}.{ext}"
-    (UPLOADS / name).write_bytes(data)
+    ext = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp",
+           "image/heic": "heic", "application/pdf": "pdf"}[mime]
+    name = f"{secrets.token_hex(16)}.{ext}"
+    descriptor = os.open(UPLOADS / name, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "wb") as output:
+        output.write(data)
     return {"file_url": f"file:{name}"}
 
 
@@ -202,7 +215,7 @@ def extract(body: ExtractIn, x_internal_token: str | None = Header(None)):
     started = time.perf_counter()
     try:
         with task_span("document-reader", "document.reader", 10000, route="after-care") as span:
-            bill = reader.read_bill(body.file_url, body.demo or (DEMO and not body.file_url), body.strict)
+            bill = reader.read_bill(body.file_url, body.demo, body.strict)
             path = bill.get("reader", "unknown")
             span.set_data("reader", path)
             span.set_data("lines", len(bill.get("lines", [])))  # a count, never the lines
@@ -236,7 +249,9 @@ def organize_after_care(body: AfterCareIn, x_internal_token: str | None = Header
     tag_case(body.case_id)
     if body.payment_status not in {"paid", "unpaid", "unknown"}:
         raise HTTPException(422, "payment_status must be paid, unpaid, or unknown")
-    total = round(sum(float(line.get("charge", 0)) * int(line.get("units", 1)) for line in body.lines), 2)
+    # OCR charge is the printed extended line total; multiplying by quantity
+    # again overstates multi-unit charges (e.g. 2 x $38.50 = $77, not $154).
+    total = round(sum(float(line.get("charge", 0)) for line in body.lines), 2)
     est = store.get_estimate(body.case_id)
     estimate_amount = float(est["amount"]) if est else None
     estimate_difference = round(total - estimate_amount, 2) if estimate_amount is not None else None

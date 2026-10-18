@@ -74,6 +74,8 @@ class AfterCareRequest(Traced):
 
 class AfterCareResult(Traced):
     case_id: str
+    ok: bool = True
+    error: str = ""  # safe category only, never raw OCR text or a private URL
     lines: List[BillLine]
     total: float
     hospital_npi: str
@@ -128,6 +130,7 @@ class InboundText(Model):
     is_group: bool = False
     case_id: str = ""
     attachment_url: str = ""
+    attachment_error: str = ""  # multiple | invalid; screen caption before rejecting upload
     message_id: str = ""
     trace: Dict[str, str] = {}  # sentry-trace + baggage from the Photon bridge
 

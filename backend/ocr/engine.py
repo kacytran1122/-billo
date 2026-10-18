@@ -6,8 +6,11 @@ Uses RapidOCR (local, free, no API key). If the library is not installed,
 from __future__ import annotations
 
 import io
+import threading
 from dataclasses import dataclass
 from functools import lru_cache
+
+_OCR_LOCK = threading.RLock()
 
 
 @dataclass
@@ -35,7 +38,8 @@ class Box:
 def _engine():
     from rapidocr_onnxruntime import RapidOCR  # optional dependency
 
-    return RapidOCR()
+    # The production VM is small. Unbounded ONNX thread pools stall every agent.
+    return RapidOCR(intra_op_num_threads=1, inter_op_num_threads=1)
 
 
 def available() -> bool:
@@ -69,11 +73,13 @@ def _to_array(image: bytes):
 def run_ocr(image: bytes) -> list[Box] | None:
     """Return text boxes, or None if OCR is unavailable or failed."""
     try:
-        engine = _engine()
+        with _OCR_LOCK:
+            engine = _engine()
     except Exception:
         return None
     try:
-        result, _ = engine(_to_array(image))
+        with _OCR_LOCK:
+            result, _ = engine(_to_array(image))
     except Exception:
         return None
     boxes: list[Box] = []

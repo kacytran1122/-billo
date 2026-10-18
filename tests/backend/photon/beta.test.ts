@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { BetaTransport, contentParts, inboundBeta, type BetaMessage } from "../../../backend/photon/src/beta.ts";
+import { MAX_DOCUMENT_BYTES, readDocumentAttachment, type DocumentAttachment } from "../../../backend/photon/src/documents.ts";
 
 const project = "pho_prj_test";
 const message: BetaMessage = {
@@ -54,6 +55,13 @@ test("Beta preserves an upload caption and every attachment for validation", () 
   ] }), { text: "unpaid bill", attachments: ["pho_att_one", "pho_att_two"] });
   assert.deepEqual(contentParts({ type: "attachment", attachmentId: "pho_att_one" }), { text: "", attachments: ["pho_att_one"] });
 });
+test("Beta preserves nested captions and malformed attachment placeholders for safe rejection", () => {
+  assert.deepEqual(contentParts({ type: "group", parts: [
+    { type: "text", text: "chest pain" }, { type: "group", parts: [
+      { type: "attachment", attachmentId: "pho_att_one" }, { type: "attachment" },
+    ] },
+  ] }), { text: "chest pain", attachments: ["pho_att_one", ""] });
+});
 test("Beta rejects stable Spectrum credentials and reports disconnected before subscribing", () => {
   assert.throws(() => new BetaTransport("uuid-project", "old-secret", "/tmp/state"));
   const transport = new BetaTransport(project, "pho_sk_test", "/tmp/state");
@@ -94,4 +102,32 @@ test("saved SMS routes remain inaccessible when SMS is disabled", async () => {
     pho_spc_sms: { platform: "sms", senderId: "pho_usr_smsagent", kind: "direct" },
   } } });
   assert.equal(await transport.getSpace("pho_spc_sms", "sms"), undefined);
+});
+test("Beta attachment download is lazy and signature detection handles generic provider MIME", async (t) => {
+  const transport = new BetaTransport(project, "pho_sk_test", "/tmp/state") as unknown as { attachment: (id: string) => DocumentAttachment };
+  const requests: string[] = [];
+  const pdf = Buffer.from("%PDF-1.7\nsynthetic bill\n%%EOF");
+  t.mock.method(globalThis, "fetch", async (url: string) => {
+    requests.push(url);
+    return url.endsWith("/content") ? new Response(pdf) : new Response(JSON.stringify({ contentType: "application/octet-stream", sizeBytes: pdf.length }));
+  });
+  const attachment = transport.attachment("pho_att_bill");
+  assert.equal(requests.length, 0); // STOP, untagged groups and albums can be rejected without downloading.
+  const result = await readDocumentAttachment(attachment);
+  assert.equal(result.mimeType, "application/pdf");
+  assert.deepEqual(result.data, pdf);
+  assert.equal(requests.length, 2);
+});
+test("Beta invalid IDs and oversized metadata fail without downloading document content", async (t) => {
+  const transport = new BetaTransport(project, "pho_sk_test", "/tmp/state") as unknown as { attachment: (id: string) => DocumentAttachment };
+  const requests: string[] = [];
+  t.mock.method(globalThis, "fetch", async (url: string) => {
+    requests.push(url);
+    return new Response(JSON.stringify({ sizeBytes: MAX_DOCUMENT_BYTES + 1 }));
+  });
+  await assert.rejects(readDocumentAttachment(transport.attachment("../bad")), /Invalid attachment ID/);
+  assert.equal(requests.length, 0);
+  await assert.rejects(readDocumentAttachment(transport.attachment("pho_att_large")), /10 MB/);
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].endsWith("/content"), false);
 });

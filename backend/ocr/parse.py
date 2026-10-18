@@ -16,7 +16,7 @@ INT = re.compile(r"^\d{1,3}$")
 
 SKIP = re.compile(
     r"\b(sub\s?total|total|balance|amount\s+due|payments?|paid|adjust\w*|discounts?|insurance|"
-    r"deductible|copay|coinsurance|previous|statement|page\s+\d)\b",
+    r"deductible|copay|coinsurance|credits?|refunds?|reversal|previous|statement|page\s+\d)\b",
     re.I,
 )
 TOTAL = re.compile(r"\b(total\s+charges|total|amount\s+due|balance\s+due)\b", re.I)
@@ -52,7 +52,7 @@ def _norm_date(m: re.Match) -> str:
 
 def parse_row(row: list[Box]) -> dict | None:
     """Parse one visual row. Returns a line dict, or None if it is not a charge line."""
-    text = " ".join(b.text for b in row)
+    text = " ".join(b.text for b in row).replace("−", "-").replace("–", "-")
     if SKIP.search(text):
         return None
     monies = [(m.group(), m.start()) for m in MONEY.finditer(text)]
@@ -65,7 +65,17 @@ def parse_row(row: list[Box]) -> dict | None:
     # Boxes left of the first amount; a box that is only a small integer is the QTY column.
     left = [b for b in row if not MONEY.search(b.text)]
     qty_box = next((b for b in reversed(left) if INT.match(b.text)), None)
-    rest = " ".join(b.text for b in left if b is not qty_box)
+    # Phone OCR often returns an entire printed row as ONE box, including the
+    # amount. Keep its left-hand text rather than dropping the whole box.
+    rest = text[:monies[0][1]].strip()
+    if qty_box:
+        rest = re.sub(r"(?:^|\s)" + re.escape(qty_box.text) + r"\s*$", "", rest)
+    # Numeric receipt/invoice/reference IDs are not CPT codes. Keep the original
+    # document text elsewhere, but exclude these identifiers from code matching.
+    rest = re.sub(r"\b(?:receipt|invoice|account|reference|ref|transaction|claim|order|patient)"
+                  r"\s*(?:(?:number|no\.?|id)\s*)?[#:]?\s+[A-Z0-9-]+\b", "", rest, flags=re.I)
+    rest = re.sub(r"\b(?:receipt|invoice|account|reference|ref|transaction|claim|order|patient)"
+                  r"\s*(?:number|no\.?|id|#|:)\s*[A-Z0-9-]+\b", "", rest, flags=re.I)
 
     service_date = ""
     if dm := DATE.search(rest):
@@ -85,12 +95,18 @@ def parse_row(row: list[Box]) -> dict | None:
 
     # Units. Best evidence: unit price x qty = total. Next: a QTY-column box. Else 1.
     units = int(qty_box.text) if qty_box and 0 < int(qty_box.text) < 1000 else 1
+    amount_ambiguous = len(monies) > 2
     if len(monies) >= 2:
         unit_price = money_to_float(monies[-2][0])
         if unit_price > 0:
             ratio = charge / unit_price
             if abs(ratio - round(ratio)) < 0.01 and 1 <= round(ratio) < 1000:
-                units = round(ratio)
+                if qty_box and units != round(ratio):
+                    amount_ambiguous = True
+                else:
+                    units = round(ratio)
+            else:
+                amount_ambiguous = True
 
     description = re.sub(r"\s+", " ", rest).strip(" -:|")[:120]
     return {
@@ -102,6 +118,7 @@ def parse_row(row: list[Box]) -> dict | None:
         "charge": round(charge, 2),
         "service_date": service_date,
         "confidence": round(min(b.conf for b in row), 3),
+        "amount_ambiguous": amount_ambiguous,
         "bbox": [
             round(min(b.x0 for b in row)), round(min(b.y0 for b in row)),
             round(max(b.x1 for b in row)), round(max(b.y1 for b in row)),
@@ -111,13 +128,17 @@ def parse_row(row: list[Box]) -> dict | None:
 
 def find_total(rows: list[list[Box]]) -> float | None:
     """Printed bill total, used to sanity-check the parsed lines."""
+    candidates = []
     for row in reversed(rows):
         text = " ".join(b.text for b in row)
-        if TOTAL.search(text) and not re.search(r"payment|paid|adjust|insurance", text, re.I):
+        if TOTAL.search(text) and not re.search(r"payment|adjust|insurance|subtotal|sub total", text, re.I):
             monies = MONEY.findall(text)
             if monies:
-                return money_to_float(monies[-1])
-    return None
+                # A paid receipt may end with Balance due $0. Its service total
+                # takes precedence over the outstanding balance.
+                priority = 0 if re.search(r"total\s+charges|grand\s+total", text, re.I) else 2 if re.search(r"balance|amount\s+due", text, re.I) else 1
+                candidates.append((priority, money_to_float(monies[-1])))
+    return min(candidates, key=lambda item: item[0])[1] if candidates else None
 
 
 def parse_bill(boxes: list[Box]) -> dict:
@@ -128,10 +149,14 @@ def parse_bill(boxes: list[Box]) -> dict:
     npi = m.group(1) if m else ""
 
     lines, unreviewed = [], []
+    payment_columns = any(re.search(r"\b(payment|paid|balance|allowed|adjustment)\b", " ".join(b.text for b in row), re.I)
+                          and not MONEY.search(" ".join(b.text for b in row)) for row in rows)
     for row in rows:
         line = parse_row(row)
         if not line:
             continue
+        if payment_columns and len(MONEY.findall(" ".join(b.text for b in row))) > 1:
+            line["amount_ambiguous"] = True
         # Lines with no CPT/HCPCS code (room, pharmacy, supplies) are kept for the
         # user to review instead of being silently dropped.
         (lines if line["code"] else unreviewed).append(line)

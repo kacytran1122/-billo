@@ -23,7 +23,8 @@ from sentry_sdk.crons import monitor
 from uagents import Agent, Context, Protocol
 from uagents_core.contrib.protocols.chat import ChatAcknowledgement, ChatMessage, chat_protocol_spec
 
-from common.chat import ack, resources_of, say, text_of
+from common.chat import ack, advertise_attachments, say, text_of, upload_resources
+from common.attachments import AttachmentError
 from common.config import ADDR, BACKEND_ROOT, FOLLOWUP_MINUTES, MODE, PORTS, READMES, require_seed
 from common.core import core_get, core_post
 from common.conversation import SCOPE_REPLY, care_request, clinical_advice_request, normalize_request, payment_status as document_payment_status, quick_reply
@@ -263,17 +264,22 @@ async def step_visit_log(ctx: Context, case: dict, text: str) -> None:
     await reply(ctx, case, res["say"])
 
 
-async def step_after_care(ctx: Context, case: dict, file_url: str, payment_status: str) -> None:
+async def step_after_care(ctx: Context, case: dict, file_url: str, payment_status: str, *, demo: bool = False) -> None:
+    if not file_url and not demo:
+        await reply(ctx, case, "Please attach a clear bill or receipt image or PDF first. I won’t substitute a demo document for a missing upload.")
+        return
+    if case["stage"] != "organizing":
+        case["stage_before_organizing"] = case["stage"]
     case["stage"] = "organizing"
     save(ctx, case)
     await reply(
         ctx,
         case,
-        "Document received. I’m extracting the provider, charges, and payment status, then comparing them with your saved care plan. I’ll flag anything that needs review.",
+        "Document received. I’m extracting the provider and charges, then comparing them with your saved care plan. I’ll flag anything that needs review and ask you to confirm an unclear payment status.",
         photon_text="📸 Got it — reading your bill.\nChecking provider, charges + saved estimate.",
     )
     await ctx.send(ADDR["bill_auditor"], AfterCareRequest(
-        case_id=case["id"], file_url=file_url, demo=not file_url,
+        case_id=case["id"], file_url=file_url, demo=demo,
         hospital_npi=(case.get("place") or {}).get("npi", ""), payment_status=payment_status,
         reply_to=str(ctx.agent.address), trace=carry()))
 
@@ -346,7 +352,8 @@ async def step_reimburse(ctx: Context, case: dict, text: str) -> None:
         reply_to=str(ctx.agent.address), trace=carry()))
 
 
-async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_group: bool = False) -> None:
+async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_group: bool = False,
+                     attachment_error: str = "") -> None:
     text = normalize_request(text)
     low = text.lower().strip()
     # Emergency wording takes precedence even in upload captions or benefit/payment requests.
@@ -355,6 +362,17 @@ async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_g
         case["stage"] = "emergency"
         save(ctx, case)
         await reply(ctx, case, emergency_rule["say"])
+        return
+    if attachment_error:
+        if attachment_error in {"multiple", "multiple_documents"}:
+            message = "Please send one bill or receipt at a time so I can review the correct document."
+        else:
+            message = "I couldn’t open that attachment for document review."
+        await reply(ctx, case, (
+            message + " Re-upload one clear JPEG, PNG, WebP, HEIC/HEIF image or PDF under 10 MB. "
+            "No charges were invented and no payment was approved.\n"
+            "Bill and receipt screen (public demo): https://www.getbillo.us/tools/scan"
+        ))
         return
     m = re.fullmatch(r"(?:book|pick|choose|save)(?:\s+(?:option|number|provider))?\s*#?\s*(\d+)(?:\s+(?:please|as my care plan))?", low)
     immediate = quick_reply(text, has_files=bool(files), stage=case["stage"], asked=case.get("asked", False))
@@ -384,7 +402,8 @@ async def route_text(ctx: Context, case: dict, text: str, files: list[str], is_g
         await step_scan_clinic_qr(ctx, case, files[0] if files else "", demo="demo" in low)
     elif files or (any(w in low for w in BILL_WORDS) and re.search(r"\bdemo\b", low)):
         payment_status = document_payment_status(text)
-        await step_after_care(ctx, case, files[0] if files else "", payment_status)
+        await step_after_care(ctx, case, files[0] if files else "", payment_status,
+                              demo=not files and bool(re.search(r"\bdemo\b", low)))
     elif any(w in low for w in BILL_WORDS) and ("photo" in low or "here" in low):
         await reply(ctx, case, "I don’t see an attached document yet. Please attach a clear image or PDF and label it paid or unpaid. I won’t invent charges from a missing bill.")
     elif any(w in low for w in ("hsa", "fsa", "hra", "out of network", "out-of-network", "employer benefit", "student benefit", "travel insurance", "accident insurance", "check benefits")):
@@ -408,13 +427,24 @@ chat = Protocol(spec=chat_protocol_spec)
 @chat.on_message(ChatMessage)
 async def on_chat(ctx: Context, sender: str, msg: ChatMessage):
     await ack(ctx, sender, msg)
+    await advertise_attachments(ctx, sender, msg)
     case = get_case(ctx, "asi1", sender)
     with case_scope(case["id"], channel="asi1"), \
             sentry_sdk.start_transaction(op="billo.case", name="asi1 message") as tx:
         tx.set_data("case", case_hash(case["id"]))
         tx.set_data("stage.before", case["stage"] if case["stage"] in METRIC_STAGES else "other")
         try:
-            await route_text(ctx, case, text_of(msg), resources_of(msg))
+            text = text_of(msg)
+            # Do not delay an emergency response while downloading an attachment.
+            if first_matching_rule(text, SAFETY_RULES):
+                await route_text(ctx, case, text, [])
+                return
+            files = await upload_resources(msg)
+            await route_text(ctx, case, text, files)
+        except AttachmentError as exc:
+            sentry_sdk.set_tag("check", "bill_reader")
+            sentry_sdk.capture_message("ASI attachment could not be imported", level="warning")
+            await route_text(ctx, case, text_of(msg), [], attachment_error=str(exc))
         except Exception as exc:  # never leave the patient without an answer
             sentry_sdk.capture_exception(exc)
             tx.set_status("internal_error")
@@ -442,7 +472,7 @@ async def on_imessage(ctx: Context, sender: str, msg: InboundText):
     else:
         case = get_case(ctx, "imessage", msg.space_id)
     files = [msg.attachment_url] if msg.attachment_url else []
-    if not msg.text.strip() and not files:  # e.g. the QR code text: the bridge already said "Linked"
+    if not msg.text.strip() and not files and not msg.attachment_error:
         return
     # Continue the trace the Photon bridge started, so iMessage -> bridge -> agents is one trace.
     with case_scope(case["id"], channel="imessage"):
@@ -451,7 +481,8 @@ async def on_imessage(ctx: Context, sender: str, msg: InboundText):
             tx.set_data("group", msg.is_group)
             tx.set_data("has_file", bool(files))
             try:
-                await route_text(ctx, case, msg.text, files, is_group=msg.is_group)
+                await route_text(ctx, case, msg.text, files, is_group=msg.is_group,
+                                 attachment_error=msg.attachment_error)
             except Exception as exc:
                 sentry_sdk.capture_exception(exc)
                 tx.set_status("internal_error")
@@ -461,9 +492,22 @@ async def on_imessage(ctx: Context, sender: str, msg: InboundText):
 # ------------------------------------------------------------------ after-care result
 @agent.on_message(model=AfterCareResult)
 async def on_result(ctx: Context, sender: str, res: AfterCareResult):
+    if sender != ADDR["bill_auditor"]:
+        return
     case = load(ctx, res.case_id)
     if not case:
         return
+    if not res.ok:
+        case["stage"] = case.pop("stage_before_organizing", "organized" if case.get("after_care") else "new")
+        save(ctx, case)
+        await reply(ctx, case, (
+            "I couldn’t reliably read and organize that document. Any earlier organized record is unchanged. "
+            "Please resend a sharper image with all four corners visible, or a readable PDF. "
+            "I haven’t invented charges or approved a payment.\n"
+            "Bill and receipt screen (public demo): https://www.getbillo.us/tools/scan"
+        ))
+        return
+    case.pop("stage_before_organizing", None)
     case["after_care"] = {"total": res.total, "hospital_npi": res.hospital_npi,
                           "payment_status": res.payment_status, "provider_match": res.provider_match,
                           "estimate_amount": res.estimate_amount, "estimate_difference": res.estimate_difference,
@@ -473,9 +517,9 @@ async def on_result(ctx: Context, sender: str, res: AfterCareResult):
     kind = "paid receipt" if res.payment_status == "paid" else "unpaid final bill" if res.payment_status == "unpaid" else "document with unconfirmed payment status"
     text = ["Document review complete", f"Type: {kind.title()}", f"Total: ${res.total:,.2f}"]
     if res.reader == "ocr":
-        text.append("Reader: local OCR; extracted charges matched the printed total.")
+        text.append("Reader: local OCR extraction. Review charges against the original document; a printed-total match is not guaranteed.")
     elif res.reader == "vision":
-        text.append("Reader: vision fallback; extracted values were checked against the image because local OCR confidence was low.")
+        text.append("Reader: vision-assisted extraction. Review required: compare charges and any unreadable fields with the original document; independent OCR verification may be unavailable.")
     elif res.reader == "demo_fallback":
         text.append("Reader: demo fallback. I could not read the uploaded image reliably; send a clearer photo before relying on this result.")
     if res.unreviewed_lines:
@@ -589,10 +633,20 @@ async def _apply_medic(ctx: Context, case: dict, act: MedicAction) -> None:
     elif act.action == "reschedule_followup":
         case["asked"] = False
         case["followup_due"] = time.time() + 300
+    if act.action == "retry_reader":
+        # The original temporary upload may already have been deleted. An empty
+        # source would select a synthetic demo, not retry the patient's document.
+        if case["stage"] == "organizing":
+            case["stage"] = case.pop("stage_before_organizing", "organized" if case.get("after_care") else "new")
+        save(ctx, case)
+        await reply(ctx, case, (
+            "The document could not be reread automatically. Please re-upload one clear bill or receipt image or PDF. "
+            "Any earlier organized record is unchanged; no charges were invented and no payment was approved.\n"
+            "Bill and receipt screen (public demo): https://www.getbillo.us/tools/scan"
+        ))
+        return
     save(ctx, case)
     await reply(ctx, case, act.patient_text)
-    if act.action == "retry_reader" and case["stage"] == "organizing":
-        await step_after_care(ctx, case, "", (case.get("after_care") or {}).get("payment_status", "unknown"))
 
 
 # ------------------------------------------------------------------ "Did you go?" follow-up

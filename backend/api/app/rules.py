@@ -17,6 +17,8 @@ RULES = yaml.safe_load((BACKEND_ROOT / "rules" / "bill_audit.yaml").read_text())
 def rules_check(line: dict, all_lines: list[dict], visit_codes: set[str] | None) -> list[tuple[str, str]]:
     """Return [(rule_id, reason)] for this line."""
     hits: list[tuple[str, str]] = []
+    if not line.get("code"):
+        return hits  # Uncoded receipt items need review, not invented code rules.
     same = [l for l in all_lines if l["code"] == line["code"] and l.get("service_date") == line.get("service_date")]
     if len(same) > 1 and line["line_no"] != min(l["line_no"] for l in same):
         hits.append((RULES["duplicates"]["rule_id"], f"code {line['code']} is billed {len(same)} times on the same day"))
@@ -35,7 +37,7 @@ def price_check(line: dict, all_lines: list[dict], stats: dict | None) -> tuple[
     if not stats:
         return False, "no price data for this code", 0.0
     same = [l for l in all_lines if l["code"] == line["code"] and l.get("service_date") == line.get("service_date")]
-    billed_for_code = sum(l["charge"] * l.get("units", 1) for l in same)
+    billed_for_code = sum(l["charge"] for l in same)
     p50, p90 = stats["p50"], stats["p90"]
     if len(same) > 1 and line["line_no"] != min(l["line_no"] for l in same):
         too_high = billed_for_code > p90  # duplicate: together they cost more than one normal service
@@ -76,7 +78,7 @@ def gfe_check(lines: list[dict], gfe: float | None, sum_p90: float) -> dict | No
     """Case level: No Surprises Act. Dispute if billed >= GFE + $400 AND the total is above normal prices."""
     if gfe is None:
         return None
-    total = sum(l["charge"] * l.get("units", 1) for l in lines)
+    total = sum(l["charge"] for l in lines)
     over = total - gfe
     rules_hit = over >= RULES["gfe"]["threshold"]
     price_hit = total > sum_p90
@@ -97,7 +99,7 @@ def gfe_check(lines: list[dict], gfe: float | None, sum_p90: float) -> dict | No
 
 def disputed_amount(lines: list[dict], flags: list[dict], gfe: float | None) -> float:
     """If the $400 rule applies, the patient pays the estimate and disputes the rest."""
-    total = sum(l["charge"] * l.get("units", 1) for l in lines)
+    total = sum(l["charge"] for l in lines)
     line_disputes = sum(f["amount_at_stake"] for f in flags if f["kind"] == "dispute" and f["rule_id"] != "GFE-400")
     gfe_flag = any(f["rule_id"] == "GFE-400" and f["kind"] == "dispute" for f in flags)
     if gfe_flag and gfe is not None:
